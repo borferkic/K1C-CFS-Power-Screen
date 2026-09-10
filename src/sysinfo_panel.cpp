@@ -3,7 +3,7 @@
 #include "config.h"
 #include "theme.h"
 #include "spdlog/spdlog.h"
-#include "guppyscreen.h"
+#include "powerscreen.h"
 
 #include <algorithm>
 #include <iterator>
@@ -15,8 +15,8 @@ namespace fs = std::experimental::filesystem;
 
 LV_IMG_DECLARE(back);
 
-#ifdef GUPPYSCREEN_VERSION
-#define GS_VERSION GUPPYSCREEN_VERSION
+#ifdef POWERSCREEN_VERSION
+#define GS_VERSION POWERSCREEN_VERSION
 #else
 #define GS_VERSION "dev-snapshot"
 #endif
@@ -241,7 +241,7 @@ void SysInfoPanel::foreground() {
     auto ip = KUtils::interface_ip(iface);
     network_detail.push_back(fmt::format("\t{}: {}", iface, ip));
   }
-  lv_label_set_text(network_label, fmt::format("{}\n\nGuppyScreen\n\tVersion: " GS_VERSION,
+  lv_label_set_text(network_label, fmt::format("{}\n\nPowerScreen\n\tVersion: " GS_VERSION,
 					       fmt::join(network_detail, "\n")).c_str());
 }
 
@@ -302,7 +302,7 @@ void SysInfoPanel::handle_callback(lv_event_t *e)
         conf->save();
         auto theme_config = fs::canonical(conf->get_path()).parent_path() / "themes" / (selected_theme + ".json");
         ThemeConfig::get_instance()->init(theme_config);
-        GuppyScreen::refresh_theme();
+        PowerScreen::refresh_theme();
       }
     }
   }

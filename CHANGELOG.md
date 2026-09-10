@@ -1,15 +1,15 @@
 # Changelog
 
-All notable changes to the K1C modification are documented in this file.
+All notable changes to K1C CFS POWER SCREEN are documented in this file.
 
-Todos los cambios importantes de esta modificación para K1C se documentan en este archivo.
+Todos los cambios importantes de K1C CFS POWER SCREEN se documentan en este archivo.
 
 ## [Unreleased] / [Sin publicar]
 
 ### Added / Añadido
 
-- Created the private repository `K1C-CFS-Guppyscreen-MOD` for the personal K1C project.
-- Creado el repositorio privado `K1C-CFS-Guppyscreen-MOD` para el proyecto personal de K1C.
+- Created the private repository `K1C-CFS-POWER-SCREEN` for the personal K1C project.
+- Creado el repositorio privado `K1C-CFS-POWER-SCREEN` para el proyecto personal de K1C.
 - Added the `MANUAL M600` button to the extrusion panel.
 - Añadido el botón `MANUAL M600` al panel de extrusión.
 - Added the manual filament change dialog using `PromptPanel`.
@@ -18,12 +18,12 @@ Todos los cambios importantes de esta modificación para K1C se documentan en es
 - Añadidas las acciones `SDK_UNLOAD_FILAMENT`, `SDK_LOAD_FILAMENT`, `RESUME`, `CANCEL_PRINT` y cierre.
 - Added load, unload, resume, and stop icons to the dialog.
 - Añadidos iconos de carga, descarga, reanudación y detención al diálogo.
-- Added Material and Z-Bolt MIPS packages for K1C builds.
-- Añadidos paquetes MIPS Material y Z-Bolt para compilaciones de K1C.
+- Added the Z-Bolt MIPS package for K1C builds.
+- Añadido el paquete MIPS Z-Bolt para compilaciones de K1C.
 - Added `nightly` and `stable` release channels.
 - Añadidos los canales de publicación `nightly` y `stable`.
-- Added GitHub Release installation instructions for both themes.
-- Añadidas instrucciones de instalación desde GitHub Releases para ambos temas.
+- Added GitHub Release installation instructions for the Z-Bolt package.
+- Añadidas instrucciones de instalación desde GitHub Releases para el paquete Z-Bolt.
 
 ### Changed / Cambiado
 
@@ -45,12 +45,6 @@ Todos los cambios importantes de esta modificación para K1C se documentan en es
 - Forzada la distribución de acciones M600 como una cuadrícula de dos columnas y dos filas: `UNLOAD`/`LOAD` y `RESUME`/`STOP`.
 - Updated the `X` action to finish the prompt with `action:prompt_end`.
 - Actualizada la acción de la `X` para finalizar el prompt con `action:prompt_end`.
-- Publish both K1C packages from one release job after the MIPS builds finish, preventing parallel nightly-release conflicts.
-- Publicados ambos paquetes K1C desde un único job de release al terminar las compilaciones MIPS, evitando conflictos paralelos del release nightly.
-- Added Moonraker/Fluidd update metadata and a Z-Bolt release package for K1C software updates.
-- Añadidos metadatos de actualización para Moonraker/Fluidd y un paquete de release Z-Bolt para las actualizaciones de software de K1C.
-- Changed nightly releases to use their UTC date and time as the release tag, preventing conflicts with an existing fixed `nightly` tag.
-- Cambiados los releases nightly para usar su fecha y hora UTC como tag de release, evitando conflictos con un tag fijo `nightly` existente.
 - Added bilingual README documentation, project credits, and the PayPal support link.
 - Añadida documentación bilingüe en el README, créditos del proyecto y el enlace de apoyo por PayPal.
 - Updated the K1C remotely through SSH using the Z-Bolt nightly package, preserving a device backup.
@@ -62,5 +56,5 @@ Todos los cambios importantes de esta modificación para K1C se documentan en es
 - `nightly`: compilaciones desde `main` para pruebas de desarrollo, identificadas con fecha y hora UTC (`nightly-YYYYMMDD-HHMM`).
 - `stable`: builds created from version tags.
 - `stable`: compilaciones creadas a partir de tags de versión.
-- Each channel provides `guppyscreen.tar.gz` (Material) and `guppyscreen-zbolt.tar.gz` (Z-Bolt).
-- Cada canal proporciona `guppyscreen.tar.gz` (Material) y `guppyscreen-zbolt.tar.gz` (Z-Bolt).
+- Each channel provides `powerscreen-zbolt.tar.gz`.
+- Cada canal proporciona `powerscreen-zbolt.tar.gz`.

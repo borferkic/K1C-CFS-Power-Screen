@@ -1,17 +1,14 @@
 #!/bin/bash
 
-RELEASES_DIR=./releases/guppyscreen
+RELEASES_DIR=./releases/powerscreen
 rm -rf $RELEASES_DIR
 mkdir -p $RELEASES_DIR
 
-ASSET_NAME=$1
-REPOSITORY=${GUPPYSCREEN_REPOSITORY:-borferkic/K1C-CFS-Guppyscreen-MOD}
-PROJECT_OWNER=${REPOSITORY%%/*}
-PROJECT_NAME=${REPOSITORY#*/}
+ASSET_NAME="powerscreen-zbolt"
 
-"$CROSS_COMPILE"strip ./build/bin/guppyscreen
+"$CROSS_COMPILE"strip ./build/bin/powerscreen
 "$CROSS_COMPILE"strip ./build/bin/kd_graphic_mode
-cp ./build/bin/guppyscreen $RELEASES_DIR/guppyscreen
+cp ./build/bin/powerscreen $RELEASES_DIR/powerscreen
 cp -r ./k1/k1_mods $RELEASES_DIR
 cp -r ./k1/scripts $RELEASES_DIR
 cp -r ./themes $RELEASES_DIR
@@ -25,17 +22,5 @@ cp -r ./debian $RELEASES_DIR
 cp ./build/bin/kd_graphic_mode $RELEASES_DIR/debian
 
 
-echo "{\"version\": \"$GUPPYSCREEN_VERSION\", \"theme\": \"$GUPPY_THEME\", \"asset_name\": \"$ASSET_NAME.tar.gz\"}" > $RELEASES_DIR/.version
-echo "{\"project_name\": \"$PROJECT_NAME\", \"project_owner\": \"$PROJECT_OWNER\", \"version\": \"$GUPPYSCREEN_VERSION\", \"asset_name\": \"$ASSET_NAME.zip\"}" > $RELEASES_DIR/release_info.json
+echo "{\"version\": \"$POWERSCREEN_VERSION\", \"asset_name\": \"$ASSET_NAME.tar.gz\"}" > $RELEASES_DIR/.version
 tar czf $ASSET_NAME.tar.gz -C releases .
-python3 - "$RELEASES_DIR" "$ASSET_NAME.zip" <<'PY'
-from pathlib import Path
-from zipfile import ZIP_DEFLATED, ZipFile
-import sys
-
-source = Path(sys.argv[1])
-archive = Path(sys.argv[2])
-with ZipFile(archive, "w", ZIP_DEFLATED) as package:
-    for item in source.rglob("*"):
-        package.write(item, item.relative_to(source))
-PY

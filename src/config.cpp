@@ -61,15 +61,15 @@ void Config::init(std::string config_path, const std::string thumbdir) {
 
   json cooldown_conf = {{ "cooldown", "SET_HEATER_TEMPERATURE HEATER=extruder TARGET=0\nSET_HEATER_TEMPERATURE HEATER=heater_bed TARGET=0"}};
   json default_macros_conf = {
-    {"load_filament", "_GUPPY_LOAD_MATERIAL"},
-    {"unload_filament", "_GUPPY_QUIT_MATERIAL"}
+    {"load_filament", "_POWERSCREEN_LOAD_MATERIAL"},
+    {"unload_filament", "_POWERSCREEN_QUIT_MATERIAL"}
   };
 
   if (stat(config_path.c_str(), &buffer) == 0) {
     data = json::parse(std::fstream(config_path));
   } else {
     data = {
-        {"log_path", "/usr/data/printer_data/logs/guppyscreen.log"},
+        {"log_path", "/usr/data/printer_data/logs/powerscreen.log"},
         {"thumbnail_path", thumbdir},
         {"wpa_supplicant", "/var/run/wpa_supplicant"},
         {"display_sleep_sec", 600}
@@ -114,9 +114,9 @@ void Config::init(std::string config_path, const std::string thumbdir) {
       }
     }
 
-    auto &guppy_init = data["/guppy_init_script"_json_pointer];
-    if (guppy_init.is_null()) {
-      data["/guppy_init_script"_json_pointer] = "/etc/init.d/S99guppyscreen";
+    auto &powerscreen_init = data["/powerscreen_init_script"_json_pointer];
+    if (powerscreen_init.is_null()) {
+      data["/powerscreen_init_script"_json_pointer] = "/etc/init.d/S99powerscreen";
     }
 
     auto &ll = data[json::json_pointer(df() + "log_level")];
@@ -126,7 +126,7 @@ void Config::init(std::string config_path, const std::string thumbdir) {
   }
   auto &rotate = data["/display_rotate"_json_pointer];
   if (rotate.is_null()) {
-#ifdef GUPPY_ROTATE
+#ifdef POWERSCREEN_ROTATE
     data["/display_rotate"_json_pointer] = 3; // LV_DISP_ROT_270
 #else
     data["/display_rotate"_json_pointer] = 0; // LV_DISP_ROT_0

@@ -5,3 +5,7 @@ build/
 *.a
 /.idea
 /cible/
+# Build and release artifacts generated locally.
+/releases/
+/*.tar.gz
+/.tmp-k1c-install/

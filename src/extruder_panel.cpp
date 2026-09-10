@@ -134,7 +134,7 @@ void ExtruderPanel::foreground() {
 }
 
 void ExtruderPanel::show_manual_filament_change() {
-  // Use Guppy's native prompt protocol so the dialog is rendered by the
+  // Use PowerScreen's native prompt protocol so the dialog is rendered by the
   // printer UI and remains compatible with the existing prompt handling.
   ws.gcode_script(
     "RESPOND TYPE=command MSG=\"action:prompt_begin MANUAL FILAMENT CHANGE\"\n"
@@ -217,7 +217,7 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
     }
 
     if (btn == unload_btn.get_container()) {
-      if (unload_filament_macro == "_GUPPY_QUIT_MATERIAL") {
+      if (unload_filament_macro == "_POWERSCREEN_QUIT_MATERIAL") {
         const char *temp = lv_btnmatrix_get_btn_text(temp_selector.get_selector(),
                                                      temp_selector.get_selected_idx());
         ws.gcode_script(fmt::format("{} EXTRUDER_TEMP={}", unload_filament_macro, temp));
@@ -231,7 +231,7 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
     }
 
     if (btn == load_btn.get_container()) {
-      if (load_filament_macro == "_GUPPY_LOAD_MATERIAL") {
+      if (load_filament_macro == "_POWERSCREEN_LOAD_MATERIAL") {
         const char *temp = lv_btnmatrix_get_btn_text(temp_selector.get_selector(),
                                                      temp_selector.get_selected_idx());
         const char *len = lv_btnmatrix_get_btn_text(length_selector.get_selector(),

@@ -1,5 +1,5 @@
 #include "printer_select_panel.h"
-#include "guppyscreen.h"
+#include "powerscreen.h"
 #include "config.h"
 #include "hv/json.hpp"
 #include "subprocess.hpp"
@@ -40,7 +40,7 @@ PrinterSelectContainer::PrinterSelectContainer(PrinterSelectPanel &ps,
     lv_event_code_t code = lv_event_get_code(e);
     if (code == LV_EVENT_CLICKED) {
       PrinterSelectContainer *p = (PrinterSelectContainer*)e->user_data;
-      lv_obj_t *msgbox = p->prompt(fmt::format("Guppy Screen will restart. Do you want to switch to {}?",
+      lv_obj_t *msgbox = p->prompt(fmt::format("PowerScreen will restart. Do you want to switch to {}?",
 					       p->name));
       lv_obj_add_event_cb(msgbox, [](lv_event_t *e) {
 	lv_obj_t *obj = lv_obj_get_parent(lv_event_get_target(e));
@@ -52,7 +52,7 @@ PrinterSelectContainer::PrinterSelectContainer(PrinterSelectPanel &ps,
 	  conf->set<std::string>("/default_printer", ((PrinterSelectContainer*)e->user_data)->name);
 	  conf->save();
 		  
-	  auto init_script = conf->get<std::string>("/guppy_init_script");
+	  auto init_script = conf->get<std::string>("/powerscreen_init_script");
 	  const fs::path script(init_script);
 	  if (fs::exists(script)) {
 	    sp::call({init_script, "restart"});
@@ -235,7 +235,7 @@ PrinterSelectPanel::PrinterSelectPanel()
         conf->save();
         conf->init(conf->get<std::string>("/config_path"), conf->get<std::string>("/thumbnail_path"));
         std::string ws_url = fmt::format("ws://{}:{}/websocket", ip, port);
-        GuppyScreen::get()->connect_ws(ws_url);
+        PowerScreen::get()->connect_ws(ws_url);
       }
     }
   }, LV_EVENT_CLICKED, this);

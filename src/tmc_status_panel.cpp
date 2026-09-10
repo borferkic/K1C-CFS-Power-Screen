@@ -40,9 +40,9 @@ TmcStatusPanel::TmcStatusPanel(KWebSocketClient &c,
     if(code == LV_EVENT_VALUE_CHANGED) {
       TmcStatusPanel *p = (TmcStatusPanel*)e->user_data;      
       if (lv_obj_has_state(obj, LV_STATE_CHECKED)) {
-	p->ws.gcode_script("_GUPPY_LOAD_MODULE SECTION=tmcstatus");
+	p->ws.gcode_script("_POWERSCREEN_LOAD_MODULE SECTION=tmcstatus");
       } else {
-	p->ws.gcode_script("_GUPPY_UNLOAD_MODULE SECTION=tmcstatus");
+	p->ws.gcode_script("_POWERSCREEN_UNLOAD_MODULE SECTION=tmcstatus");
       }
     }
   }, LV_EVENT_VALUE_CHANGED, this);

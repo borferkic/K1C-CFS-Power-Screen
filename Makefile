@@ -24,7 +24,7 @@ WARNINGS		:= -Wall -Wextra -Wno-unused-function -Wno-error=strict-prototypes -Wp
 					-Wunreachable-code -Wno-switch-default -Wreturn-type -Wmultichar -Wformat-security -Wno-sign-compare
 CFLAGS 			?= -O3 -g0 -MD -MP -I$(LVGL_DIR)/ $(WARNINGS) 
 LDFLAGS 		?= -static -lm -Llibhv/lib -Lspdlog/build -l:libhv.a -latomic -lpthread -Lwpa_supplicant/wpa_supplicant/ -l:libwpa_client.a -lstdc++fs -l:libspdlog.a
-BIN 			= guppyscreen
+BIN 			= powerscreen
 BUILD_DIR 		= ./build
 BUILD_OBJ_DIR 	= $(BUILD_DIR)/obj
 BUILD_BIN_DIR 	= $(BUILD_DIR)/bin
@@ -42,27 +42,15 @@ include $(LVGL_DIR)/lv_drivers/lv_drivers.mk
 CSRCS 			+= $(wildcard $(LVGL_DIR)/assets/*.c)
 CSRCS			+= $(wildcard $(LVGL_DIR)/lv_touch_calibration/*.c)
 
-ASSET_DIR		= material
-ifdef GUPPY_SMALL_SCREEN
-ASSET_DIR		= material_46
-DEFINES			+= -D GUPPY_SMALL_SCREEN
+ifdef POWERSCREEN_ROTATE
+DEFINES			+= -D POWERSCREEN_ROTATE
 endif
 
-
-ifdef GUPPY_ROTATE
-DEFINES			+= -D GUPPY_ROTATE
-endif
-
-
-ifeq ($(GUPPY_THEME),zbolt)
 CSRCS 			+= $(wildcard $(LVGL_DIR)/assets/zbolt/*.c)
 DEFINES			+= -D ZBOLT
-else
-CSRCS 			+= $(wildcard $(LVGL_DIR)/assets/$(ASSET_DIR)/*.c)
-endif
 
-ifdef GUPPYSCREEN_VERSION
-DEFINES			+= -D GUPPYSCREEN_VERSION="\"${GUPPYSCREEN_VERSION}\""
+ifdef POWERSCREEN_VERSION
+DEFINES			+= -D POWERSCREEN_VERSION="\"${POWERSCREEN_VERSION}\""
 endif
 
 OBJEXT 			?= .o

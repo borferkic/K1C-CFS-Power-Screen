@@ -13,12 +13,7 @@ LV_IMG_DECLARE(limit_img);
 LV_IMG_DECLARE(motor_img);
 LV_IMG_DECLARE(chart_img);
 
-#ifndef ZBOLT
-LV_IMG_DECLARE(belts_calibration_img);
-LV_IMG_DECLARE(power_devices_img);
-#else
 LV_IMG_DECLARE(print);
-#endif
 
 PrinterTunePanel::PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent, FineTunePanel &finetune)
   : cont(lv_obj_create(parent))
@@ -33,19 +28,11 @@ PrinterTunePanel::PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t 
   , bedmesh_btn(cont, &bedmesh_img, "Bed Mesh", &PrinterTunePanel::_handle_callback, this)
   , finetune_btn(cont, &fine_tune_img, "Fine Tune", &PrinterTunePanel::_handle_callback, this)
   , inputshaper_btn(cont, &inputshaper_img, "Input Shaper", &PrinterTunePanel::_handle_callback, this)
-#ifndef ZBOLT
-  , belts_calibration_btn(cont, &belts_calibration_img, "Belts/Shake", &PrinterTunePanel::_handle_callback, this)
-#else
   , belts_calibration_btn(cont, &inputshaper_img, "Belts/Shake", &PrinterTunePanel::_handle_callback, this)
-#endif
   , limits_btn(cont, &limit_img, "Limits", &PrinterTunePanel::_handle_callback, this)
   , tmc_tune_btn(cont, &motor_img, "TMC Autotune", &PrinterTunePanel::_handle_callback, this)
   , tmc_status_btn(cont, &chart_img, "TMC Metrics", &PrinterTunePanel::_handle_callback, this)
-#ifndef ZBOLT
-  , power_devices_btn(cont, &power_devices_img, "Power Devices", &PrinterTunePanel::_handle_callback, this)
-#else
   , power_devices_btn(cont, &print, "Power Devices", &PrinterTunePanel::_handle_callback, this)
-#endif
 {
   lv_obj_move_background(cont);
 
@@ -98,7 +85,7 @@ void PrinterTunePanel::init(json &j) {
 
   tmc_status_panel.init(j);
 
-  // TODO: handle remote guppy instance
+  // TODO: handle remote powerscreen instance
   State *s = State::get_instance();
   auto kp = s->get_data("/printer_info/klipper_path"_json_pointer);
   if (!kp.is_null()) {

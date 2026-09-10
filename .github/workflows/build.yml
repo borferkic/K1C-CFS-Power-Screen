@@ -1,4 +1,4 @@
-name: guppy zbolt build
+name: powerscreen zbolt build
 
 on:
   push:
@@ -12,28 +12,41 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    container:
-      image: ballaswag/guppydev:latest
-      options: --user 1001
 
     env:
-      CROSS_COMPILE: mipsel-buildroot-linux-musl-
-      CC: mipsel-buildroot-linux-musl-
-      CXX: mipsel-buildroot-linux-musl-
-      GUPPY_THEME: zbolt
-      GUPPY_ROTATE: true
+      POWERSCREEN_ROTATE: true
 
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: recursive
 
-    - name: set guppyscreen version
+    - name: install build dependencies and MIPS toolchain
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake
+        TOOLCHAIN_ARCHIVE="$RUNNER_TEMP/mips-gcc720-glibc229.tar.gz"
+        TOOLCHAIN_ROOT="$RUNNER_TEMP/mips-toolchain"
+        mkdir -p "$TOOLCHAIN_ROOT"
+        curl --fail --location --retry 3 \
+          https://github.com/ballaswag/k1-discovery/releases/download/1.0.0/mips-gcc720-glibc229.tar.gz \
+          --output "$TOOLCHAIN_ARCHIVE"
+        tar -xzf "$TOOLCHAIN_ARCHIVE" -C "$TOOLCHAIN_ROOT"
+        TOOLCHAIN_BIN="$(find "$TOOLCHAIN_ROOT" -type d -name bin -print -quit)"
+        test -n "$TOOLCHAIN_BIN"
+        echo "$TOOLCHAIN_BIN" >> "$GITHUB_PATH"
+        TOOLCHAIN_PREFIX="$(find -L "$TOOLCHAIN_BIN" -maxdepth 1 -type f -name '*gcc' -print -quit | sed 's/gcc$//')"
+        test -n "$TOOLCHAIN_PREFIX"
+        echo "CROSS_COMPILE=$TOOLCHAIN_PREFIX" >> "$GITHUB_ENV"
+        echo "CC=$TOOLCHAIN_PREFIX" >> "$GITHUB_ENV"
+        echo "CXX=$TOOLCHAIN_PREFIX" >> "$GITHUB_ENV"
+
+    - name: set powerscreen version
       run: |
         if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-          echo "GUPPYSCREEN_VERSION=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
+          echo "POWERSCREEN_VERSION=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
         else
-          echo "GUPPYSCREEN_VERSION=nightly-$(date -u +%Y%m%d-%H%M)" >> "$GITHUB_ENV"
+          echo "POWERSCREEN_VERSION=nightly-$(date -u +%Y%m%d-%H%M)" >> "$GITHUB_ENV"
         fi
 
     - name: patch lv_drivers
@@ -57,7 +70,7 @@ jobs:
     - name: make libspdlog
       run: make libspdlog.a
 
-    - name: make guppyscreen
+    - name: make powerscreen
       run: make -j
 
     - name: make kd_graphic_mode
@@ -66,9 +79,9 @@ jobs:
     - name: package zbolt
       run: |
         chmod +x ./release.sh
-        ./release.sh guppyscreen-zbolt
+        ./release.sh powerscreen-zbolt
 
     - uses: actions/upload-artifact@v4
       with:
-        name: guppyscreen-zbolt
-        path: ./guppyscreen-zbolt.tar.gz
+        name: powerscreen-zbolt
+        path: ./powerscreen-zbolt.tar.gz

@@ -13,11 +13,7 @@ LV_IMG_DECLARE(refresh_img);
 LV_IMG_DECLARE(spoolman_img);
 LV_IMG_DECLARE(update_img);
 
-#ifdef ZBOLT
 LV_IMG_DECLARE(info_img);
-#else
-LV_IMG_DECLARE(sysinfo_img);
-#endif
 
 LV_IMG_DECLARE(print);
 
@@ -32,14 +28,10 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
   , wifi_btn(cont, &network_img, "WIFI", &SettingPanel::_handle_callback, this)
   , restart_klipper_btn(cont, &refresh_img, "Restart Klipper", &SettingPanel::_handle_callback, this)
   , restart_firmware_btn(cont, &refresh_img, "Restart\nFirmware", &SettingPanel::_handle_callback, this)
-#ifdef ZBOLT
   , sysinfo_btn(cont, &info_img, "System", &SettingPanel::_handle_callback, this)
-#else
-  , sysinfo_btn(cont, &sysinfo_img, "System", &SettingPanel::_handle_callback, this)
-#endif
   , spoolman_btn(cont, &spoolman_img, "Spoolman", &SettingPanel::_handle_callback, this)
-  , guppy_restart_btn(cont, &refresh_img, "Restart Guppy", &SettingPanel::_handle_callback, this)
-  , guppy_update_btn(cont, &update_img, "Update Guppy", &SettingPanel::_handle_callback, this)
+  , powerscreen_restart_btn(cont, &refresh_img, "Restart PowerScreen", &SettingPanel::_handle_callback, this)
+  , powerscreen_update_btn(cont, &update_img, "Update PowerScreen", &SettingPanel::_handle_callback, this)
   , printer_select_btn(cont, &print, "Printers", &SettingPanel::_handle_callback, this)
 {
   lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
@@ -64,8 +56,8 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
 
   // row 2
   lv_obj_set_grid_cell(spoolman_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(guppy_restart_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(guppy_update_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 1);
+  lv_obj_set_grid_cell(powerscreen_restart_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
+  lv_obj_set_grid_cell(powerscreen_update_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 1);
   lv_obj_set_grid_cell(printer_select_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
   
 }
@@ -102,25 +94,25 @@ void SettingPanel::handle_callback(lv_event_t *event) {
     } else if (btn == spoolman_btn.get_container()) {
       spdlog::trace("setting spoolman pressed");
       spoolman_panel.foreground();
-    } else if (btn == guppy_restart_btn.get_container()) {
-      spdlog::trace("restart guppy pressed");
+    } else if (btn == powerscreen_restart_btn.get_container()) {
+      spdlog::trace("restart powerscreen pressed");
       Config *conf = Config::get_instance();
-      auto init_script = conf->get<std::string>("/guppy_init_script");
+      auto init_script = conf->get<std::string>("/powerscreen_init_script");
       const fs::path script(init_script);
-      if (fs::exists(script) || init_script.rfind("service guppyscreen", 0) == 0) {
+      if (fs::exists(script) || init_script.rfind("service powerscreen", 0) == 0) {
         sp::call({init_script, "restart"});
       } else {
-        	spdlog::warn("Failed to restart Guppy Screen. Did not find restart script.");
+        spdlog::warn("Failed to restart PowerScreen. Did not find restart script.");
       }
-    } else if (btn == guppy_update_btn.get_container()) {
-      spdlog::trace("update guppy pressed");
+    } else if (btn == powerscreen_update_btn.get_container()) {
+      spdlog::trace("update powerscreen pressed");
       // TODO: throw this inside the global threadpool to make it async
       auto update_script = fs::canonical("/proc/self/exe").parent_path() / "update.sh";
       const fs::path script(update_script);
       if (fs::exists(script)) {
 	sp::call(script);
       } else {
-	spdlog::warn("Failed to update Guppy Screen. Did not find update script.");
+	spdlog::warn("Failed to update PowerScreen. Did not find update script.");
       }
     } else if (btn == printer_select_btn.get_container()) {
       spdlog::trace("setting printers pressed");

@@ -24,7 +24,7 @@ static int tick_thread(void *data);
 
 static void hal_init(lv_color_t p, lv_color_t s);
 
-#include "guppyscreen.h"
+#include "powerscreen.h"
 #include "hv/hlog.h"
 #include "config.h"
 
@@ -40,11 +40,11 @@ int main(void)
     spdlog::debug("current path {}", std::string(fs::canonical("/proc/self/exe").parent_path()));
 
     Config *conf = Config::get_instance();
-    auto config_path = fs::canonical("/proc/self/exe").parent_path() / "guppyconfig.json";
+    auto config_path = fs::canonical("/proc/self/exe").parent_path() / "powerscreenconfig.json";
     conf->init(config_path.string(), "/usr/data/printer_data/thumbnails");
 
-    GuppyScreen::init(hal_init);
-    GuppyScreen::loop();
+    PowerScreen::init(hal_init);
+    PowerScreen::loop();
     return 0;
 }
 

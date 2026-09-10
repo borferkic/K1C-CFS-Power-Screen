@@ -585,7 +585,7 @@
 #endif
 
 #if USE_SDL || USE_SDL_GPU
-    #ifdef GUPPY_SMALL_SCREEN
+    #ifdef POWERSCREEN_SMALL_SCREEN
       #  define SDL_HOR_RES     480
       #  define SDL_VER_RES     272
     #else

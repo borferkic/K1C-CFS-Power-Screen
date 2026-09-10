@@ -1,15 +1,15 @@
 #!/bin/sh
 
-BACKUP_DIR=/usr/data/guppyify-backup
+BACKUP_DIR=/usr/data/powerscreen-backup
 
 cp $BACKUP_DIR/S12boot_display /etc/init.d/S12boot_display
 cp $BACKUP_DIR/S50dropbear /etc/init.d/S50dropbear
 cp $BACKUP_DIR/S99start_app /etc/init.d/S99start_app
 mv /usr/bin/Monitor.disable /usr/bin/Monitor
 mv /usr/bin/display-server.disable /usr/bin/display-server
-rm /etc/init.d/S99guppyscreen
+rm /etc/init.d/S99powerscreen
 
-killall guppyscreen
+killall powerscreen
 
 read -p "Do you want to delete the BackupDir at ? (y/n): " delete
 

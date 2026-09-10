@@ -161,7 +161,7 @@ void MacroItem::handle_hide_show(lv_event_t *e) {
     std::string key = fmt::format("macros.settings.{}", lv_label_get_text(macro_label));
 
     json h = {
-      {"namespace", "guppyscreen"}, 
+      {"namespace", "powerscreen"},
       {"key", key },
       {"value", {
 	  { "hidden", !hidden }

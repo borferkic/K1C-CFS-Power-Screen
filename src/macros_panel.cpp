@@ -51,7 +51,7 @@ void MacrosPanel::populate() {
     ->get_data("/printer_state/configfile/config"_json_pointer);
 
   // TODO: this is a race condition
-  auto &macro_settings = State::get_instance()->get_data("/guppysettings/macros/settings"_json_pointer);
+  auto &macro_settings = State::get_instance()->get_data("/powerscreensettings/macros/settings"_json_pointer);
 
   if (!config_json.is_null()) {
     auto macros = KUtils::parse_macros(config_json);

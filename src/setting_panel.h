@@ -47,8 +47,8 @@ class SettingPanel {
   ButtonContainer restart_firmware_btn;
   ButtonContainer sysinfo_btn;
   ButtonContainer spoolman_btn;
-  ButtonContainer guppy_restart_btn;
-  ButtonContainer guppy_update_btn;
+  ButtonContainer powerscreen_restart_btn;
+  ButtonContainer powerscreen_update_btn;
   ButtonContainer printer_select_btn;
   
 };

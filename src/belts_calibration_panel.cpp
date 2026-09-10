@@ -127,10 +127,10 @@ void BeltsCalibrationPanel::handle_callback(lv_event_t *event) {
 
     auto screen_width = (double)lv_disp_get_physical_hor_res(NULL) / 100.0;
     auto screen_height = (double)lv_disp_get_physical_ver_res(NULL) / 100.0;
-    ws.gcode_script(fmt::format("GUPPY_BELTS_SHAPER_CALIBRATION PNG_OUT_PATH={} PNG_WIDTH={} PNG_HEIGHT={}",
+    ws.gcode_script(fmt::format("POWERSCREEN_BELTS_SHAPER_CALIBRATION PNG_OUT_PATH={} PNG_WIDTH={} PNG_HEIGHT={}",
 				png_path, screen_width, screen_height));
 
-    // ws.gcode_script(fmt::format("GUPPY_BELTS_SHAPER_CALIBRATION PNG_OUT_PATH={} PNG_WIDTH={} PNG_HEIGHT={} FREQ_START=5 FREQ_END=10",
+    // ws.gcode_script(fmt::format("POWERSCREEN_BELTS_SHAPER_CALIBRATION PNG_OUT_PATH={} PNG_WIDTH={} PNG_HEIGHT={} FREQ_START=5 FREQ_END=10",
     // 				png_path, screen_width, screen_height));
     
 
@@ -148,7 +148,7 @@ void BeltsCalibrationPanel::handle_callback(lv_event_t *event) {
     if (!KUtils::is_homed()) {
       ws.gcode_script("G28");
     }
-    ws.gcode_script(fmt::format("GUPPY_EXCITATE_AXIS_AT_FREQ FREQUENCY={} AXIS={}", excite_hz, excite_buf));
+    ws.gcode_script(fmt::format("POWERSCREEN_EXCITATE_AXIS_AT_FREQ FREQUENCY={} AXIS={}", excite_hz, excite_buf));
 
   } else if (btn == back_btn.get_container()) {
     lv_obj_move_background(cont);
@@ -185,7 +185,7 @@ void BeltsCalibrationPanel::handle_macro_response(json &j) {
   if (!v.is_null()) {
     std::string resp = v.template get<std::string>();
     std::lock_guard<std::mutex> lock(lv_lock);
-    if (resp.rfind("// Command {guppy_belts_calibration} finished", 0) == 0) {
+    if (resp.rfind("// Command {powerscreen_belts_calibration} finished", 0) == 0) {
       spdlog::trace("belts calbiration finished");
       auto config_root = KUtils::get_root_path("config");
       auto png_path = fmt::format("{}/{}", config_root.length() > 0 ? config_root : "/tmp" , BELTS_PNG);

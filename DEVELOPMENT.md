@@ -1,6 +1,6 @@
 ## Development
 
-This repository contains the Guppy Screen source code and all its external dependencies.
+This repository contains the PowerScreen source code and all its external dependencies.
 
 Dependencies:
  - [lvgl](https://github.com/lvgl/lvgl)
@@ -13,13 +13,13 @@ Dependencies:
    Handles wireless connections
 
 ## Toolchains
-The Guppy Screen uses features (filesystem) from C++17, so a gcc/g++ version (7.2+) with C++17 support is required.
+The PowerScreen uses features (filesystem) from C++17, so a gcc/g++ version (7.2+) with C++17 support is required.
 
 ### Environment Variables
 `CROSS_COMPILE` - The prefix to the toolchain architecture, e.g. `mips-linux-gnu-`
 `SIMULATION` - Define it to build with SDL for running on your local machine.
-`ZBOLT` - Define it to use the Z-Bolt icon set. By default the build uses the Material Design Icons.
-`GUPPYSCREEN_VERSION` - Version string displayed in the System Panel in the UI.
+The build uses the Z-Bolt icon set exclusively.
+`POWERSCREEN_VERSION` - Version string displayed in the System Panel in the UI.
 
 ### Build Environment
 
@@ -36,16 +36,16 @@ For Arch and derivatives install 'base-devel' and 'sdl2' packages.
 
 #### Mipsel Tool chain
 
-To build guppyscreen for Mipsel (Ingenic X2000E) - specific to the K1 SoC, you will need the mips-gcc720 tool chain.
+To build powerscreen for Mipsel (Ingenic X2000E) - specific to the K1 SoC, you will need the mips-gcc720 tool chain.
 
 1. Download the toolchain [here](https://github.com/ballaswag/k1-discovery/releases/download/1.0.0/mips-gcc720-glibc229.tar.gz)
 2. `tar xf mips-gcc720-glibc229.tar.gz && export PATH=<path-to-mips-toolchain/bin>:$PATH`
 
 ### The Code
 
-Clone the guppyscreen repo (and submodules) and apply a couple of patches locally.
+Clone the powerscreen repo (and submodules) and apply a couple of patches locally.
 
-1. `git clone --recursive https://github.com/ballaswag/guppyscreen && cd guppyscreen`
+1. `git clone --recursive https://github.com/borferkic/K1C-CFS-POWER-SCREEN.git PowerScreen && cd PowerScreen`
 2. `(cd lv_drivers/ && git apply ../patches/0001-lv_driver_fb_ioctls.patch)`
 3. `(cd spdlog/ && git apply ../patches/0002-spdlog_fmt_initializer_list.patch)`
 
@@ -55,25 +55,25 @@ Building for the K1/Max
 1. `export CROSS_COMPILE=mips-linux-gnu-`
 2. `make clean && make -j$(nproc) build`
 
-After an initial `make build`, you can make changes to src guppy files and then use `make` to compile the files that need compiling.
+After an initial `make build`, you can make changes to src powerscreen files and then use `make` to compile the files that need compiling.
 
-The executable is ./build/bin/guppyscreen
+The executable is ./build/bin/powerscreen
 
 ### x86_64 (Intel/AMD)
-Building and running Guppy Screen on your local machine speeds up development. Changes can be tested on the local machine before rebuilding for the other architectures.
+Building and running PowerScreen on your local machine speeds up development. Changes can be tested on the local machine before rebuilding for the other architectures.
 
 1. `unset CROSS_COMPILE`
 2. `make clean && make -j$(nproc) build`
 
-After an initial `make build`, you can make changes to src guppy files and then use `make` to compile the files that need compiling.
+After an initial `make build`, you can make changes to src powerscreen files and then use `make` to compile the files that need compiling.
 
-The executable is ./build/bin/guppyscreen
+The executable is ./build/bin/powerscreen
 
 ### Simulation
-Guppy Screen default configurations (guppyconfig.json) is configured for the K1/Max. In order to run it remotely as a simulator build, a few thing needs to be setup.
-The following attributes need to be configured in `build/bin/guppyconfig.json`
+PowerScreen default configurations (powerscreenconfig.json) is configured for the K1/Max. In order to run it remotely as a simulator build, a few thing needs to be setup.
+The following attributes need to be configured in `build/bin/powerscreenconfig.json`
 
-1. `log_path` - Absolute path to `guppyscreen.log`. Directory must exist locally.
+1. `log_path` - Absolute path to `powerscreen.log`. Directory must exist locally.
 2. `thumbnail_path` - Absolute path to a local directory for storing gcode thumbnails.
 3. `moonraker_host` - Moonraker IP address
 4. `moonraker_port` - Moonraker Port
@@ -82,7 +82,7 @@ The following attributes need to be configured in `build/bin/guppyconfig.json`
 ```
 {
   "default_printer": "k1",
-  "log_path": "<local_path_to_guppyscreen.log>",
+  "log_path": "<local_path_to_powerscreen.log>",
   "printers": {
     "k1": {
       "display_sleep_sec": 300,
@@ -97,7 +97,7 @@ The following attributes need to be configured in `build/bin/guppyconfig.json`
 
 ```
 
-Note: Guppy Screen currently requires running as `root` because it directly interacts with wpa_supplicant.
+Note: PowerScreen currently requires running as `root` because it directly interacts with wpa_supplicant.
 
 ### Virtual Klipper
 
@@ -129,4 +129,4 @@ https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository
 1. `git clone https://github.com/mainsail-crew/virtual-klipper-printer.git && cd virtual-klipper-printer`
 2. `sudo docker-compose up -d`
 
-You can now configure the guppyconfig.json `moonraker_host` to be `127.0.0.1` and `moonraker_port` to be 7125
+You can now configure the powerscreenconfig.json `moonraker_host` to be `127.0.0.1` and `moonraker_port` to be 7125

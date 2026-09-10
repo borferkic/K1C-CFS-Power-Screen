@@ -11,7 +11,8 @@ GCODE_SHELL_CMD=$KLIPPY_EXTRA_DIR/gcode_shell_command.py
 SHAPER_CONFIG=$KLIPPY_EXTRA_DIR/calibrate_shaper_config.py
 CONFIG_FILE="${HOME}/printer_data/config"
 PRINTER_DATA_DIR="${HOME}/printer_data"
-GUPPY_DIR="${HOME}/guppyscreen"
+POWERSCREEN_DIR="${HOME}/powerscreen"
+POWERSCREEN_REPOSITORY="borferkic/K1C-CFS-POWER-SCREEN"
 
 has_moonraker() {
     echo "Checking for a working Moonraker"
@@ -47,13 +48,13 @@ get_klipper_paths() {
 }
 
 install_services() {
-    sed -i "s|<USER>|$USER|g" ${HOME}/guppyscreen/debian/guppyscreen.service
+    sed -i "s|<USER>|$USER|g" ${HOME}/powerscreen/debian/powerscreen.service
 
-    sudo cp ${HOME}/guppyscreen/debian/disable_blinking_cursor.service /etc/systemd/system
-    sudo cp ${HOME}/guppyscreen/debian/guppyscreen.service /etc/systemd/system
+    sudo cp ${HOME}/powerscreen/debian/disable_blinking_cursor.service /etc/systemd/system
+    sudo cp ${HOME}/powerscreen/debian/powerscreen.service /etc/systemd/system
     sudo systemctl enable disable_blinking_cursor.service
-    sudo systemctl enable guppyscreen.service    
-    printf "${green}Configuring guppyscreen services ${white}\n"
+    sudo systemctl enable powerscreen.service
+    printf "${green}Configuring powerscreen services ${white}\n"
 
     sudo systemctl disable KlipperScreen.service
 
@@ -65,37 +66,37 @@ install_services() {
     fi
 }
 
-install_guppy_goodies() {
-    printf "${green}Setting up Guppy Macros ${white}\n"
+install_powerscreen_goodies() {
+    printf "${green}Setting up PowerScreen Macros ${white}\n"
     if [ ! -f $GCODE_SHELL_CMD ]; then
 	printf "${green}Installing gcode_shell_command.py for klippy ${white}\n"
-	cp $GUPPY_DIR/k1_mods/gcode_shell_command.py $GCODE_SHELL_CMD
+	cp $POWERSCREEN_DIR/k1_mods/gcode_shell_command.py $GCODE_SHELL_CMD
     fi
 
-    cp $GUPPY_DIR/k1_mods/calibrate_shaper_config.py $SHAPER_CONFIG
+    cp $POWERSCREEN_DIR/k1_mods/calibrate_shaper_config.py $SHAPER_CONFIG
 
-    mkdir -p $CONFIG_DIR/GuppyScreen/scripts
-    sed -i "s|<CONFIG_DIR>|$CONFIG_DIR|g; s|<KLIPPER_PATH>|$KLIPPER_PATH|g" $GUPPY_DIR/debian/guppy_cmd.cfg
-    cp $GUPPY_DIR/debian/*.cfg $CONFIG_DIR/GuppyScreen
-    cp $GUPPY_DIR/scripts/*.py $CONFIG_DIR/GuppyScreen/scripts
+    mkdir -p $CONFIG_DIR/PowerScreen/scripts
+    sed -i "s|<CONFIG_DIR>|$CONFIG_DIR|g; s|<KLIPPER_PATH>|$KLIPPER_PATH|g" $POWERSCREEN_DIR/debian/powerscreen_cmd.cfg
+    cp $POWERSCREEN_DIR/debian/*.cfg $CONFIG_DIR/PowerScreen
+    cp $POWERSCREEN_DIR/scripts/*.py $CONFIG_DIR/PowerScreen/scripts
     
-    if grep -q "include GuppyScreen" $CONFIG_DIR/printer.cfg ; then
-	echo "printer.cfg already includes GuppyScreen cfgs"
+    if grep -q "include PowerScreen" $CONFIG_DIR/printer.cfg ; then
+	echo "printer.cfg already includes PowerScreen cfgs"
     else
-	printf "${green}Including guppyscreen cfgs in printer.cfg ${white}\n"
-	sed -i '1s;^;\[include GuppyScreen/*\.cfg\]\n;' $CONFIG_DIR/printer.cfg
+	printf "${green}Including powerscreen cfgs in printer.cfg ${white}\n"
+	sed -i '1s;^;\[include PowerScreen/*\.cfg\]\n;' $CONFIG_DIR/printer.cfg
     fi
 
-    sed -i "s|<GUPPY_DIR>|$GUPPY_DIR|g; s|<PRINTER_DATA_DIR>|$PRINTER_DATA_DIR|g" $GUPPY_DIR/debian/guppyconfig.json
+    sed -i "s|<POWERSCREEN_DIR>|$POWERSCREEN_DIR|g; s|<PRINTER_DATA_DIR>|$PRINTER_DATA_DIR|g" $POWERSCREEN_DIR/debian/powerscreenconfig.json
     
-    cp $GUPPY_DIR/debian/guppyconfig.json $GUPPY_DIR
-    mkdir $GUPPY_DIR/thumbnails
+    cp $POWERSCREEN_DIR/debian/powerscreenconfig.json $POWERSCREEN_DIR
+    mkdir $POWERSCREEN_DIR/thumbnails
 }
 
 restart_services() {
-    printf "${green}Restarting Guppy Screen services ${white}\n"
+    printf "${green}Restarting PowerScreen services ${white}\n"
     sudo service disable_blinking_cursor restart
-    service guppyscreen restart
+    service powerscreen restart
 }
 
 
@@ -103,25 +104,26 @@ ARCH=`uname -m`
 echo "Found arch $ARCH"
 
 if [ "$ARCH" = "aarch64" ]; then
-    printf "${green}Installing Guppy Screen ${white}\n"
+    printf "${green}Installing PowerScreen ${white}\n"
 
-    ASSET_URL="https://github.com/ballaswag/guppyscreen/releases/latest/download/guppyscreen-arm.tar.gz"
+    # Este instalador ARM requiere que el repositorio propio publique este artefacto.
+    ASSET_URL="https://github.com/$POWERSCREEN_REPOSITORY/releases/latest/download/powerscreen-arm.tar.gz"
     if [ "$1" = "nightly" ]; then
         printf "${yellow}Installing nightly build ${white}\n"
-        ASSET_URL="https://github.com/ballaswag/guppyscreen/releases/download/nightly/guppyscreen-arm.tar.gz"
+        ASSET_URL="https://github.com/$POWERSCREEN_REPOSITORY/releases/download/nightly/powerscreen-arm.tar.gz"
     fi
     
-    curl -s -L $ASSET_URL -o /tmp/guppyscreen.tar.gz
-    tar xf /tmp/guppyscreen.tar.gz -C ${HOME}
+    curl -s -L $ASSET_URL -o /tmp/powerscreen.tar.gz
+    tar xf /tmp/powerscreen.tar.gz -C ${HOME}
 
     has_moonraker
     get_klipper_paths
     install_services
-    install_guppy_goodies
+    install_powerscreen_goodies
     restart_services
 
-    printf "${green}Successfully installed Guppy Screen ${white}\n"
+    printf "${green}Successfully installed PowerScreen ${white}\n"
 else
-    printf "${red}Terminating... Your OS Platform has not been tested with Guppy Screen ${white}\n"
+    printf "${red}Terminating... Your OS Platform has not been tested with PowerScreen ${white}\n"
     exit 1
 fi

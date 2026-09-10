@@ -4,8 +4,8 @@
 #include "spdlog/spdlog.h"
 #include "lvgl/lvgl.h"
 
-const uint32_t GUPPY_COLOR_SIZE = 19;
-const lv_palette_t GUPPY_COLORS[GUPPY_COLOR_SIZE] = {
+const uint32_t POWERSCREEN_COLOR_SIZE = 19;
+const lv_palette_t POWERSCREEN_COLORS[POWERSCREEN_COLOR_SIZE] = {
   LV_PALETTE_RED,
   LV_PALETTE_PINK,
   LV_PALETTE_PURPLE,
@@ -214,10 +214,10 @@ json State::get_display_sensors() {
   if (display_sensors.empty()) {
     // default to first extruders/heaters from printer objects
     uint32_t color_idx = 0;
-    lv_palette_t color = GUPPY_COLORS[color_idx];
+    lv_palette_t color = POWERSCREEN_COLORS[color_idx];
     for (auto &e: extruders) {
       spdlog::debug("default extruder {}", e);
-      color = GUPPY_COLORS[color_idx % GUPPY_COLOR_SIZE];
+      color = POWERSCREEN_COLORS[color_idx % POWERSCREEN_COLOR_SIZE];
       display_sensors[e] = {
 	{ "id", e },
 	{ "display_name", KUtils::to_title(e) },
@@ -230,7 +230,7 @@ json State::get_display_sensors() {
 
     for (auto &e: heaters) {
       spdlog::debug("default heaters {}", e);
-      color = GUPPY_COLORS[color_idx % GUPPY_COLOR_SIZE];
+      color = POWERSCREEN_COLORS[color_idx % POWERSCREEN_COLOR_SIZE];
       display_sensors[e] = {
 	{ "id", e },
 	{ "display_name", KUtils::to_title(e) },
@@ -243,7 +243,7 @@ json State::get_display_sensors() {
 
     for (auto &e: sensors) {
       spdlog::debug("default sensors {}", e);
-      color = GUPPY_COLORS[color_idx % GUPPY_COLOR_SIZE];
+      color = POWERSCREEN_COLORS[color_idx % POWERSCREEN_COLOR_SIZE];
       display_sensors[e] = {
 	{ "id", e },
 	{ "display_name", KUtils::to_title(e) },

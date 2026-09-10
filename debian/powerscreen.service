@@ -1,0 +1,15 @@
+[Unit]
+Description=PowerScreen
+After=moonraker.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=<USER>
+WorkingDirectory=/home/<USER>/powerscreen
+ExecStart="/home/<USER>/powerscreen/powerscreen"
+
+[Install]
+WantedBy=multi-user.target
