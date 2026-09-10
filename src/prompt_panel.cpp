@@ -262,6 +262,7 @@ void PromptPanel::handle_macro_response(json &j) {
                     lv_obj_set_grid_dsc_array(footer_cont, manual_button_cols, manual_button_rows);
                     // Keep the 2x2 controls inside the K1C display margins.
                     lv_obj_set_style_pad_all(footer_cont, 4, 0);
+                    lv_obj_set_style_pad_bottom(footer_cont, 10, 0);
                     lv_obj_set_style_pad_row(footer_cont, 6, 0);
                     lv_obj_set_style_pad_column(footer_cont, 6, 0);
                 } else {
@@ -353,7 +354,12 @@ void PromptPanel::handle_macro_response(json &j) {
                 spdlog::debug("PROMPT_FOOTER_BUTTON: {} CMD: {}, type {}", prompt_footer_button, prompt_button_command, prompt_button_type);
                 lv_obj_t *btn = NULL;
                 if (command.find("prompt_footer_button") == 0) {
-                    btn = lv_btn_create(footer_cont);
+                    if (manual_filament_prompt && prompt_footer_button == "CLOSE") {
+                        // CLOSE is text-only, with a transparent touch area.
+                        btn = lv_obj_create(footer_cont);
+                    } else {
+                        btn = lv_btn_create(footer_cont);
+                    }
                 } else {
                     if (button_group_cont == NULL) {
                         btn = lv_btn_create(flex);
@@ -367,7 +373,11 @@ void PromptPanel::handle_macro_response(json &j) {
                             // Keep CLOSE as a compact, centered bottom action.
                             lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_CENTER, 0, 2,
                                                   LV_GRID_ALIGN_CENTER, 2, 1);
-                            lv_obj_set_size(btn, 135, 52);
+                            lv_obj_set_size(btn, 135, 40);
+                            lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, 0);
+                            lv_obj_set_style_border_width(btn, 0, 0);
+                            lv_obj_set_style_shadow_width(btn, 0, 0);
+                            lv_obj_set_style_radius(btn, 0, 0);
                         } else {
                             int button_index = manual_button_count++;
                             lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_CENTER, button_index % 2, 1,
@@ -418,7 +428,9 @@ void PromptPanel::handle_macro_response(json &j) {
                         lv_obj_center(label);
                     }
 
-                    if (!prompt_button_type.compare("secondary")) {
+                    if (manual_filament_prompt && prompt_footer_button == "CLOSE") {
+                        // No visual button style for the text-only CLOSE action.
+                    } else if (!prompt_button_type.compare("secondary")) {
                         spdlog::debug("type secondary");
                         lv_obj_add_style(btn, &style_btn_grey, 0);
                     } else if (!prompt_button_type.compare("warning")) {
