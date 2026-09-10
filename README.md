@@ -19,6 +19,29 @@ This repository is intended only for:
 
 There are no builds, instructions, or support for Android, Raspberry Pi, `GuppyDroid`, or other printer models.
 
+## Installation from GitHub Releases
+
+Download one of the K1C packages from the [Releases page](https://github.com/borferkic/K1C-CFS-Guppyscreen-MOD/releases) after signing in to GitHub:
+
+- `guppyscreen.tar.gz` — Material theme.
+- `guppyscreen-zbolt.tar.gz` — Z-Bolt theme.
+
+Because this repository is private, the release package must be downloaded through an authenticated GitHub session. Copy the selected package to the K1C:
+
+```powershell
+scp .\guppyscreen.tar.gz root@IP_DE_TU_K1C:/tmp/
+```
+
+Replace the filename with `guppyscreen-zbolt.tar.gz` for the Z-Bolt theme. Then connect by SSH and replace the installed version while preserving a backup:
+
+```sh
+/etc/init.d/S99guppyscreen stop
+cp -a /usr/data/guppyscreen /usr/data/guppyscreen.backup
+tar xzf /tmp/guppyscreen.tar.gz -C /usr/data/
+sync
+/etc/init.d/S99guppyscreen restart
+```
+
 ## Inherited features
 
 - Console and macro shell.
@@ -106,6 +129,29 @@ Este repositorio está destinado únicamente a:
 - Macros y scripts personalizados para CFS.
 
 No se incluyen builds, instrucciones ni soporte para Android, Raspberry Pi, `GuppyDroid` u otros modelos de impresora.
+
+## Instalación desde GitHub Releases
+
+Descarga uno de los paquetes para K1C desde la [página de Releases](https://github.com/borferkic/K1C-CFS-Guppyscreen-MOD/releases) después de iniciar sesión en GitHub:
+
+- `guppyscreen.tar.gz` — tema Material.
+- `guppyscreen-zbolt.tar.gz` — tema Z-Bolt.
+
+Como este repositorio es privado, el paquete debe descargarse mediante una sesión autenticada de GitHub. Copia el paquete seleccionado a la K1C:
+
+```powershell
+scp .\guppyscreen.tar.gz root@IP_DE_TU_K1C:/tmp/
+```
+
+Cambia el nombre por `guppyscreen-zbolt.tar.gz` para instalar el tema Z-Bolt. Después conéctate por SSH y reemplaza la versión instalada conservando una copia de seguridad:
+
+```sh
+/etc/init.d/S99guppyscreen stop
+cp -a /usr/data/guppyscreen /usr/data/guppyscreen.backup
+tar xzf /tmp/guppyscreen.tar.gz -C /usr/data/
+sync
+/etc/init.d/S99guppyscreen restart
+```
 
 ## Características heredadas
 
