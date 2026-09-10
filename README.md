@@ -56,6 +56,10 @@ build/bin/guppyscreen
 
 Las pruebas de interfaz y del flujo CFS deben realizarse en una K1C real. Una compilación correcta no sustituye la validación del diálogo, las macros ni el comportamiento físico del extrusor.
 
+## Apoyo al proyecto
+
+Si este proyecto te resulta útil, puedes apoyar su desarrollo mediante [PayPal](https://paypal.me/borissdk).
+
 ## Pendientes
 
 El trabajo pendiente se mantiene en [PENDIENTES.md](PENDIENTES.md).
