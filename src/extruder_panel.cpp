@@ -138,8 +138,6 @@ void ExtruderPanel::show_manual_filament_change() {
   // printer UI and remains compatible with the existing prompt handling.
   ws.gcode_script(
     "RESPOND TYPE=command MSG=\"action:prompt_begin MANUAL FILAMENT CHANGE\"\n"
-    "RESPOND TYPE=command MSG=\"action:prompt_text PAUSE THE CHANGE IF NEEDED, THEN USE THE BUTTONS BELOW.\"\n"
-    "RESPOND TYPE=command MSG=\"action:prompt_text 1. UNLOAD THE OLD FILAMENT.  2. INSERT THE NEW FILAMENT.  3. LOAD AND PURGE IT.\"\n"
     "RESPOND TYPE=command MSG=\"action:prompt_footer_button UNLOAD|SDK_UNLOAD_FILAMENT|warning\"\n"
     "RESPOND TYPE=command MSG=\"action:prompt_footer_button LOAD|SDK_LOAD_FILAMENT|primary\"\n"
     "RESPOND TYPE=command MSG=\"action:prompt_footer_button RESUME|RESUME|success\"\n"

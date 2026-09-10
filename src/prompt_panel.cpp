@@ -60,6 +60,8 @@ PromptPanel::PromptPanel(KWebSocketClient &websocket_client, std::mutex &lock, l
     lv_obj_set_size(header, lv_pct(100), lv_pct(10));
     lv_obj_set_size(flex, lv_pct(100), lv_pct(60));
     lv_obj_set_size(footer_cont, lv_pct(100), lv_pct(15));
+    lv_obj_set_style_text_align(header, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_style_text_font(header, &lv_font_montserrat_20, 0);
 
     lv_obj_clear_flag(prompt_cont, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_clear_flag(header, LV_OBJ_FLAG_SCROLLABLE);
@@ -76,6 +78,8 @@ PromptPanel::PromptPanel(KWebSocketClient &websocket_client, std::mutex &lock, l
     lv_style_set_flex_track_place(&button_group_flex_style, LV_FLEX_ALIGN_CENTER);
     lv_style_set_layout(&button_group_flex_style, LV_LAYOUT_FLEX);
     lv_style_set_pad_all(&button_group_flex_style, 0);
+    lv_style_set_pad_row(&button_group_flex_style, 10);
+    lv_style_set_pad_column(&button_group_flex_style, 10);
     lv_style_set_height(&button_group_flex_style, LV_SIZE_CONTENT);
     lv_style_set_width(&button_group_flex_style, lv_pct(100));
     lv_style_set_outline_pad(&button_group_flex_style, 0);
@@ -244,6 +248,10 @@ void PromptPanel::handle_macro_response(json &j) {
                 // remove buttons
                 lv_obj_clean(footer_cont);
                 lv_obj_clean(flex);
+                prompt_has_text = false;
+                lv_obj_add_flag(flex, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_set_grid_cell(footer_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 2);
+                lv_obj_set_size(footer_cont, lv_pct(100), lv_pct(100));
                 if (close_btn != NULL) {
                     lv_obj_del(close_btn);
                     close_btn = NULL;
@@ -258,6 +266,10 @@ void PromptPanel::handle_macro_response(json &j) {
             } else if (command.find("prompt_text") == 0) {
                 std::string prompt_text = command.substr(12);
                 spdlog::debug("PROMPT_TEXT: {}", prompt_text);
+                prompt_has_text = true;
+                lv_obj_clear_flag(flex, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_set_grid_cell(footer_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_END, 2, 1);
+                lv_obj_set_size(footer_cont, lv_pct(100), lv_pct(15));
                 // create label and add to flex field
                 lv_obj_t *textfield = lv_label_create(flex);
                 lv_obj_set_width(textfield, lv_pct(96));
@@ -326,11 +338,11 @@ void PromptPanel::handle_macro_response(json &j) {
                     }
                 }
                 if (btn) {
-                    lv_obj_set_size(btn, lv_pct(30), 82);
-                    lv_obj_set_style_max_width(btn, lv_pct(30), 0);
-                    lv_obj_set_style_min_width(btn, 32, 0);
-                    lv_obj_set_style_max_height(btn, 54, 0);
-                    lv_obj_set_style_min_height(btn, 42, 0);
+                    lv_obj_set_size(btn, lv_pct(46), 100);
+                    lv_obj_set_style_max_width(btn, lv_pct(46), 0);
+                    lv_obj_set_style_min_width(btn, 120, 0);
+                    lv_obj_set_style_max_height(btn, 110, 0);
+                    lv_obj_set_style_min_height(btn, 90, 0);
                     lv_obj_set_style_outline_pad(btn, 0, 0);
                     lv_obj_center(btn);
                     lv_obj_set_flex_grow(btn, 1);
@@ -342,7 +354,8 @@ void PromptPanel::handle_macro_response(json &j) {
                     lv_label_set_text(label, prompt_footer_button.c_str());
                     lv_label_set_text(command, prompt_button_command.c_str());
                     lv_obj_set_style_pad_all(btn, 2, 0);
-                    lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, -4);
+                    lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
+                    lv_obj_set_style_text_font(label, &lv_font_montserrat_20, 0);
 
                     const void *button_icon = NULL;
                     if (prompt_footer_button == "LOAD") {
@@ -358,6 +371,9 @@ void PromptPanel::handle_macro_response(json &j) {
                         lv_obj_t *icon = lv_img_create(btn);
                         lv_img_set_src(icon, button_icon);
                         lv_obj_align(icon, LV_ALIGN_TOP_MID, 0, 2);
+                        lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, -6);
+                    } else {
+                        lv_obj_center(label);
                     }
 
                     if (!prompt_button_type.compare("secondary")) {
@@ -393,6 +409,7 @@ void PromptPanel::handle_macro_response(json &j) {
                         lv_obj_align(close_btn, LV_ALIGN_TOP_RIGHT, -6, 6);
                         lv_obj_t *close_label = lv_label_create(close_btn);
                         lv_label_set_text(close_label, "X");
+                        lv_obj_set_style_text_font(close_label, &lv_font_montserrat_20, 0);
                         lv_obj_center(close_label);
                         lv_obj_t *close_command = lv_label_create(close_btn);
                         lv_obj_set_size(close_command, 1, 1);
@@ -414,6 +431,10 @@ void PromptPanel::handle_macro_response(json &j) {
                 // remove buttons
                 lv_obj_clean(footer_cont);
                 lv_obj_clean(flex);
+                prompt_has_text = false;
+                lv_obj_clear_flag(flex, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_set_grid_cell(footer_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_END, 2, 1);
+                lv_obj_set_size(footer_cont, lv_pct(100), lv_pct(15));
                 if (close_btn != NULL) {
                     lv_obj_del(close_btn);
                     close_btn = NULL;
