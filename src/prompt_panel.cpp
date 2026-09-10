@@ -245,6 +245,9 @@ void PromptPanel::handle_macro_response(json &j) {
                 std::string prompt_header = command.substr(13);
                 spdlog::debug("PROMPT_BEGIN: {}", prompt_header);
 
+                manual_filament_prompt = prompt_header == "MANUAL FILAMENT CHANGE";
+                manual_button_count = 0;
+
                 // remove buttons
                 lv_obj_clean(footer_cont);
                 lv_obj_clean(flex);
@@ -252,6 +255,21 @@ void PromptPanel::handle_macro_response(json &j) {
                 lv_obj_add_flag(flex, LV_OBJ_FLAG_HIDDEN);
                 lv_obj_set_grid_cell(footer_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 2);
                 lv_obj_set_size(footer_cont, lv_pct(100), lv_pct(100));
+                if (manual_filament_prompt) {
+                    static lv_coord_t manual_button_cols[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+                    static lv_coord_t manual_button_rows[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+                    lv_obj_set_layout(footer_cont, LV_LAYOUT_GRID);
+                    lv_obj_set_grid_dsc_array(footer_cont, manual_button_cols, manual_button_rows);
+                    lv_obj_set_style_pad_all(footer_cont, 8, 0);
+                    lv_obj_set_style_pad_row(footer_cont, 10, 0);
+                    lv_obj_set_style_pad_column(footer_cont, 10, 0);
+                } else {
+                    lv_obj_set_layout(footer_cont, LV_LAYOUT_FLEX);
+                    lv_obj_set_flex_flow(footer_cont, LV_FLEX_FLOW_ROW_WRAP);
+                    lv_obj_set_style_pad_all(footer_cont, 0, 0);
+                    lv_obj_set_style_pad_row(footer_cont, 10, 0);
+                    lv_obj_set_style_pad_column(footer_cont, 10, 0);
+                }
                 if (close_btn != NULL) {
                     lv_obj_del(close_btn);
                     close_btn = NULL;
@@ -338,14 +356,26 @@ void PromptPanel::handle_macro_response(json &j) {
                     }
                 }
                 if (btn) {
-                    lv_obj_set_size(btn, lv_pct(46), 100);
-                    lv_obj_set_style_max_width(btn, lv_pct(46), 0);
-                    lv_obj_set_style_min_width(btn, 120, 0);
-                    lv_obj_set_style_max_height(btn, 110, 0);
-                    lv_obj_set_style_min_height(btn, 90, 0);
+                    bool is_manual_action = manual_filament_prompt && prompt_footer_button != "CLOSE";
+                    if (is_manual_action) {
+                        int button_index = manual_button_count++;
+                        lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_STRETCH, button_index % 2, 1,
+                                              LV_GRID_ALIGN_STRETCH, button_index / 2, 1);
+                        lv_obj_set_size(btn, lv_pct(100), lv_pct(100));
+                        lv_obj_set_style_min_width(btn, 0, 0);
+                        lv_obj_set_style_min_height(btn, 0, 0);
+                    } else {
+                        lv_obj_set_size(btn, lv_pct(46), 100);
+                        lv_obj_set_style_max_width(btn, lv_pct(46), 0);
+                        lv_obj_set_style_min_width(btn, 120, 0);
+                        lv_obj_set_style_max_height(btn, 110, 0);
+                        lv_obj_set_style_min_height(btn, 90, 0);
+                    }
                     lv_obj_set_style_outline_pad(btn, 0, 0);
-                    lv_obj_center(btn);
-                    lv_obj_set_flex_grow(btn, 1);
+                    if (!is_manual_action) {
+                        lv_obj_center(btn);
+                        lv_obj_set_flex_grow(btn, 1);
+                    }
                     lv_obj_t *label = lv_label_create(btn);
                     // a hidden label is abused to transfer the command and auto-clean it
                     lv_obj_t *command = lv_label_create(btn);
@@ -432,6 +462,8 @@ void PromptPanel::handle_macro_response(json &j) {
                 lv_obj_clean(footer_cont);
                 lv_obj_clean(flex);
                 prompt_has_text = false;
+                manual_filament_prompt = false;
+                manual_button_count = 0;
                 lv_obj_clear_flag(flex, LV_OBJ_FLAG_HIDDEN);
                 lv_obj_set_grid_cell(footer_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_END, 2, 1);
                 lv_obj_set_size(footer_cont, lv_pct(100), lv_pct(15));

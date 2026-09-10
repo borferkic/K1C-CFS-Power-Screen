@@ -142,7 +142,7 @@ void ExtruderPanel::show_manual_filament_change() {
     "RESPOND TYPE=command MSG=\"action:prompt_footer_button LOAD|SDK_LOAD_FILAMENT|primary\"\n"
     "RESPOND TYPE=command MSG=\"action:prompt_footer_button RESUME|RESUME|success\"\n"
     "RESPOND TYPE=command MSG=\"action:prompt_footer_button STOP|CANCEL_PRINT|error\"\n"
-    "RESPOND TYPE=command MSG=\"action:prompt_footer_button CLOSE|M117 MANUAL FILAMENT CHANGE CLOSED|secondary\"\n"
+    "RESPOND TYPE=command MSG=\"action:prompt_footer_button CLOSE|RESPOND TYPE=command MSG='action:prompt_end'|secondary\"\n"
     "RESPOND TYPE=command MSG=\"action:prompt_show\"");
 }
 

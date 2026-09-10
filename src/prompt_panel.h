@@ -47,6 +47,8 @@ class PromptPanel : public NotifyConsumer {
         lv_obj_t *button_group_cont;
         lv_obj_t *footer_cont;
         bool prompt_has_text = false;
+        bool manual_filament_prompt = false;
+        int manual_button_count = 0;
 
 };
 

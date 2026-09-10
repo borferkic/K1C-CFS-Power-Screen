@@ -41,22 +41,21 @@ Todos los cambios importantes de esta modificación para K1C se documentan en es
 - `RESUME` ahora es verde y `STOP` rojo.
 - Replaced the large `CLOSE` footer button with a compact `X` in the top-right corner.
 - Reemplazado el botón inferior grande `CLOSE` por una `X` compacta en la esquina superior derecha.
+- Enforced the M600 action layout as a two-column, two-row grid: `UNLOAD`/`LOAD` and `RESUME`/`STOP`.
+- Forzada la distribución de acciones M600 como una cuadrícula de dos columnas y dos filas: `UNLOAD`/`LOAD` y `RESUME`/`STOP`.
+- Updated the `X` action to finish the prompt with `action:prompt_end`.
+- Actualizada la acción de la `X` para finalizar el prompt con `action:prompt_end`.
+- Publish both K1C packages from one release job after the MIPS builds finish, preventing parallel nightly-release conflicts.
+- Publicados ambos paquetes K1C desde un único job de release al terminar las compilaciones MIPS, evitando conflictos paralelos del release nightly.
 - Added bilingual README documentation, project credits, and the PayPal support link.
 - Añadida documentación bilingüe en el README, créditos del proyecto y el enlace de apoyo por PayPal.
 - Updated the K1C remotely through SSH using the Z-Bolt nightly package, preserving a device backup.
 - Actualizada remotamente la K1C por SSH usando el paquete nightly Z-Bolt, conservando un respaldo del dispositivo.
 
-### Pending / Pendiente
-
-- Remove the `GuppyDroid` workflow and any remaining non-K1C references from the repository.
-- Eliminar el workflow de `GuppyDroid` y cualquier referencia restante que no corresponda a K1C.
-- Validate the final dialog and CFS workflow on the physical K1C.
-- Validar el diálogo final y el flujo CFS en la K1C física.
-
 ## Release format / Formato de publicación
 
-- `nightly`: builds from `main` for development testing.
-- `nightly`: compilaciones desde `main` para pruebas de desarrollo.
+- `nightly`: builds from `main` for development testing, labeled with the UTC date and time (`nightly-YYYYMMDD-HHMM`).
+- `nightly`: compilaciones desde `main` para pruebas de desarrollo, identificadas con fecha y hora UTC (`nightly-YYYYMMDD-HHMM`).
 - `stable`: builds created from version tags.
 - `stable`: compilaciones creadas a partir de tags de versión.
 - Each channel provides `guppyscreen.tar.gz` (Material) and `guppyscreen-zbolt.tar.gz` (Z-Bolt).
