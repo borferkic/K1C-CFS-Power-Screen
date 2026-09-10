@@ -90,6 +90,7 @@ Interface and CFS workflow testing must be performed on a real K1C. A successful
 ## Pending work
 
 Pending work is tracked in [PENDIENTES.md](PENDIENTES.md).
+The project history is documented in [CHANGELOG.md](CHANGELOG.md).
 
 ## Support the project
 
@@ -203,6 +204,7 @@ Las pruebas de interfaz y del flujo CFS deben realizarse en una K1C real. Una co
 ## Pendientes
 
 El trabajo pendiente se mantiene en [PENDIENTES.md](PENDIENTES.md).
+El historial del proyecto se documenta en [CHANGELOG.md](CHANGELOG.md).
 
 ## Apoyo al proyecto
 
