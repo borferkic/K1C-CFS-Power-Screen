@@ -186,7 +186,7 @@ void PromptPanel::handle_callback(lv_event_t *event) {
         // The Manual M600 screen uses these terminal actions. Hide the
         // native prompt before running them so no nested RESPOND is needed.
         const char *button_text = label == NULL ? "" : lv_label_get_text(label);
-        if (!strcmp(button_text, "RESUME") || !strcmp(button_text, "STOP") || !strcmp(button_text, "CLOSE")) {
+        if (!strcmp(button_text, "RESUME") || !strcmp(button_text, "STOP") || !strcmp(button_text, "CLOSE") || !strcmp(button_text, "X")) {
             background();
         }
 
@@ -244,6 +244,10 @@ void PromptPanel::handle_macro_response(json &j) {
                 // remove buttons
                 lv_obj_clean(footer_cont);
                 lv_obj_clean(flex);
+                if (close_btn != NULL) {
+                    lv_obj_del(close_btn);
+                    close_btn = NULL;
+                }
                 // remove button commands
 
                 lv_obj_set_size(prompt_cont, lv_pct(72), lv_pct(60));
@@ -379,6 +383,25 @@ void PromptPanel::handle_macro_response(json &j) {
                     }
                     lv_obj_add_event_cb(btn, _handle_callback, LV_EVENT_PRESSED, this);
 
+                    if (prompt_footer_button == "CLOSE") {
+                        // Keep the footer compact: CLOSE is represented by a
+                        // small X in the dialog's top-right corner.
+                        lv_obj_add_flag(btn, LV_OBJ_FLAG_HIDDEN);
+                        close_btn = lv_btn_create(prompt_cont);
+                        lv_obj_set_size(close_btn, 42, 42);
+                        lv_obj_set_style_pad_all(close_btn, 0, 0);
+                        lv_obj_align(close_btn, LV_ALIGN_TOP_RIGHT, -6, 6);
+                        lv_obj_t *close_label = lv_label_create(close_btn);
+                        lv_label_set_text(close_label, "X");
+                        lv_obj_center(close_label);
+                        lv_obj_t *close_command = lv_label_create(close_btn);
+                        lv_obj_set_size(close_command, 1, 1);
+                        lv_obj_add_flag(close_command, LV_OBJ_FLAG_HIDDEN);
+                        lv_label_set_text(close_command, prompt_button_command.c_str());
+                        lv_obj_add_style(close_btn, &style_btn_grey, 0);
+                        lv_obj_add_event_cb(close_btn, _handle_callback, LV_EVENT_PRESSED, this);
+                    }
+
                 }
             } else if (command.find("prompt_show") == 0) {
                 spdlog::debug("PROMPT_SHOW");
@@ -391,6 +414,10 @@ void PromptPanel::handle_macro_response(json &j) {
                 // remove buttons
                 lv_obj_clean(footer_cont);
                 lv_obj_clean(flex);
+                if (close_btn != NULL) {
+                    lv_obj_del(close_btn);
+                    close_btn = NULL;
+                }
                 lv_obj_set_size(prompt_cont, lv_pct(60), lv_pct(50));
                 lv_obj_set_height(flex, LV_SIZE_CONTENT);
             } else {

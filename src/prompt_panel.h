@@ -43,6 +43,7 @@ class PromptPanel : public NotifyConsumer {
         lv_obj_t *prompt_cont;
         lv_obj_t *flex;
         lv_obj_t *header;
+        lv_obj_t *close_btn = NULL;
         lv_obj_t *button_group_cont;
         lv_obj_t *footer_cont;
 
