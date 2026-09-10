@@ -263,7 +263,8 @@ void PromptPanel::handle_macro_response(json &j) {
                     lv_obj_set_grid_dsc_array(footer_cont, manual_button_cols, manual_button_rows);
                     // Keep the 2x2 controls inside the K1C display margins.
                     lv_obj_set_style_pad_all(footer_cont, 0, 0);
-                    lv_obj_set_style_pad_row(footer_cont, 0, 0);
+                    // Separate the upper action row from STOP and CLOSE below.
+                    lv_obj_set_style_pad_row(footer_cont, 12, 0);
                     lv_obj_set_style_pad_column(footer_cont, 6, 0);
                 } else {
                     lv_obj_set_layout(footer_cont, LV_LAYOUT_FLEX);
@@ -288,7 +289,7 @@ void PromptPanel::handle_macro_response(json &j) {
 
                 // set header here
                 if (manual_filament_prompt) {
-                    lv_label_set_text(header, "MANUAL FILAMENT CHANGE\nSELECT ONE OPTION TO PROCEED");
+                    lv_label_set_text(header, "MANUAL FILAMENT CHANGE\n--------------------------\nSELECT ONE OPTION TO PROCEED");
                     lv_obj_set_height(header, LV_SIZE_CONTENT);
                 } else {
                     lv_label_set_text(header, prompt_header.c_str());
