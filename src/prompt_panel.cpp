@@ -256,14 +256,13 @@ void PromptPanel::handle_macro_response(json &j) {
                 lv_obj_set_grid_cell(footer_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 2);
                 lv_obj_set_size(footer_cont, lv_pct(100), lv_pct(100));
                 if (manual_filament_prompt) {
-                    static lv_coord_t manual_button_cols[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
-                    static lv_coord_t manual_button_rows[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+                    static lv_coord_t manual_button_cols[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+                    // Two compact rows: LOAD, UNLOAD, RESUME above; STOP and CLOSE below.
+                    static lv_coord_t manual_button_rows[] = {LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST};
                     lv_obj_set_layout(footer_cont, LV_LAYOUT_GRID);
                     lv_obj_set_grid_dsc_array(footer_cont, manual_button_cols, manual_button_rows);
                     // Keep the 2x2 controls inside the K1C display margins.
-                    lv_obj_set_style_pad_all(footer_cont, 4, 0);
-                    lv_obj_set_style_pad_bottom(footer_cont, 10, 0);
-                    // Use the available vertical space for the three rows.
+                    lv_obj_set_style_pad_all(footer_cont, 0, 0);
                     lv_obj_set_style_pad_row(footer_cont, 0, 0);
                     lv_obj_set_style_pad_column(footer_cont, 6, 0);
                 } else {
@@ -371,10 +370,10 @@ void PromptPanel::handle_macro_response(json &j) {
                 if (btn) {
                     if (manual_filament_prompt) {
                         if (prompt_footer_button == "CLOSE") {
-                            // Keep CLOSE as a compact, centered bottom action.
-                            lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_CENTER, 0, 2,
-                                                  LV_GRID_ALIGN_CENTER, 2, 1);
-                            lv_obj_set_size(btn, 135, 40);
+                            // Keep CLOSE on the lower row, opposite STOP.
+                            lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_CENTER, 2, 1,
+                                                  LV_GRID_ALIGN_CENTER, 1, 1);
+                            lv_obj_set_size(btn, 135, 32);
                             lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, 0);
                             lv_obj_set_style_border_width(btn, 0, 0);
                             lv_obj_set_style_outline_width(btn, 0, 0);
@@ -383,10 +382,19 @@ void PromptPanel::handle_macro_response(json &j) {
                             lv_obj_set_style_pad_all(btn, 0, 0);
                             lv_obj_clear_flag(btn, LV_OBJ_FLAG_SCROLLABLE);
                         } else {
-                            int button_index = manual_button_count++;
-                            lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_CENTER, button_index % 2, 1,
-                                                  LV_GRID_ALIGN_CENTER, button_index / 2, 1);
-                            lv_obj_set_size(btn, 135, 78);
+                            int button_column = 0;
+                            int button_row = 0;
+                            if (prompt_footer_button == "UNLOAD") {
+                                button_column = 1;
+                            } else if (prompt_footer_button == "RESUME") {
+                                button_column = 2;
+                            } else if (prompt_footer_button == "STOP") {
+                                button_column = 0;
+                                button_row = 1;
+                            }
+                            lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_CENTER, button_column, 1,
+                                                  LV_GRID_ALIGN_CENTER, button_row, 1);
+                            lv_obj_set_size(btn, 135, 68);
                         }
                         lv_obj_set_style_min_width(btn, 0, 0);
                         lv_obj_set_style_min_height(btn, 0, 0);
