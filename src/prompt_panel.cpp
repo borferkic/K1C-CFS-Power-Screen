@@ -342,6 +342,10 @@ void PromptPanel::handle_macro_response(json &j) {
                 int index_second = command.find("|", index_first + 1);
                 spdlog::debug("indexes: {} {} {}", index_label, index_first, index_second);
                 std::string prompt_footer_button = command.substr(index_label, index_first - index_label);
+                const auto first_button_character = prompt_footer_button.find_first_not_of(" \t");
+                if (first_button_character != std::string::npos) {
+                    prompt_footer_button.erase(0, first_button_character);
+                }
                 std::string prompt_button_command;
                 std::string prompt_button_type = "none";
                 spdlog::debug("button: {} |  {} | {}", prompt_footer_button, prompt_button_command, prompt_button_type);
