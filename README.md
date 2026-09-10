@@ -42,6 +42,8 @@ sync
 /etc/init.d/S99guppyscreen restart
 ```
 
+The repository provides two release channels for the K1C. `nightly` is built automatically from `main` for development testing. `stable` is built when a version tag is created. Each channel includes both the Material and Z-Bolt packages.
+
 ## Inherited features
 
 - Console and macro shell.
@@ -152,6 +154,8 @@ tar xzf /tmp/guppyscreen.tar.gz -C /usr/data/
 sync
 /etc/init.d/S99guppyscreen restart
 ```
+
+El repositorio ofrece dos canales de publicación para la K1C. `nightly` se compila automáticamente desde `main` para pruebas de desarrollo. `stable` se compila al crear un tag de versión. Cada canal incluye los paquetes Material y Z-Bolt.
 
 ## Características heredadas
 
