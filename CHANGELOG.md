@@ -27,6 +27,10 @@ Todos los cambios importantes de esta modificación para K1C se documentan en es
 
 ### Changed / Cambiado
 
+- Simplified the M600 dialog to a centered title and a large 2x2 action layout: `UNLOAD`/`LOAD`, followed by `RESUME`/`STOP`.
+- Simplificado el diálogo M600 a un título centrado y una distribución grande 2x2: `UNLOAD`/`LOAD`, seguido de `RESUME`/`STOP`.
+- Centered the action labels and increased their font size for easier touchscreen use.
+- Centradas las etiquetas de acción y aumentada su fuente para facilitar el uso táctil.
 - Limited the project scope to the Creality K1C and removed ARM/smallscreen variants from the build matrix.
 - Limitado el alcance a la Creality K1C y eliminadas las variantes ARM/smallscreen de la matriz de compilación.
 - Converted the custom dialog text and extrusion controls to uppercase.
