@@ -259,7 +259,7 @@ void PromptPanel::handle_macro_response(json &j) {
                 lv_obj_set_size(footer_cont, lv_pct(100), lv_pct(100));
                 if (manual_filament_prompt) {
                     static lv_coord_t manual_button_cols[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
-                    static lv_coord_t manual_button_rows[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+                    static lv_coord_t manual_button_rows[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
                     lv_obj_set_layout(footer_cont, LV_LAYOUT_GRID);
                     lv_obj_set_grid_dsc_array(footer_cont, manual_button_cols, manual_button_rows);
                     // Keep the 2x2 controls inside the K1C display margins.
@@ -281,7 +281,7 @@ void PromptPanel::handle_macro_response(json &j) {
 
                 if (manual_filament_prompt) {
                     // The K1C needs extra vertical room for the second row.
-                    lv_obj_set_size(prompt_cont, lv_pct(76), lv_pct(72));
+                    lv_obj_set_size(prompt_cont, lv_pct(76), lv_pct(82));
                 } else {
                     lv_obj_set_size(prompt_cont, lv_pct(72), lv_pct(60));
                 }
@@ -364,12 +364,18 @@ void PromptPanel::handle_macro_response(json &j) {
                     }
                 }
                 if (btn) {
-                    bool is_manual_action = manual_filament_prompt && prompt_footer_button != "CLOSE";
-                    if (is_manual_action) {
-                        int button_index = manual_button_count++;
-                        lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_CENTER, button_index % 2, 1,
-                                              LV_GRID_ALIGN_CENTER, button_index / 2, 1);
-                        lv_obj_set_size(btn, 140, 95);
+                    if (manual_filament_prompt) {
+                        if (prompt_footer_button == "CLOSE") {
+                            // Keep CLOSE as a compact, centered bottom action.
+                            lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_CENTER, 0, 2,
+                                                  LV_GRID_ALIGN_CENTER, 2, 1);
+                            lv_obj_set_size(btn, 135, 52);
+                        } else {
+                            int button_index = manual_button_count++;
+                            lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_CENTER, button_index % 2, 1,
+                                                  LV_GRID_ALIGN_CENTER, button_index / 2, 1);
+                            lv_obj_set_size(btn, 135, 78);
+                        }
                         lv_obj_set_style_min_width(btn, 0, 0);
                         lv_obj_set_style_min_height(btn, 0, 0);
                     } else {
@@ -436,30 +442,6 @@ void PromptPanel::handle_macro_response(json &j) {
                         lv_obj_add_style(btn, &style_btn_dark_grey, 0);
                     }
                     lv_obj_add_event_cb(btn, _handle_callback, LV_EVENT_PRESSED, this);
-
-                    if (prompt_footer_button == "CLOSE") {
-                        // Keep the footer compact: CLOSE is represented by a
-                        // small X in the dialog's top-right corner.
-                        lv_obj_add_flag(btn, LV_OBJ_FLAG_HIDDEN);
-                        close_btn = lv_btn_create(prompt_cont);
-                        // prompt_cont uses LV_LAYOUT_GRID; the close control
-                        // must be free to remain anchored in the corner.
-                        lv_obj_add_flag(close_btn, LV_OBJ_FLAG_IGNORE_LAYOUT);
-                        lv_obj_set_size(close_btn, 42, 42);
-                        lv_obj_set_style_pad_all(close_btn, 0, 0);
-                        lv_obj_align(close_btn, LV_ALIGN_TOP_RIGHT, -6, 6);
-                        lv_obj_move_foreground(close_btn);
-                        lv_obj_t *close_label = lv_label_create(close_btn);
-                        lv_label_set_text(close_label, "X");
-                        lv_obj_set_style_text_font(close_label, &lv_font_montserrat_20, 0);
-                        lv_obj_center(close_label);
-                        lv_obj_t *close_command = lv_label_create(close_btn);
-                        lv_obj_set_size(close_command, 1, 1);
-                        lv_obj_add_flag(close_command, LV_OBJ_FLAG_HIDDEN);
-                        lv_label_set_text(close_command, prompt_button_command.c_str());
-                        lv_obj_add_style(close_btn, &style_btn_grey, 0);
-                        lv_obj_add_event_cb(close_btn, _handle_callback, LV_EVENT_PRESSED, this);
-                    }
 
                 }
             } else if (command.find("prompt_show") == 0) {
