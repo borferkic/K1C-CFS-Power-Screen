@@ -9,3 +9,4 @@ build/
 /releases/
 /*.tar.gz
 /.tmp-k1c-install/
+/.tmp-build-final/
