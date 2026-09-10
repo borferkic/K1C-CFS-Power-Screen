@@ -279,7 +279,12 @@ void PromptPanel::handle_macro_response(json &j) {
                 }
                 // remove button commands
 
-                lv_obj_set_size(prompt_cont, lv_pct(72), lv_pct(60));
+                if (manual_filament_prompt) {
+                    // The K1C needs extra vertical room for the second row.
+                    lv_obj_set_size(prompt_cont, lv_pct(76), lv_pct(72));
+                } else {
+                    lv_obj_set_size(prompt_cont, lv_pct(72), lv_pct(60));
+                }
                 lv_obj_set_height(flex, lv_pct(70));
 
                 // set header here
@@ -443,6 +448,7 @@ void PromptPanel::handle_macro_response(json &j) {
                         lv_obj_set_size(close_btn, 42, 42);
                         lv_obj_set_style_pad_all(close_btn, 0, 0);
                         lv_obj_align(close_btn, LV_ALIGN_TOP_RIGHT, -6, 6);
+                        lv_obj_move_foreground(close_btn);
                         lv_obj_t *close_label = lv_label_create(close_btn);
                         lv_label_set_text(close_label, "X");
                         lv_obj_set_style_text_font(close_label, &lv_font_montserrat_20, 0);
