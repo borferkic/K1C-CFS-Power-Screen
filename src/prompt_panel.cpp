@@ -287,7 +287,12 @@ void PromptPanel::handle_macro_response(json &j) {
                 lv_obj_set_height(flex, lv_pct(70));
 
                 // set header here
-                lv_label_set_text(header, prompt_header.c_str());
+                if (manual_filament_prompt) {
+                    lv_label_set_text(header, "MANUAL FILAMENT CHANGE\nSELECT ONE OPTION TO PROCEED");
+                    lv_obj_set_height(header, LV_SIZE_CONTENT);
+                } else {
+                    lv_label_set_text(header, prompt_header.c_str());
+                }
             } else if (command.find("prompt_text") == 0) {
                 std::string prompt_text = command.substr(12);
                 spdlog::debug("PROMPT_TEXT: {}", prompt_text);
@@ -358,12 +363,7 @@ void PromptPanel::handle_macro_response(json &j) {
                 spdlog::debug("PROMPT_FOOTER_BUTTON: {} CMD: {}, type {}", prompt_footer_button, prompt_button_command, prompt_button_type);
                 lv_obj_t *btn = NULL;
                 if (command.find("prompt_footer_button") == 0) {
-                    if (manual_filament_prompt && prompt_footer_button == "CLOSE") {
-                        // CLOSE is text-only, with a transparent touch area.
-                        btn = lv_obj_create(footer_cont);
-                    } else {
-                        btn = lv_btn_create(footer_cont);
-                    }
+                    btn = lv_btn_create(footer_cont);
                 } else {
                     if (button_group_cont == NULL) {
                         btn = lv_btn_create(flex);
@@ -377,14 +377,7 @@ void PromptPanel::handle_macro_response(json &j) {
                             // Keep CLOSE on the lower row, opposite STOP.
                             lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_CENTER, 2, 1,
                                                   LV_GRID_ALIGN_CENTER, 1, 1);
-                            lv_obj_set_size(btn, 135, 32);
-                            lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, 0);
-                            lv_obj_set_style_border_width(btn, 0, 0);
-                            lv_obj_set_style_outline_width(btn, 0, 0);
-                            lv_obj_set_style_shadow_width(btn, 0, 0);
-                            lv_obj_set_style_radius(btn, 0, 0);
-                            lv_obj_set_style_pad_all(btn, 0, 0);
-                            lv_obj_clear_flag(btn, LV_OBJ_FLAG_SCROLLABLE);
+                            lv_obj_set_size(btn, 135, 100);
                         } else {
                             int button_column = 0;
                             int button_row = 0;
@@ -398,7 +391,7 @@ void PromptPanel::handle_macro_response(json &j) {
                             }
                             lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_CENTER, button_column, 1,
                                                   LV_GRID_ALIGN_CENTER, button_row, 1);
-                            lv_obj_set_size(btn, 135, 68);
+                            lv_obj_set_size(btn, 135, 100);
                         }
                         lv_obj_set_style_min_width(btn, 0, 0);
                         lv_obj_set_style_min_height(btn, 0, 0);
@@ -444,9 +437,7 @@ void PromptPanel::handle_macro_response(json &j) {
                         lv_obj_center(label);
                     }
 
-                    if (manual_filament_prompt && prompt_footer_button == "CLOSE") {
-                        // No visual button style for the text-only CLOSE action.
-                    } else if (!prompt_button_type.compare("secondary")) {
+                    if (!prompt_button_type.compare("secondary")) {
                         spdlog::debug("type secondary");
                         lv_obj_add_style(btn, &style_btn_grey, 0);
                     } else if (!prompt_button_type.compare("warning")) {
