@@ -3,11 +3,19 @@
 #include "utils.h"
 #include "spdlog/spdlog.h"
 
+#include <cstring>
+
+LV_IMG_DECLARE(load_filament_img);
+LV_IMG_DECLARE(unload_filament_img);
+LV_IMG_DECLARE(resume);
+LV_IMG_DECLARE(cancel);
+
 // uncomment for helper boxes
 // #define DEBUG_LINES
 
 static lv_style_t style_btn_grey;
 static lv_style_t style_btn_blue;
+static lv_style_t style_btn_green;
 static lv_style_t style_btn_red;
 static lv_style_t style_btn_orange;
 static lv_style_t style_btn_dark_grey;
@@ -36,11 +44,11 @@ PromptPanel::PromptPanel(KWebSocketClient &websocket_client, std::mutex &lock, l
     lv_obj_set_style_radius(prompt_cont, 5, LV_PART_MAIN);
     lv_obj_set_style_border_width(prompt_cont, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_color(prompt_cont, lv_palette_main(LV_PALETTE_GREY), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_max_height(prompt_cont, lv_pct(80), 0);
+    lv_obj_set_style_max_height(prompt_cont, lv_pct(90), 0);
     lv_obj_set_style_max_width(prompt_cont, lv_pct(75), 0);
-    lv_obj_set_style_min_height(prompt_cont, lv_pct(50), 0);
+    lv_obj_set_style_min_height(prompt_cont, lv_pct(60), 0);
     lv_obj_set_style_min_width(prompt_cont, lv_pct(60), 0);
-    lv_obj_set_size(prompt_cont, lv_pct(60), lv_pct(50));
+    lv_obj_set_size(prompt_cont, lv_pct(72), lv_pct(60));
     lv_obj_set_grid_dsc_array(prompt_cont, grid_main_col_dsc_detail, grid_main_row_dsc_detail);
 
     lv_obj_set_style_pad_all(flex, 0, 0);
@@ -62,7 +70,7 @@ PromptPanel::PromptPanel(KWebSocketClient &websocket_client, std::mutex &lock, l
     // set buttons horizontal
     //
     lv_style_init(&button_group_flex_style);
-    lv_style_set_flex_flow(&button_group_flex_style, LV_FLEX_FLOW_ROW);
+    lv_style_set_flex_flow(&button_group_flex_style, LV_FLEX_FLOW_ROW_WRAP);
     lv_style_set_flex_main_place(&button_group_flex_style, LV_FLEX_ALIGN_SPACE_EVENLY);
     lv_style_set_flex_cross_place(&button_group_flex_style, LV_FLEX_ALIGN_CENTER);
     lv_style_set_flex_track_place(&button_group_flex_style, LV_FLEX_ALIGN_CENTER);
@@ -111,6 +119,10 @@ PromptPanel::PromptPanel(KWebSocketClient &websocket_client, std::mutex &lock, l
     lv_style_init(&style_btn_blue);
     lv_style_set_bg_color(&style_btn_blue, lv_palette_main(LV_PALETTE_BLUE));
     lv_style_set_bg_opa(&style_btn_blue, LV_OPA_COVER);
+
+    lv_style_init(&style_btn_green);
+    lv_style_set_bg_color(&style_btn_green, lv_palette_main(LV_PALETTE_GREEN));
+    lv_style_set_bg_opa(&style_btn_green, LV_OPA_COVER);
 
     lv_style_init(&style_btn_red);
     lv_style_set_bg_color(&style_btn_red, lv_palette_main(LV_PALETTE_RED));
@@ -170,6 +182,14 @@ void PromptPanel::handle_callback(lv_event_t *event) {
     if (command != NULL) {
         std::string cmd = lv_label_get_text(command);
         spdlog::debug("button: {}", cmd);
+
+        // The Manual M600 screen uses these terminal actions. Hide the
+        // native prompt before running them so no nested RESPOND is needed.
+        const char *button_text = label == NULL ? "" : lv_label_get_text(label);
+        if (!strcmp(button_text, "RESUME") || !strcmp(button_text, "STOP") || !strcmp(button_text, "CLOSE")) {
+            background();
+        }
+
         ws.gcode_script(cmd);
     }
 
@@ -226,7 +246,7 @@ void PromptPanel::handle_macro_response(json &j) {
                 lv_obj_clean(flex);
                 // remove button commands
 
-                lv_obj_set_size(prompt_cont, lv_pct(60), lv_pct(50));
+                lv_obj_set_size(prompt_cont, lv_pct(72), lv_pct(60));
                 lv_obj_set_height(flex, lv_pct(70));
 
                 // set header here
@@ -302,8 +322,8 @@ void PromptPanel::handle_macro_response(json &j) {
                     }
                 }
                 if (btn) {
-                    lv_obj_set_size(btn, lv_pct(45), 32);
-                    lv_obj_set_style_max_width(btn, lv_pct(45), 0);
+                    lv_obj_set_size(btn, lv_pct(30), 82);
+                    lv_obj_set_style_max_width(btn, lv_pct(30), 0);
                     lv_obj_set_style_min_width(btn, 32, 0);
                     lv_obj_set_style_max_height(btn, 54, 0);
                     lv_obj_set_style_min_height(btn, 42, 0);
@@ -318,8 +338,23 @@ void PromptPanel::handle_macro_response(json &j) {
                     lv_label_set_text(label, prompt_footer_button.c_str());
                     lv_label_set_text(command, prompt_button_command.c_str());
                     lv_obj_set_style_pad_all(btn, 2, 0);
-                    // lv_obj_set_style_max_width(label, lv_pct(45), 0);
-                    lv_obj_center(label);
+                    lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, -4);
+
+                    const void *button_icon = NULL;
+                    if (prompt_footer_button == "LOAD") {
+                        button_icon = &load_filament_img;
+                    } else if (prompt_footer_button == "UNLOAD") {
+                        button_icon = &unload_filament_img;
+                    } else if (prompt_footer_button == "RESUME") {
+                        button_icon = &resume;
+                    } else if (prompt_footer_button == "STOP") {
+                        button_icon = &cancel;
+                    }
+                    if (button_icon != NULL) {
+                        lv_obj_t *icon = lv_img_create(btn);
+                        lv_img_set_src(icon, button_icon);
+                        lv_obj_align(icon, LV_ALIGN_TOP_MID, 0, 2);
+                    }
 
                     if (!prompt_button_type.compare("secondary")) {
                         spdlog::debug("type secondary");
@@ -336,6 +371,8 @@ void PromptPanel::handle_macro_response(json &j) {
                     } else if (!prompt_button_type.compare("primary")) {
                         spdlog::debug("type primary");
                         lv_obj_add_style(btn, &style_btn_blue, 0);
+                    } else if (!prompt_button_type.compare("success")) {
+                        lv_obj_add_style(btn, &style_btn_green, 0);
                     } else { // info and primary as well
                         spdlog::debug("type default");
                         lv_obj_add_style(btn, &style_btn_dark_grey, 0);

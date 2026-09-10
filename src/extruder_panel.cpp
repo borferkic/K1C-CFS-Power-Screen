@@ -11,6 +11,7 @@ LV_IMG_DECLARE(extrude_img);
 LV_IMG_DECLARE(retract_img);
 LV_IMG_DECLARE(unload_filament_img);
 LV_IMG_DECLARE(load_filament_img);
+LV_IMG_DECLARE(filament_img);
 LV_IMG_DECLARE(extruder);
 LV_IMG_DECLARE(cooldown_img);
 
@@ -23,22 +24,23 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   , panel_cont(lv_obj_create(lv_scr_act()))
   , spoolman_panel(sm)
   , extruder_temp(ws, panel_cont, &extruder, 150,
-	  "Extruder", lv_palette_main(LV_PALETTE_RED), false, true, numpad, "extruder", NULL, NULL)
-  , temp_selector(panel_cont, "Extruder Temperature (C)",
+	  "EXTRUDER", lv_palette_main(LV_PALETTE_RED), false, true, numpad, "extruder", NULL, NULL)
+  , temp_selector(panel_cont, "EXTRUDER TEMPERATURE (C)",
 		  {"180", "190", "200", "210", "220", "230", "240", ""}, 6, &ExtruderPanel::_handle_callback, this)
-  , length_selector(panel_cont, "Extrude Length (mm)",
+  , length_selector(panel_cont, "EXTRUDE LENGTH (MM)",
 		    {"5", "10", "15", "20", "25", "30", "35", ""}, 1, &ExtruderPanel::_handle_callback, this)
-  , speed_selector(panel_cont, "Extrude Speed (mm/s)",
+  , speed_selector(panel_cont, "EXTRUDE SPEED (MM/S)",
 		   {"1", "2", "5", "10", "25", "35", "50", ""}, 2, &ExtruderPanel::_handle_callback, this)
   , rightside_btns_cont(lv_obj_create(panel_cont))
   , leftside_btns_cont(lv_obj_create(panel_cont))
-  , load_btn(leftside_btns_cont, &load_filament_img, "Load", &ExtruderPanel::_handle_callback, this)
-  , unload_btn(leftside_btns_cont, &unload_filament_img, "Unload", &ExtruderPanel::_handle_callback, this)
-  , cooldown_btn(leftside_btns_cont, &cooldown_img, "Cooldown", &ExtruderPanel::_handle_callback, this)
-  , spoolman_btn(rightside_btns_cont, &spoolman_img, "Spoolman", &ExtruderPanel::_handle_callback, this)
-  , extrude_btn(rightside_btns_cont, &extrude_img, "Extrude", &ExtruderPanel::_handle_callback, this)
-  , retract_btn(rightside_btns_cont, &retract_img, "Retract", &ExtruderPanel::_handle_callback, this)
-  , back_btn(rightside_btns_cont, &back, "Back", &ExtruderPanel::_handle_callback, this)
+  , load_btn(leftside_btns_cont, &load_filament_img, "LOAD", &ExtruderPanel::_handle_callback, this)
+  , unload_btn(leftside_btns_cont, &unload_filament_img, "UNLOAD", &ExtruderPanel::_handle_callback, this)
+  , manual_change_btn(leftside_btns_cont, &filament_img, "MANUAL M600", &ExtruderPanel::_handle_callback, this)
+  , cooldown_btn(leftside_btns_cont, &cooldown_img, "COOLDOWN", &ExtruderPanel::_handle_callback, this)
+  , spoolman_btn(rightside_btns_cont, &spoolman_img, "SPOOLMAN", &ExtruderPanel::_handle_callback, this)
+  , extrude_btn(rightside_btns_cont, &extrude_img, "EXTRUDE", &ExtruderPanel::_handle_callback, this)
+  , retract_btn(rightside_btns_cont, &retract_img, "RETRACT", &ExtruderPanel::_handle_callback, this)
+  , back_btn(rightside_btns_cont, &back, "BACK", &ExtruderPanel::_handle_callback, this)
   , load_filament_macro("LOAD_FILAMENT")
   , unload_filament_macro("UNLOAD_FILAMENT")
   , cooldown_macro("SET_HEATER_TEMPERATURE HEATER=extruder TARGET=0")
@@ -131,6 +133,21 @@ void ExtruderPanel::foreground() {
   lv_obj_move_foreground(panel_cont);
 }
 
+void ExtruderPanel::show_manual_filament_change() {
+  // Use Guppy's native prompt protocol so the dialog is rendered by the
+  // printer UI and remains compatible with the existing prompt handling.
+  ws.gcode_script(
+    "RESPOND TYPE=command MSG=\"action:prompt_begin MANUAL FILAMENT CHANGE\"\n"
+    "RESPOND TYPE=command MSG=\"action:prompt_text PAUSE THE CHANGE IF NEEDED, THEN USE THE BUTTONS BELOW.\"\n"
+    "RESPOND TYPE=command MSG=\"action:prompt_text 1. UNLOAD THE OLD FILAMENT.  2. INSERT THE NEW FILAMENT.  3. LOAD AND PURGE IT.\"\n"
+    "RESPOND TYPE=command MSG=\"action:prompt_footer_button UNLOAD|SDK_UNLOAD_FILAMENT|warning\"\n"
+    "RESPOND TYPE=command MSG=\"action:prompt_footer_button LOAD|SDK_LOAD_FILAMENT|primary\"\n"
+    "RESPOND TYPE=command MSG=\"action:prompt_footer_button RESUME|RESUME|success\"\n"
+    "RESPOND TYPE=command MSG=\"action:prompt_footer_button STOP|CANCEL_PRINT|error\"\n"
+    "RESPOND TYPE=command MSG=\"action:prompt_footer_button CLOSE|M117 MANUAL FILAMENT CHANGE CLOSED|secondary\"\n"
+    "RESPOND TYPE=command MSG=\"action:prompt_show\"");
+}
+
 void ExtruderPanel::enable_spoolman() {
   spoolman_btn.enable();
 }
@@ -209,6 +226,10 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
       } else {
         ws.gcode_script(unload_filament_macro);
       }
+    }
+
+    if (btn == manual_change_btn.get_container()) {
+      show_manual_filament_change();
     }
 
     if (btn == load_btn.get_container()) {

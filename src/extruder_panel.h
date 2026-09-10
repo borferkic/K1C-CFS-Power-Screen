@@ -37,6 +37,7 @@ class ExtruderPanel : public NotifyConsumer {
   lv_obj_t *leftside_btns_cont;
   ButtonContainer load_btn;
   ButtonContainer unload_btn;
+  ButtonContainer manual_change_btn;
   ButtonContainer cooldown_btn;
   ButtonContainer spoolman_btn;
   ButtonContainer extrude_btn;
@@ -45,6 +46,8 @@ class ExtruderPanel : public NotifyConsumer {
   std::string load_filament_macro;
   std::string unload_filament_macro;
   std::string cooldown_macro;
+
+  void show_manual_filament_change();
 };
 
 #endif // __EXTRUDER_PANEL_H__
