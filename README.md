@@ -81,3 +81,89 @@ También se reconocen los proyectos y recursos utilizados por la base original:
 ## Licencia
 
 Consulta [LICENSE](LICENSE) para conocer los términos aplicables a la base original y a esta modificación.
+
+---
+
+# GuppyScreen MOD for Creality K1C
+
+This is a personal modification of GuppyScreen focused exclusively on the Creality K1C. It keeps the touch interface base for Klipper/Moonraker and adds features specific to the CFS workflow and manual filament changes.
+
+## Scope
+
+This repository is intended only for:
+
+- Creality K1C.
+- The original K1C screen.
+- MIPS builds compatible with K1C hardware.
+- Custom CFS macros and scripts.
+
+There are no builds, instructions, or support for Android, Raspberry Pi, `GuppyDroid`, or other printer models.
+
+## Inherited features
+
+- Console and macro shell.
+- Bed Mesh.
+- Input Shaper.
+- Print status.
+- Spoolman integration.
+- Extrusion and retraction.
+- Temperature control.
+- Fan, LED, and movement control.
+- Fine tuning for speed, flow, Z-offset, and Pressure Advance.
+- Velocity and acceleration limits.
+- File browser.
+- TMC metrics.
+
+## Additional features in this modification
+
+- `MANUAL M600` button in the extrusion panel.
+- Manual filament change dialog adapted to the K1C screen.
+- `SDK_UNLOAD_FILAMENT` and `SDK_LOAD_FILAMENT` actions.
+- Green `RESUME` action.
+- Red `STOP` action using `CANCEL_PRINT`.
+- `CLOSE` action to close the dialog.
+- Icons for load, unload, resume, and stop actions.
+- Button layout reorganized for comfortable touchscreen use on the K1C.
+
+## Development and build
+
+Initialize the submodules when cloning the repository:
+
+```bash
+git clone --recursive https://github.com/borferkic/K1C-CFS-Guppyscreen-MOD.git
+cd K1C-CFS-Guppyscreen-MOD
+```
+
+Building for the K1C requires the MIPS toolchain described in [DEVELOPMENT.md](DEVELOPMENT.md). The main configuration uses the `mipsel-buildroot-linux-musl-` compiler and generates:
+
+```text
+build/bin/guppyscreen
+```
+
+Interface and CFS workflow testing must be performed on a real K1C. A successful build does not replace validation of the dialog, macros, or the extruder's physical behavior.
+
+## Pending work
+
+Pending work is tracked in [PENDIENTES.md](PENDIENTES.md).
+
+## Support the project
+
+If this project is useful to you, you can support its development through [PayPal](https://paypal.me/borissdk).
+
+## Credits and thanks
+
+This project is based on the original work from [ballaswag/guppyscreen](https://github.com/ballaswag/guppyscreen). Many thanks to its creator for developing and publishing the GuppyScreen foundation.
+
+The projects and resources used by the original foundation are also acknowledged:
+
+- [LVGL](https://github.com/lvgl/lvgl)
+- [Material Design Icons](https://pictogrammers.com/library/mdi/)
+- [Z-Bolt Icons](https://github.com/Z-Bolt/OctoScreen)
+- [Moonraker](https://github.com/Arksine/moonraker)
+- [KlipperScreen](https://github.com/KlipperScreen/KlipperScreen)
+- [Fluidd](https://github.com/fluidd-core/fluidd)
+- [Klippain Shake&Tune](https://github.com/Frix-x/klippain-shaketune)
+
+## License
+
+See [LICENSE](LICENSE) for the terms applicable to the original foundation and this modification.
