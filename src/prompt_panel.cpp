@@ -263,7 +263,8 @@ void PromptPanel::handle_macro_response(json &j) {
                     // Keep the 2x2 controls inside the K1C display margins.
                     lv_obj_set_style_pad_all(footer_cont, 4, 0);
                     lv_obj_set_style_pad_bottom(footer_cont, 10, 0);
-                    lv_obj_set_style_pad_row(footer_cont, 6, 0);
+                    // Use the available vertical space for the three rows.
+                    lv_obj_set_style_pad_row(footer_cont, 0, 0);
                     lv_obj_set_style_pad_column(footer_cont, 6, 0);
                 } else {
                     lv_obj_set_layout(footer_cont, LV_LAYOUT_FLEX);
