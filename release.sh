@@ -28,4 +28,14 @@ cp ./build/bin/kd_graphic_mode $RELEASES_DIR/debian
 echo "{\"version\": \"$GUPPYSCREEN_VERSION\", \"theme\": \"$GUPPY_THEME\", \"asset_name\": \"$ASSET_NAME.tar.gz\"}" > $RELEASES_DIR/.version
 echo "{\"project_name\": \"$PROJECT_NAME\", \"project_owner\": \"$PROJECT_OWNER\", \"version\": \"$GUPPYSCREEN_VERSION\", \"asset_name\": \"$ASSET_NAME.zip\"}" > $RELEASES_DIR/release_info.json
 tar czf $ASSET_NAME.tar.gz -C releases .
-(cd $RELEASES_DIR && zip -qr ../../$ASSET_NAME.zip .)
+python3 - "$RELEASES_DIR" "$ASSET_NAME.zip" <<'PY'
+from pathlib import Path
+from zipfile import ZIP_DEFLATED, ZipFile
+import sys
+
+source = Path(sys.argv[1])
+archive = Path(sys.argv[2])
+with ZipFile(archive, "w", ZIP_DEFLATED) as package:
+    for item in source.rglob("*"):
+        package.write(item, item.relative_to(source))
+PY
