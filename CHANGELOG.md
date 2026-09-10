@@ -47,6 +47,10 @@ Todos los cambios importantes de esta modificación para K1C se documentan en es
 - Actualizada la acción de la `X` para finalizar el prompt con `action:prompt_end`.
 - Publish both K1C packages from one release job after the MIPS builds finish, preventing parallel nightly-release conflicts.
 - Publicados ambos paquetes K1C desde un único job de release al terminar las compilaciones MIPS, evitando conflictos paralelos del release nightly.
+- Added Moonraker/Fluidd update metadata and a Z-Bolt release package for K1C software updates.
+- Añadidos metadatos de actualización para Moonraker/Fluidd y un paquete de release Z-Bolt para las actualizaciones de software de K1C.
+- Changed nightly releases to use their UTC date and time as the release tag, preventing conflicts with an existing fixed `nightly` tag.
+- Cambiados los releases nightly para usar su fecha y hora UTC como tag de release, evitando conflictos con un tag fijo `nightly` existente.
 - Added bilingual README documentation, project credits, and the PayPal support link.
 - Añadida documentación bilingüe en el README, créditos del proyecto y el enlace de apoyo por PayPal.
 - Updated the K1C remotely through SSH using the Z-Bolt nightly package, preserving a device backup.

@@ -5,6 +5,9 @@ rm -rf $RELEASES_DIR
 mkdir -p $RELEASES_DIR
 
 ASSET_NAME=$1
+REPOSITORY=${GUPPYSCREEN_REPOSITORY:-borferkic/K1C-CFS-Guppyscreen-MOD}
+PROJECT_OWNER=${REPOSITORY%%/*}
+PROJECT_NAME=${REPOSITORY#*/}
 
 "$CROSS_COMPILE"strip ./build/bin/guppyscreen
 "$CROSS_COMPILE"strip ./build/bin/kd_graphic_mode
@@ -23,4 +26,6 @@ cp ./build/bin/kd_graphic_mode $RELEASES_DIR/debian
 
 
 echo "{\"version\": \"$GUPPYSCREEN_VERSION\", \"theme\": \"$GUPPY_THEME\", \"asset_name\": \"$ASSET_NAME.tar.gz\"}" > $RELEASES_DIR/.version
+echo "{\"project_name\": \"$PROJECT_NAME\", \"project_owner\": \"$PROJECT_OWNER\", \"version\": \"$GUPPYSCREEN_VERSION\", \"asset_name\": \"$ASSET_NAME.zip\"}" > $RELEASES_DIR/release_info.json
 tar czf $ASSET_NAME.tar.gz -C releases .
+(cd $RELEASES_DIR && zip -qr ../../$ASSET_NAME.zip .)
