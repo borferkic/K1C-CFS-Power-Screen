@@ -376,8 +376,11 @@ void PromptPanel::handle_macro_response(json &j) {
                             lv_obj_set_size(btn, 135, 40);
                             lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, 0);
                             lv_obj_set_style_border_width(btn, 0, 0);
+                            lv_obj_set_style_outline_width(btn, 0, 0);
                             lv_obj_set_style_shadow_width(btn, 0, 0);
                             lv_obj_set_style_radius(btn, 0, 0);
+                            lv_obj_set_style_pad_all(btn, 0, 0);
+                            lv_obj_clear_flag(btn, LV_OBJ_FLAG_SCROLLABLE);
                         } else {
                             int button_index = manual_button_count++;
                             lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_CENTER, button_index % 2, 1,
