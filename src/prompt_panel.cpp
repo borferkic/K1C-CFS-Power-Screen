@@ -158,10 +158,12 @@ PromptPanel::~PromptPanel() {
 
 void PromptPanel::foreground() {
     // shrink wrap
+    lv_obj_clear_flag(prompt_cont, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(prompt_cont);
 }
 
 void PromptPanel::background() {
+  lv_obj_add_flag(prompt_cont, LV_OBJ_FLAG_HIDDEN);
   lv_obj_move_background(prompt_cont);
 }
 
@@ -260,9 +262,10 @@ void PromptPanel::handle_macro_response(json &j) {
                     static lv_coord_t manual_button_rows[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
                     lv_obj_set_layout(footer_cont, LV_LAYOUT_GRID);
                     lv_obj_set_grid_dsc_array(footer_cont, manual_button_cols, manual_button_rows);
-                    lv_obj_set_style_pad_all(footer_cont, 8, 0);
-                    lv_obj_set_style_pad_row(footer_cont, 10, 0);
-                    lv_obj_set_style_pad_column(footer_cont, 10, 0);
+                    // Keep the 2x2 controls inside the K1C display margins.
+                    lv_obj_set_style_pad_all(footer_cont, 4, 0);
+                    lv_obj_set_style_pad_row(footer_cont, 6, 0);
+                    lv_obj_set_style_pad_column(footer_cont, 6, 0);
                 } else {
                     lv_obj_set_layout(footer_cont, LV_LAYOUT_FLEX);
                     lv_obj_set_flex_flow(footer_cont, LV_FLEX_FLOW_ROW_WRAP);
@@ -359,9 +362,9 @@ void PromptPanel::handle_macro_response(json &j) {
                     bool is_manual_action = manual_filament_prompt && prompt_footer_button != "CLOSE";
                     if (is_manual_action) {
                         int button_index = manual_button_count++;
-                        lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_STRETCH, button_index % 2, 1,
-                                              LV_GRID_ALIGN_STRETCH, button_index / 2, 1);
-                        lv_obj_set_size(btn, lv_pct(100), lv_pct(100));
+                        lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_CENTER, button_index % 2, 1,
+                                              LV_GRID_ALIGN_CENTER, button_index / 2, 1);
+                        lv_obj_set_size(btn, 140, 95);
                         lv_obj_set_style_min_width(btn, 0, 0);
                         lv_obj_set_style_min_height(btn, 0, 0);
                     } else {
@@ -434,6 +437,9 @@ void PromptPanel::handle_macro_response(json &j) {
                         // small X in the dialog's top-right corner.
                         lv_obj_add_flag(btn, LV_OBJ_FLAG_HIDDEN);
                         close_btn = lv_btn_create(prompt_cont);
+                        // prompt_cont uses LV_LAYOUT_GRID; the close control
+                        // must be free to remain anchored in the corner.
+                        lv_obj_add_flag(close_btn, LV_OBJ_FLAG_IGNORE_LAYOUT);
                         lv_obj_set_size(close_btn, 42, 42);
                         lv_obj_set_style_pad_all(close_btn, 0, 0);
                         lv_obj_align(close_btn, LV_ALIGN_TOP_RIGHT, -6, 6);
