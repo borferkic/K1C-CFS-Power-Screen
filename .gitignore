@@ -10,3 +10,4 @@ build/
 /*.tar.gz
 /.tmp-k1c-install/
 /.tmp-build-final/
+/.tmp-live-screenshots/

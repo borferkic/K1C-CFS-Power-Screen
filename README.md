@@ -19,29 +19,160 @@ This repository is intended only for:
 
 There are no builds, instructions, or support for Android, Raspberry Pi, `PowerScreenDroid`, or other printer models.
 
-## Installation from GitHub Releases
+## Screenshots
 
-Download the K1C package from the [Releases page](https://github.com/borferkic/K1C-CFS-POWER-SCREEN/releases) after signing in to GitHub:
+The following captures were taken directly from a running K1C after the manual M600 dialog was opened. They document the current interface and the custom CFS workflow; they are not historical screenshots from the original project.
 
-- `powerscreen-zbolt.tar.gz` — the only supported PowerScreen package.
+| Main screen | Manual M600 dialog |
+| --- | --- |
+| <img src="screenshots/home-live.png" alt="PowerScreen main screen captured on a K1C" width="400"> | <img src="screenshots/m600-live.png" alt="Manual M600 dialog captured on a K1C" width="400"> |
 
-Because this repository is private, the release package must be downloaded through an authenticated GitHub session. Copy the selected package to the K1C:
+## Installation on a K1C
+
+This is a manual SSH installation for the original K1C screen. Do not install while printing, heating, homing, or running a calibration. Keep the printer connected to stable power and keep the SSH session open until the final checks pass.
+
+### Requirements
+
+- A Creality K1C with SSH access enabled and reachable on the local network.
+- A Windows PC with PowerShell and the OpenSSH `ssh`/`scp` commands.
+- The file `powerscreen-zbolt.tar.gz` downloaded from the authenticated [GitHub Releases page](https://github.com/borferkic/K1C-CFS-POWER-SCREEN/releases).
+- The root password of the printer.
+- A verified backup before replacing an existing installation.
+
+The only supported package is `powerscreen-zbolt.tar.gz`. It contains the MIPS executable, the service, the K1 macros and scripts, the themes, and the installer files. Do not use an ARM package or an archive from another printer model.
+
+### 1. Verify the package on the PC
+
+Run these commands in the directory containing the downloaded package:
 
 ```powershell
-scp .\powerscreen-zbolt.tar.gz root@IP_DE_TU_K1C:/tmp/
+$PackagePath = ".\powerscreen-zbolt.tar.gz"
+if (-not (Test-Path -LiteralPath $PackagePath)) { throw "Package not found: $PackagePath" }
+Get-FileHash -LiteralPath $PackagePath -Algorithm SHA256
+tar -tzf $PackagePath
 ```
 
-Then connect by SSH and replace the installed version while preserving a backup:
+The archive listing must include `powerscreen/powerscreen`, `powerscreen/installer.sh`, `powerscreen/update.sh`, `powerscreen/k1_mods/S99powerscreen`, and the `powerscreen/scripts/` directory. Stop if the archive is corrupt, has a different top-level directory, or is not the K1C MIPS package.
+
+### 2. Create and verify a backup on the printer
+
+Connect to the printer first:
+
+```powershell
+ssh -p 22 root@IP_DE_TU_K1C
+```
+
+At the printer shell, verify the architecture and available space. The architecture must be `mips`:
 
 ```sh
-/etc/init.d/S99powerscreen stop
-cp -a /usr/data/powerscreen /usr/data/powerscreen.backup
-tar xzf /tmp/powerscreen-zbolt.tar.gz -C /usr/data/
-sync
-/etc/init.d/S99powerscreen restart
+uname -m
+df -h /usr/data
 ```
 
-The repository provides two release channels for the K1C. `nightly` is built automatically from `main` for development testing. `stable` is built when a version tag is created. Each channel contains the `powerscreen-zbolt.tar.gz` package.
+For an existing PowerScreen installation, create a dated backup before stopping or replacing it:
+
+```sh
+set -eu
+BACKUP_ID=$(date +%Y%m%d-%H%M%S)
+BACKUP_DIR=/usr/data/powerscreen-backups/pre-replace-$BACKUP_ID
+mkdir -p "$BACKUP_DIR"
+
+if [ -d /usr/data/powerscreen ]; then
+    tar -czf "$BACKUP_DIR/powerscreen-install.tar.gz" -C /usr/data powerscreen
+fi
+
+if [ -f /etc/init.d/S99powerscreen ]; then
+    cp -p /etc/init.d/S99powerscreen "$BACKUP_DIR/"
+fi
+
+if [ -f "$BACKUP_DIR/powerscreen-install.tar.gz" ]; then
+    sha256sum "$BACKUP_DIR/powerscreen-install.tar.gz" > "$BACKUP_DIR/SHA256SUMS.txt"
+    tar -tzf "$BACKUP_DIR/powerscreen-install.tar.gz" > /dev/null
+fi
+
+ls -lh "$BACKUP_DIR"
+cat "$BACKUP_DIR/SHA256SUMS.txt" 2>/dev/null || true
+echo "BACKUP_DIR=$BACKUP_DIR"
+```
+
+Do not continue until `tar -tzf` succeeds and the backup path has been recorded. Copy the archive to the PC as a second copy, replacing `<BACKUP_DIR>` with the path printed above:
+
+```powershell
+scp -P 22 root@IP_DE_TU_K1C:<BACKUP_DIR>/powerscreen-install.tar.gz .\powerscreen-backup.tar.gz
+Get-FileHash -LiteralPath .\powerscreen-backup.tar.gz -Algorithm SHA256
+```
+
+The local hash must match the value in `SHA256SUMS.txt` on the printer. Keep this copy outside the active project tree or in a local backup folder that is not committed to Git.
+
+### 3. Transfer the release package
+
+Copy the verified package to `/tmp` on the K1C:
+
+```powershell
+scp -P 22 .\powerscreen-zbolt.tar.gz root@IP_DE_TU_K1C:/tmp/
+```
+
+Connect again and verify the transfer before extracting it:
+
+```powershell
+ssh -p 22 root@IP_DE_TU_K1C
+```
+
+```sh
+uname -m
+test "$(uname -m)" = "mips"
+tar -tzf /tmp/powerscreen-zbolt.tar.gz > /dev/null
+ls -lh /tmp/powerscreen-zbolt.tar.gz
+```
+
+### 4. Stage the package and run the installer
+
+The installer configures more than the executable: it installs the service, macros, helper modules, scripts, shared libraries, and the configuration include. Therefore, use the bundled installer instead of copying only the binary.
+
+Extract the package and run the installer:
+
+```sh
+tar -xzf /tmp/powerscreen-zbolt.tar.gz -C /usr/data/
+test -x /usr/data/powerscreen/powerscreen
+sh /usr/data/powerscreen/installer.sh
+```
+
+The installer may ask the following questions:
+
+- If Moonraker is not connected, stop and fix Moonraker unless you intentionally choose to continue.
+- Disabling all Creality services frees resources but can break Creality Cloud and Creality Slicer. Answer `n` if those services must remain available.
+- Answer `y` when asked to restart Klipper so the new macros and modules are loaded.
+
+The installer downloads the selected package from the repository's Releases channel. Use the `nightly` argument only when intentionally installing the development channel:
+
+```sh
+sh /usr/data/powerscreen/installer.sh nightly
+```
+
+Do not delete the backup or close the SSH session until the installer reports success and the checks in the next section pass.
+
+### 5. Validate the installation
+
+Run these checks on the printer:
+
+```sh
+test -x /usr/data/powerscreen/powerscreen
+test -x /etc/init.d/S99powerscreen
+/etc/init.d/S99powerscreen restart
+sleep 2
+ps | grep '[p]owerscreen'
+tail -n 40 /usr/data/printer_data/logs/powerscreen.log
+curl -s localhost:7125/server/info | jq .result.klippy_connected
+grep -R "PowerScreen" /usr/data/printer_data/config/printer.cfg /usr/data/printer_data/config/PowerScreen 2>/dev/null
+```
+
+The process must remain active, the log must not show an immediate crash, and Moonraker must report `true` for `klippy_connected`. On the touchscreen, check the main tabs, open the extrusion panel, open the manual M600 dialog, and verify `LOAD`, `UNLOAD`, `RESUME`, `STOP`, and `CLOSE` individually. Test filament movement only with the correct temperature and a controlled filament path.
+
+### 6. Rollback
+
+If PowerScreen does not start, stop it and restore the verified archive from the backup directory. The exact backup directory is the one recorded during step 2. Restore the service file too, if it was included in the backup, then restart the service and validate the original state before attempting another upgrade.
+
+The repository provides two release channels for the K1C. `nightly` is built automatically from `main` for development testing. `stable` is built when a version tag is created. Each channel contains the `powerscreen-zbolt.tar.gz` package. A successful GitHub Actions build is not the same as a published Release and is not, by itself, a hardware validation.
 
 ## Inherited features
 
@@ -132,29 +263,160 @@ Este repositorio está destinado únicamente a:
 
 No se incluyen builds, instrucciones ni soporte para Android, Raspberry Pi, `PowerScreenDroid` u otros modelos de impresora.
 
-## Instalación desde GitHub Releases
+## Capturas de pantalla
 
-Descarga el paquete para K1C desde la [página de Releases](https://github.com/borferkic/K1C-CFS-POWER-SCREEN/releases) después de iniciar sesión en GitHub:
+Las siguientes capturas se tomaron directamente de una K1C en funcionamiento después de abrir el diálogo M600 manual. Documentan la interfaz actual y el flujo CFS personalizado; no son capturas históricas del proyecto original.
 
-- `powerscreen-zbolt.tar.gz` — único paquete compatible con PowerScreen.
+| Pantalla principal | Diálogo M600 manual |
+| --- | --- |
+| <img src="screenshots/home-live.png" alt="Pantalla principal de PowerScreen capturada en una K1C" width="400"> | <img src="screenshots/m600-live.png" alt="Diálogo M600 manual capturado en una K1C" width="400"> |
 
-Como este repositorio es privado, el paquete debe descargarse mediante una sesión autenticada de GitHub. Copia el paquete seleccionado a la K1C:
+## Instalación en una K1C
+
+Esta es una instalación manual mediante SSH para la pantalla original de la K1C. No instales mientras la impresora esté imprimiendo, calentando, haciendo homing o ejecutando una calibración. Mantén la impresora conectada a una alimentación estable y conserva abierta la sesión SSH hasta terminar todas las comprobaciones.
+
+### Requisitos
+
+- Una Creality K1C con SSH habilitado y accesible desde la red local.
+- Un PC Windows con PowerShell y los comandos OpenSSH `ssh`/`scp`.
+- El archivo `powerscreen-zbolt.tar.gz` descargado desde la [página autenticada de GitHub Releases](https://github.com/borferkic/K1C-CFS-POWER-SCREEN/releases).
+- La contraseña root de la impresora.
+- Un respaldo verificado antes de reemplazar una instalación existente.
+
+El único paquete compatible es `powerscreen-zbolt.tar.gz`. Contiene el ejecutable MIPS, el servicio, las macros y scripts de la K1C, los temas y los archivos del instalador. No uses un paquete ARM ni un archivo de otro modelo de impresora.
+
+### 1. Verificar el paquete en el PC
+
+Ejecuta estos comandos en la carpeta que contiene el paquete descargado:
 
 ```powershell
-scp .\powerscreen-zbolt.tar.gz root@IP_DE_TU_K1C:/tmp/
+$PackagePath = ".\powerscreen-zbolt.tar.gz"
+if (-not (Test-Path -LiteralPath $PackagePath)) { throw "No se encontró el paquete: $PackagePath" }
+Get-FileHash -LiteralPath $PackagePath -Algorithm SHA256
+tar -tzf $PackagePath
 ```
 
-Después conéctate por SSH y reemplaza la versión instalada conservando una copia de seguridad:
+El listado debe incluir `powerscreen/powerscreen`, `powerscreen/installer.sh`, `powerscreen/update.sh`, `powerscreen/k1_mods/S99powerscreen` y la carpeta `powerscreen/scripts/`. Detente si el archivo está dañado, tiene otra carpeta raíz o no corresponde al paquete MIPS de la K1C.
+
+### 2. Crear y verificar el respaldo en la impresora
+
+Conéctate primero a la impresora:
+
+```powershell
+ssh -p 22 root@IP_DE_TU_K1C
+```
+
+En la consola de la impresora verifica la arquitectura y el espacio disponible. La arquitectura debe ser `mips`:
 
 ```sh
-/etc/init.d/S99powerscreen stop
-cp -a /usr/data/powerscreen /usr/data/powerscreen.backup
-tar xzf /tmp/powerscreen-zbolt.tar.gz -C /usr/data/
-sync
-/etc/init.d/S99powerscreen restart
+uname -m
+df -h /usr/data
 ```
 
-El repositorio ofrece dos canales de publicación para la K1C. `nightly` se compila automáticamente desde `main` para pruebas de desarrollo. `stable` se compila al crear un tag de versión. Cada canal contiene el paquete `powerscreen-zbolt.tar.gz`.
+Si ya existe una instalación de PowerScreen, crea un respaldo fechado antes de detenerla o reemplazarla:
+
+```sh
+set -eu
+BACKUP_ID=$(date +%Y%m%d-%H%M%S)
+BACKUP_DIR=/usr/data/powerscreen-backups/pre-replace-$BACKUP_ID
+mkdir -p "$BACKUP_DIR"
+
+if [ -d /usr/data/powerscreen ]; then
+    tar -czf "$BACKUP_DIR/powerscreen-install.tar.gz" -C /usr/data powerscreen
+fi
+
+if [ -f /etc/init.d/S99powerscreen ]; then
+    cp -p /etc/init.d/S99powerscreen "$BACKUP_DIR/"
+fi
+
+if [ -f "$BACKUP_DIR/powerscreen-install.tar.gz" ]; then
+    sha256sum "$BACKUP_DIR/powerscreen-install.tar.gz" > "$BACKUP_DIR/SHA256SUMS.txt"
+    tar -tzf "$BACKUP_DIR/powerscreen-install.tar.gz" > /dev/null
+fi
+
+ls -lh "$BACKUP_DIR"
+cat "$BACKUP_DIR/SHA256SUMS.txt" 2>/dev/null || true
+echo "BACKUP_DIR=$BACKUP_DIR"
+```
+
+No continúes hasta que `tar -tzf` termine correctamente y hayas anotado la ruta del respaldo. Copia el archivo al PC como segunda copia, sustituyendo `<BACKUP_DIR>` por la ruta que se mostró:
+
+```powershell
+scp -P 22 root@IP_DE_TU_K1C:<BACKUP_DIR>/powerscreen-install.tar.gz .\powerscreen-backup.tar.gz
+Get-FileHash -LiteralPath .\powerscreen-backup.tar.gz -Algorithm SHA256
+```
+
+El hash local debe coincidir con el valor de `SHA256SUMS.txt` de la impresora. Conserva esta copia fuera del árbol activo del proyecto o dentro de una carpeta local de respaldos que no se suba a Git.
+
+### 3. Transferir el paquete de release
+
+Copia el paquete verificado a `/tmp` de la K1C:
+
+```powershell
+scp -P 22 .\powerscreen-zbolt.tar.gz root@IP_DE_TU_K1C:/tmp/
+```
+
+Conéctate de nuevo y verifica la transferencia antes de extraerla:
+
+```powershell
+ssh -p 22 root@IP_DE_TU_K1C
+```
+
+```sh
+uname -m
+test "$(uname -m)" = "mips"
+tar -tzf /tmp/powerscreen-zbolt.tar.gz > /dev/null
+ls -lh /tmp/powerscreen-zbolt.tar.gz
+```
+
+### 4. Preparar el paquete y ejecutar el instalador
+
+El instalador configura más que el ejecutable: instala el servicio, las macros, los módulos auxiliares, los scripts, las bibliotecas compartidas y el include de configuración. Por eso debes usar el instalador incluido y no copiar únicamente el binario.
+
+Extrae el paquete y ejecuta el instalador:
+
+```sh
+tar -xzf /tmp/powerscreen-zbolt.tar.gz -C /usr/data/
+test -x /usr/data/powerscreen/powerscreen
+sh /usr/data/powerscreen/installer.sh
+```
+
+El instalador puede hacer estas preguntas:
+
+- Si Moonraker no está conectado, detente y corrige Moonraker salvo que tengas un motivo concreto para continuar.
+- Deshabilitar todos los servicios de Creality libera recursos, pero puede romper Creality Cloud y Creality Slicer. Responde `n` si necesitas conservar esos servicios.
+- Responde `y` cuando solicite reiniciar Klipper para cargar las nuevas macros y módulos.
+
+El instalador descarga el paquete seleccionado desde el canal Releases del repositorio. Usa el argumento `nightly` únicamente si quieres instalar de forma intencional el canal de desarrollo:
+
+```sh
+sh /usr/data/powerscreen/installer.sh nightly
+```
+
+No borres el respaldo ni cierres la sesión SSH hasta que el instalador informe éxito y las comprobaciones de la siguiente sección pasen.
+
+### 5. Validar la instalación
+
+Ejecuta estas comprobaciones en la impresora:
+
+```sh
+test -x /usr/data/powerscreen/powerscreen
+test -x /etc/init.d/S99powerscreen
+/etc/init.d/S99powerscreen restart
+sleep 2
+ps | grep '[p]owerscreen'
+tail -n 40 /usr/data/printer_data/logs/powerscreen.log
+curl -s localhost:7125/server/info | jq .result.klippy_connected
+grep -R "PowerScreen" /usr/data/printer_data/config/printer.cfg /usr/data/printer_data/config/PowerScreen 2>/dev/null
+```
+
+El proceso debe mantenerse activo, el log no debe mostrar un cierre inmediato y Moonraker debe responder `true` en `klippy_connected`. En la pantalla táctil revisa las pestañas principales, abre el panel de extrusión, abre el diálogo M600 manual y verifica individualmente `LOAD`, `UNLOAD`, `RESUME`, `STOP` y `CLOSE`. Prueba el movimiento de filamento únicamente con la temperatura correcta y el recorrido preparado.
+
+### 6. Reversión
+
+Si PowerScreen no inicia, detenlo y restaura el archivo verificado desde la carpeta de respaldo. Usa exactamente la carpeta anotada en el paso 2. Restaura también el archivo de servicio si fue incluido en el respaldo, reinicia el servicio y valida el estado anterior antes de intentar otra actualización.
+
+El repositorio ofrece dos canales para la K1C. `nightly` se compila automáticamente desde `main` para pruebas de desarrollo. `stable` se compila al crear un tag de versión. Cada canal contiene `powerscreen-zbolt.tar.gz`. Una compilación exitosa de GitHub Actions no equivale a una Release publicada ni valida por sí sola el funcionamiento en hardware.
 
 ## Características heredadas
 
