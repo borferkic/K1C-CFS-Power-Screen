@@ -9,6 +9,9 @@
 #include "print_status_panel.h"
 #include "tree.h"
 
+#include <string>
+#include <vector>
+
 class PrintPanel : public NotifyConsumer {
  public:
   PrintPanel(KWebSocketClient &ws, std::mutex &lv_lock, PrintStatusPanel &ps);
@@ -19,7 +22,7 @@ class PrintPanel : public NotifyConsumer {
   void subscribe();
   void foreground();
   void handle_callback(lv_event_t *event);
-  void handle_metadata(Tree *, json & data);
+  void handle_metadata(const std::string &path, json &data);
   void handle_back_btn(lv_event_t *event);
   void handle_print_callback(lv_event_t *event);
   void handle_status_btn(lv_event_t *event);
@@ -49,11 +52,27 @@ class PrintPanel : public NotifyConsumer {
     PrintPanel *panel = (PrintPanel*)event->user_data;
     panel->handle_btns(event);
   };
-  
-  
+
+  static void _handle_file_card(lv_event_t *event) {
+    PrintPanel *panel = (PrintPanel*)event->user_data;
+    panel->handle_file_card(event);
+  };
  private:
+  struct FileCard {
+    lv_obj_t *card;
+    lv_obj_t *thumbnail;
+    lv_obj_t *eta_label;
+    std::string path;
+    Tree *node;
+    bool directory;
+  };
+
   void show_dir(Tree *dir, uint32_t sort_type);
   void show_file_detail(Tree *f);
+  void handle_file_card(lv_event_t *event);
+  void request_file_metadata(Tree *file);
+  void update_file_card(const std::string &path, json &metadata);
+  void select_file_card(FileCard &card);
   
   KWebSocketClient &ws;
   lv_obj_t *files_cont;
@@ -71,7 +90,7 @@ class PrintPanel : public NotifyConsumer {
   lv_obj_t *modified_sort_btn;
   lv_obj_t *az_sort_btn;
   
-  lv_obj_t *file_table;
+  lv_obj_t *file_grid;
   lv_obj_t *file_view;
   ButtonContainer status_btn;
   ButtonContainer print_btn;
@@ -82,6 +101,7 @@ class PrintPanel : public NotifyConsumer {
   FilePanel file_panel;
   PrintStatusPanel &print_status;
   uint32_t sorted_by;
+  std::vector<FileCard> file_cards;
 
 };
 

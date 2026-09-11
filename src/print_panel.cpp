@@ -28,7 +28,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   , refresh_btn(lv_btn_create(file_table_btns))
   , modified_sort_btn(lv_btn_create(file_table_btns))
   , az_sort_btn(lv_btn_create(file_table_btns))
-  , file_table(lv_table_create(left_cont))
+  , file_grid(lv_obj_create(left_cont))
   , file_view(lv_obj_create(files_cont))
   , status_btn(file_view, &info_img, "Status", &PrintPanel::_handle_status_btn, this)
   , print_btn(file_view, &print, "Print", &PrintPanel::_handle_print_callback, this)
@@ -74,17 +74,37 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_add_event_cb(az_sort_btn, &PrintPanel::_handle_btns, LV_EVENT_CLICKED, this);
   
   lv_obj_set_size(file_table_btns, LV_PCT(100), LV_SIZE_CONTENT);
-  lv_obj_set_style_pad_all(file_table_btns, 2, 0);
+  lv_obj_set_style_pad_all(file_table_btns, 4, 0);
+  lv_obj_set_style_bg_color(file_table_btns, lv_palette_darken(LV_PALETTE_GREY, 4), 0);
+  lv_obj_set_style_bg_opa(file_table_btns, LV_OPA_COVER, 0);
 
   lv_obj_clear_flag(file_table_btns, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_flex_flow(file_table_btns, LV_FLEX_FLOW_ROW);
   lv_obj_set_flex_align(file_table_btns, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_END);
 
-  lv_obj_set_size(file_table, LV_PCT(100), LV_PCT(100));
-  lv_table_set_col_width(file_table, 0, LV_PCT(100));
-  lv_table_set_col_cnt(file_table, 1);
-  lv_obj_add_event_cb(file_table, &PrintPanel::_handle_callback, LV_EVENT_ALL, this);
-  lv_obj_set_scroll_dir(file_table, LV_DIR_TOP | LV_DIR_BOTTOM);
+  lv_obj_t *sort_buttons[] = {refresh_btn, modified_sort_btn, az_sort_btn};
+  for (lv_obj_t *sort_button : sort_buttons) {
+    lv_obj_set_size(sort_button, LV_PCT(30), 38);
+    lv_obj_set_style_bg_color(sort_button, lv_color_hex(0x555555), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(sort_button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(sort_button, lv_color_hex(0x444444), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_opa(sort_button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_border_width(sort_button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(sort_button, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
+  }
+
+  lv_obj_set_width(file_grid, LV_PCT(100));
+  lv_obj_set_height(file_grid, LV_SIZE_CONTENT);
+  lv_obj_set_flex_grow(file_grid, 1);
+  lv_obj_set_flex_flow(file_grid, LV_FLEX_FLOW_ROW_WRAP);
+  lv_obj_set_flex_align(file_grid, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+  lv_obj_set_style_pad_all(file_grid, 8, LV_PART_MAIN);
+  lv_obj_set_style_pad_row(file_grid, 8, LV_PART_MAIN);
+  lv_obj_set_style_pad_column(file_grid, 8, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(file_grid, lv_palette_darken(LV_PALETTE_GREY, 4), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(file_grid, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_border_width(file_grid, 0, LV_PART_MAIN);
+  lv_obj_set_scroll_dir(file_grid, LV_DIR_VER);
 
   lv_obj_set_size(file_view, LV_PCT(50), LV_PCT(100));
   lv_obj_clear_flag(file_view, LV_OBJ_FLAG_SCROLLABLE);
@@ -212,48 +232,64 @@ void PrintPanel::foreground() {
 }
 
 void PrintPanel::handle_callback(lv_event_t *e) {
-  lv_event_code_t code = lv_event_get_code(e);
-
-  if(code == LV_EVENT_VALUE_CHANGED) {
-    const char * str_fn = NULL;
-    uint16_t row;
-    uint16_t col;
-
-    lv_table_get_selected_cell(file_table, &row, &col);
-    uint16_t row_count = lv_table_get_row_cnt(file_table);
-    if (row == LV_TABLE_CELL_NONE || col == LV_TABLE_CELL_NONE || row >= row_count) {
-      return;
-    }
-
-    str_fn = lv_table_get_cell_value(file_table, row, col);
-    
-    const char *filename = str_fn+5; // +5 skips the LV_SYMBOL and spaces
-    if (std::memcmp(LV_SYMBOL_DIRECTORY, str_fn, 3) == 0) {
-      if ((strcmp(filename, "..") == 0)) {
-	if (cur_dir->parent != cur_dir) {
-	  cur_dir = cur_dir->parent;
-	  show_dir(cur_dir, sorted_by);
-	}
-      } else {
-	Tree *dir = cur_dir->get_child(filename);
-	if (dir != NULL) {
-	  cur_dir = dir;
-	  show_dir(cur_dir, sorted_by);
-	}
-      }
-    }
-    else {
-      if (cur_file != cur_dir->get_child(filename)) {
-	cur_file = cur_dir->get_child(filename);
-	show_file_detail(cur_file);
-      }
-    }
-  }
+  (void)e;
 }
 
 void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
-  uint32_t index = 0;
-  lv_table_set_cell_value_fmt(file_table, index++, 0, LV_SYMBOL_DIRECTORY "  %s", "..");
+  file_cards.clear();
+  lv_obj_clean(file_grid);
+
+  auto create_card = [this](Tree *node, const std::string &path, bool directory) {
+    lv_obj_t *card = lv_obj_create(file_grid);
+    lv_obj_set_width(card, LV_PCT(47));
+    lv_obj_set_height(card, 158);
+    lv_obj_clear_flag(card, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_add_flag(card, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_event_cb(card, &PrintPanel::_handle_file_card, LV_EVENT_CLICKED, this);
+    lv_obj_set_style_bg_color(card, lv_color_hex(0x555555), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(card, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(card, lv_color_hex(0x444444), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_opa(card, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_border_width(card, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(card, 2, LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_border_color(card, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_radius(card, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_all(card, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_flex_flow(card, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(card, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+    lv_obj_t *thumbnail = lv_img_create(card);
+    lv_obj_set_size(thumbnail, LV_PCT(100), 96);
+    lv_img_set_size_mode(thumbnail, LV_IMG_SIZE_MODE_VIRTUAL);
+    lv_img_set_src(thumbnail, directory ? LV_SYMBOL_DIRECTORY : LV_SYMBOL_IMAGE);
+    lv_obj_set_style_text_font(thumbnail, &lv_font_montserrat_32, LV_PART_MAIN);
+    lv_obj_set_style_img_recolor(thumbnail,
+                                 directory ? lv_color_hex(CREALITY_GREEN) : lv_color_hex(0xAAAAAA),
+                                 LV_PART_MAIN);
+    lv_obj_set_style_img_recolor_opa(thumbnail, LV_OPA_COVER, LV_PART_MAIN);
+
+    lv_obj_t *name_label = lv_label_create(card);
+    lv_obj_set_width(name_label, LV_PCT(100));
+    lv_label_set_long_mode(name_label, LV_LABEL_LONG_DOT);
+    lv_label_set_text(name_label, node == NULL ? ".." : node->name.c_str());
+    lv_obj_set_style_text_align(name_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+    lv_obj_set_style_text_color(name_label, lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_text_font(name_label, &lv_font_montserrat_14, LV_PART_MAIN);
+
+    lv_obj_t *eta_label = lv_label_create(card);
+    lv_obj_set_width(eta_label, LV_PCT(100));
+    lv_label_set_text(eta_label, directory ? "" : "Print: --");
+    lv_obj_set_style_text_align(eta_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+    lv_obj_set_style_text_color(eta_label, lv_color_hex(0xB8E6B8), LV_PART_MAIN);
+    lv_obj_set_style_text_font(eta_label, &lv_font_montserrat_12, LV_PART_MAIN);
+
+    file_cards.push_back({card, thumbnail, eta_label, path, node, directory});
+    if (!directory && node->contains_metadata()) {
+      update_file_card(path, node->metadata);
+    }
+  };
+
+  create_card(NULL, dir->full_path, true);
 
   bool reversed = sorted_by & sort_type;
   std::vector<Tree> sorted_files;
@@ -273,37 +309,130 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
 	  return false;
 	} else if (!x.is_leaf() && y.is_leaf()) {
 	  return true;
-	}
+      }
 
-	return reversed ? x.name > y.name : y.name > x.name;
+      return reversed ? x.name > y.name : y.name > x.name;
       });
   }
-      
+
   sorted_by = (sorted_by ^ sort_type) & sort_type;
   for (const auto &c : sorted_files) {
-    if (c.is_leaf()) {
-      lv_table_set_cell_value_fmt(file_table, index, 0, LV_SYMBOL_FILE "  %s", c.name.c_str());
-    } else {
-      lv_table_set_cell_value_fmt(file_table, index, 0, LV_SYMBOL_DIRECTORY "  %s", c.name.c_str());
+    Tree *node = dir->get_child(c.name);
+    if (node != NULL) {
+      create_card(node, node->full_path, !node->is_leaf());
+      if (node->is_leaf() && !node->contains_metadata()) {
+        request_file_metadata(node);
+      }
     }
-    index++;
   }
 
-  lv_table_set_row_cnt(file_table, index);
-  lv_obj_scroll_to_y(file_table, 0, LV_ANIM_OFF);
+  lv_obj_scroll_to_y(file_grid, 0, LV_ANIM_OFF);
 
   // XXX: maybe use the directory instead of file endpoint in moonraker
+  cur_file = NULL;
   for (auto &c : sorted_files) {
     if (c.is_leaf()) {
       const auto &selected = dir->children.find(c.name);
       if (selected != dir->children.cend()) {
 	cur_file = &selected->second;
-	show_file_detail(cur_file);
+	for (auto &card : file_cards) {
+	  if (card.node == cur_file) {
+	    select_file_card(card);
+	    break;
+	  }
+	}
       }
       break;
     }
   }
 
+}
+
+void PrintPanel::handle_file_card(lv_event_t *event) {
+  if (lv_event_get_code(event) != LV_EVENT_CLICKED) {
+    return;
+  }
+
+  lv_obj_t *target = lv_event_get_current_target(event);
+  for (auto &card : file_cards) {
+    if (card.card != target) {
+      continue;
+    }
+
+    if (card.node == NULL) {
+      if (cur_dir->parent != cur_dir) {
+        cur_dir = cur_dir->parent;
+        show_dir(cur_dir, sorted_by);
+      }
+    } else if (!card.node->is_leaf()) {
+      cur_dir = card.node;
+      show_dir(cur_dir, sorted_by);
+    } else {
+      select_file_card(card);
+    }
+    return;
+  }
+}
+
+void PrintPanel::select_file_card(FileCard &card) {
+  if (card.node == NULL) {
+    return;
+  }
+
+  cur_file = card.node;
+  for (auto &item : file_cards) {
+    if (item.card == card.card) {
+      lv_obj_add_state(item.card, LV_STATE_CHECKED);
+    } else {
+      lv_obj_clear_state(item.card, LV_STATE_CHECKED);
+    }
+  }
+  show_file_detail(cur_file);
+}
+
+void PrintPanel::request_file_metadata(Tree *file) {
+  const std::string path = file->full_path;
+  ws.send_jsonrpc("server.files.metadata",
+                  json{{"filename", path}},
+                  [this, path](json &j) {
+                    if (!j.contains("result")) {
+                      return;
+                    }
+                    std::lock_guard<std::mutex> lock(lv_lock);
+                    for (auto &card : file_cards) {
+                      if (card.path == path && card.node != NULL) {
+                        card.node->set_metadata(j);
+                        update_file_card(path, j);
+                        return;
+                      }
+                    }
+                  });
+}
+
+void PrintPanel::update_file_card(const std::string &path, json &metadata) {
+  for (auto &card : file_cards) {
+    if (card.path != path) {
+      continue;
+    }
+
+    auto eta_value = metadata["/result/estimated_time"_json_pointer];
+    int eta = eta_value.is_null() ? -1 : eta_value.template get<int>();
+    const std::string eta_text = eta > 0
+      ? fmt::format("Print: {}", KUtils::eta_string(eta))
+      : "Print: --";
+    lv_label_set_text(card.eta_label, eta_text.c_str());
+
+    auto width_scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
+    auto thumb_detail = KUtils::get_thumbnail(path, metadata, width_scale);
+    if (!thumb_detail.first.empty()) {
+      lv_img_set_src(card.thumbnail, ("A:" + thumb_detail.first).c_str());
+      size_t thumb_width = thumb_detail.second > 0 ? thumb_detail.second : 300;
+      uint32_t normalized_thumb_scale =
+        (static_cast<uint32_t>(140.0 * width_scale) * 256) / thumb_width;
+      lv_img_set_zoom(card.thumbnail, normalized_thumb_scale);
+    }
+    return;
+  }
 }
 
 void PrintPanel::show_file_detail(Tree *f) {
@@ -312,20 +441,29 @@ void PrintPanel::show_file_detail(Tree *f) {
       file_panel.refresh_view(f->metadata, f->full_path);
     } else {
       spdlog::trace("getting metadata for {}", f->name);
+      const std::string path = f->full_path;
       ws.send_jsonrpc("server.files.metadata",
-		      json::parse(R"({"filename":")" + f->full_path + R"("})"),
-		      [f, this](json &d) { this->handle_metadata(f, d); });
+                      json{{"filename", path}},
+                      [this, path](json &d) { this->handle_metadata(path, d); });
     }
   }
 }
 
-void PrintPanel::handle_metadata(Tree *f, json &j) {
+void PrintPanel::handle_metadata(const std::string &path, json &j) {
   spdlog::trace("handling metadata callback");  
-  if (f->is_leaf()) {
-    if (j.contains("result")) {
-      std::lock_guard<std::mutex> lock(lv_lock);
-      f->set_metadata(j);
-      file_panel.refresh_view(f->metadata, f->full_path);
+  if (!j.contains("result")) {
+    return;
+  }
+
+  std::lock_guard<std::mutex> lock(lv_lock);
+  for (auto &card : file_cards) {
+    if (card.path == path && card.node != NULL) {
+      card.node->set_metadata(j);
+      update_file_card(path, j);
+      if (cur_file == card.node) {
+        file_panel.refresh_view(card.node->metadata, card.node->full_path);
+      }
+      return;
     }
   }
 }
