@@ -4,10 +4,7 @@
 #include "utils.h"
 #include "spdlog/spdlog.h"
 
-#include <ctime>
-#include <iomanip>
 #include <map>
-#include <sstream>
 
 LV_IMG_DECLARE(info_img);
 LV_IMG_DECLARE(print);
@@ -248,12 +245,13 @@ void PrintPanel::handle_callback(lv_event_t *e) {
 
 void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
   file_cards.clear();
+  file_cards.reserve(dir->children.size() + 1);
   lv_obj_clean(file_grid);
 
   auto create_card = [this](Tree *node, const std::string &path, bool directory) {
     lv_obj_t *card = lv_obj_create(file_grid);
     lv_obj_set_width(card, LV_PCT(47));
-    lv_obj_set_height(card, 110);
+    lv_obj_set_height(card, 158);
     lv_obj_clear_flag(card, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_add_flag(card, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_event_cb(card, &PrintPanel::_handle_file_card, LV_EVENT_CLICKED, this);
@@ -286,13 +284,14 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
 
     lv_obj_t *name_label = lv_label_create(card);
     lv_obj_set_width(name_label, LV_PCT(100));
+    lv_obj_set_height(name_label, lv_font_get_line_height(&lv_font_montserrat_14));
     lv_label_set_long_mode(name_label, LV_LABEL_LONG_DOT);
     lv_label_set_text(name_label, node == NULL ? ".." : node->name.c_str());
     lv_obj_set_style_text_align(name_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
     lv_obj_set_style_text_color(name_label, lv_color_white(), LV_PART_MAIN);
     lv_obj_set_style_text_font(name_label, &lv_font_montserrat_14, LV_PART_MAIN);
 
-    file_cards.push_back({card, thumbnail, path, node, directory});
+    file_cards.push_back({card, thumbnail, path, node, directory, ""});
     if (!directory && node->contains_metadata()) {
       update_file_card(path, node->metadata);
     }
@@ -427,7 +426,8 @@ void PrintPanel::update_file_card(const std::string &path, json &metadata) {
     auto width_scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
     auto thumb_detail = KUtils::get_thumbnail(path, metadata, width_scale);
     if (!thumb_detail.first.empty()) {
-      lv_img_set_src(card.thumbnail, ("A:" + thumb_detail.first).c_str());
+      card.thumbnail_source = "A:" + thumb_detail.first;
+      lv_img_set_src(card.thumbnail, card.thumbnail_source.c_str());
       size_t thumb_width = thumb_detail.second > 0 ? thumb_detail.second : 300;
       uint32_t normalized_thumb_scale =
         (static_cast<uint32_t>(56.0 * width_scale) * 256) / thumb_width;
@@ -437,58 +437,10 @@ void PrintPanel::update_file_card(const std::string &path, json &metadata) {
   }
 }
 
-void PrintPanel::request_last_printed(const std::string &path) {
-  ws.send_jsonrpc("server.history.list",
-                  json{{"limit", 100}},
-                  [this, path](json &data) { this->handle_last_printed(path, data); });
-}
-
-void PrintPanel::handle_last_printed(const std::string &path, json &data) {
-  if (!data.contains("result")) {
-    return;
-  }
-
-  const auto &jobs = data["/result/jobs"_json_pointer];
-  if (!jobs.is_array()) {
-    return;
-  }
-
-  double latest_timestamp = 0;
-  for (const auto &job : jobs) {
-    if (!job.contains("filename") || job["filename"] != path) {
-      continue;
-    }
-
-    double timestamp = 0;
-    if (job.contains("end_time") && job["end_time"].is_number()) {
-      timestamp = job["end_time"].template get<double>();
-    }
-    if (timestamp <= 0 && job.contains("start_time") && job["start_time"].is_number()) {
-      timestamp = job["start_time"].template get<double>();
-    }
-    latest_timestamp = std::max(latest_timestamp, timestamp);
-  }
-
-  std::string last_printed = "(unknown)";
-  if (latest_timestamp > 0) {
-    std::time_t timestamp = static_cast<std::time_t>(latest_timestamp);
-    std::tm local_time = *std::localtime(&timestamp);
-    std::ostringstream time_stream;
-    time_stream << std::put_time(&local_time, "%Y-%m-%d %H:%M");
-    last_printed = time_stream.str();
-  }
-
-  std::lock_guard<std::mutex> lock(lv_lock);
-  if (cur_file != NULL && cur_file->full_path == path) {
-    file_panel.set_last_printed(last_printed);
-  }
-}
-
 void PrintPanel::show_file_detail(Tree *f) {
   if (f->is_leaf()) {
     if (f->contains_metadata()) {
       file_panel.refresh_view(f->metadata, f->full_path);
-      request_last_printed(f->full_path);
     } else {
       spdlog::trace("getting metadata for {}", f->name);
       const std::string path = f->full_path;
@@ -512,7 +464,6 @@ void PrintPanel::handle_metadata(const std::string &path, json &j) {
       update_file_card(path, j);
       if (cur_file == card.node) {
         file_panel.refresh_view(card.node->metadata, card.node->full_path);
-        request_last_printed(card.node->full_path);
       }
       return;
     }
