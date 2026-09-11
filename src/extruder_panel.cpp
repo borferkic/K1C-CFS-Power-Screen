@@ -37,7 +37,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   , unload_btn(leftside_btns_cont, &unload_filament_img, "UNLOAD", &ExtruderPanel::_handle_callback, this)
   , manual_change_btn(leftside_btns_cont, &filament_img, "MANUAL M600", &ExtruderPanel::_handle_callback, this)
   , cooldown_btn(leftside_btns_cont, &cooldown_img, "COOLDOWN", &ExtruderPanel::_handle_callback, this)
-  , spoolman_btn(rightside_btns_cont, &spoolman_img, "SPOOLMAN", &ExtruderPanel::_handle_callback, this)
+  , spoolman_btn(rightside_btns_cont, &spoolman_img, "CFS", &ExtruderPanel::_handle_callback, this)
   , extrude_btn(rightside_btns_cont, &extrude_img, "EXTRUDE", &ExtruderPanel::_handle_callback, this)
   , retract_btn(rightside_btns_cont, &retract_img, "RETRACT", &ExtruderPanel::_handle_callback, this)
   , back_btn(rightside_btns_cont, &back, "BACK", &ExtruderPanel::_handle_callback, this)

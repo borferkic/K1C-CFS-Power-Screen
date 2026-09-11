@@ -11,6 +11,7 @@
 #include "spoolman_panel.h"
 #include "printer_select_panel.h"
 #include "button_container.h"
+#include "square_button.h"
 #include "websocket_client.h"
 #include "lvgl/lvgl.h"
 
@@ -42,14 +43,14 @@ class SettingPanel {
   SysInfoPanel sysinfo_panel;
   SpoolmanPanel &spoolman_panel;
   PrinterSelectPanel printer_select_panel;
-  ButtonContainer wifi_btn;
-  ButtonContainer restart_klipper_btn;
-  ButtonContainer restart_firmware_btn;
-  ButtonContainer sysinfo_btn;
-  ButtonContainer spoolman_btn;
-  ButtonContainer powerscreen_restart_btn;
-  ButtonContainer powerscreen_update_btn;
-  ButtonContainer printer_select_btn;
+  SquareButton wifi_btn;
+  SquareButton restart_klipper_btn;
+  SquareButton restart_firmware_btn;
+  SquareButton sysinfo_btn;
+  SquareButton spoolman_btn;
+  SquareButton powerscreen_restart_btn;
+  SquareButton powerscreen_update_btn;
+  SquareButton printer_select_btn;
   
 };
 
