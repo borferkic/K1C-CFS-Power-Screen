@@ -45,7 +45,10 @@ FilePanel::FilePanel(lv_obj_t *parent)
 
   lv_obj_set_grid_cell(thumbnail, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
   lv_obj_set_grid_cell(fname_label, LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 1, 1);
-  lv_obj_set_grid_cell(detail_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 2, 1);
+  lv_obj_set_width(detail_cont, LV_PCT(90));
+  lv_obj_set_height(detail_cont, LV_SIZE_CONTENT);
+  lv_obj_set_grid_cell(detail_cont, LV_GRID_ALIGN_STRETCH, 0, 1,
+                       LV_GRID_ALIGN_CENTER, 2, 1);
 
   lv_obj_clear_flag(detail_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_style_pad_all(detail_cont, 0, LV_PART_MAIN);
@@ -62,12 +65,16 @@ FilePanel::FilePanel(lv_obj_t *parent)
     lv_obj_t *title = lv_label_create(detail_cont);
     lv_label_set_text(title, titles[i]);
     lv_obj_set_style_text_color(title, lv_color_hex(0x4CAF50), LV_PART_MAIN);
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_16, LV_PART_MAIN);
+    lv_obj_set_style_text_font(title, &lv_font_montserrat_20, LV_PART_MAIN);
+    lv_obj_set_style_text_align(title, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
     lv_obj_set_grid_cell(title, LV_GRID_ALIGN_START, 0, 1,
                          LV_GRID_ALIGN_CENTER, i, 1);
 
+    lv_label_set_text(values[i], "(unknown)");
     lv_obj_set_style_text_color(values[i], lv_color_white(), LV_PART_MAIN);
     lv_obj_set_style_text_font(values[i], &lv_font_montserrat_16, LV_PART_MAIN);
+    lv_obj_set_style_text_align(values[i], LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
+    lv_obj_set_width(values[i], LV_PCT(100));
     lv_obj_set_grid_cell(values[i], LV_GRID_ALIGN_START, 1, 1,
                          LV_GRID_ALIGN_CENTER, i, 1);
   }

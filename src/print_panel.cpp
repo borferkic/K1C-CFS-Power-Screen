@@ -253,7 +253,7 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
   auto create_card = [this](Tree *node, const std::string &path, bool directory) {
     lv_obj_t *card = lv_obj_create(file_grid);
     lv_obj_set_width(card, LV_PCT(47));
-    lv_obj_set_height(card, 158);
+    lv_obj_set_height(card, 110);
     lv_obj_clear_flag(card, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_add_flag(card, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_event_cb(card, &PrintPanel::_handle_file_card, LV_EVENT_CLICKED, this);
@@ -270,10 +270,15 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_set_flex_align(card, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
     lv_obj_t *thumbnail = lv_img_create(card);
-    lv_obj_set_size(thumbnail, LV_PCT(100), 84);
+    lv_obj_set_size(thumbnail, 64, 64);
     lv_img_set_size_mode(thumbnail, LV_IMG_SIZE_MODE_VIRTUAL);
     lv_img_set_src(thumbnail, directory ? LV_SYMBOL_DIRECTORY : LV_SYMBOL_IMAGE);
     lv_obj_set_style_text_font(thumbnail, &lv_font_montserrat_20, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(thumbnail, lv_color_black(), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(thumbnail, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_border_width(thumbnail, 0, LV_PART_MAIN);
+    lv_obj_set_style_radius(thumbnail, 6, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(thumbnail, 0, LV_PART_MAIN);
     lv_obj_set_style_img_recolor(thumbnail,
                                  directory ? lv_color_hex(CREALITY_GREEN) : lv_color_hex(0xAAAAAA),
                                  LV_PART_MAIN);
@@ -425,7 +430,7 @@ void PrintPanel::update_file_card(const std::string &path, json &metadata) {
       lv_img_set_src(card.thumbnail, ("A:" + thumb_detail.first).c_str());
       size_t thumb_width = thumb_detail.second > 0 ? thumb_detail.second : 300;
       uint32_t normalized_thumb_scale =
-        (static_cast<uint32_t>(76.0 * width_scale) * 256) / thumb_width;
+        (static_cast<uint32_t>(56.0 * width_scale) * 256) / thumb_width;
       lv_img_set_zoom(card.thumbnail, normalized_thumb_scale);
     }
     return;
