@@ -269,20 +269,25 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_set_flex_align(card, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER,
                           LV_FLEX_ALIGN_CENTER);
 
-    lv_obj_t *thumbnail = lv_img_create(card);
-    lv_obj_set_size(thumbnail, 112, 112);
-    lv_img_set_size_mode(thumbnail, LV_IMG_SIZE_MODE_VIRTUAL);
+    lv_obj_t *thumbnail_frame = lv_obj_create(card);
+    lv_obj_set_size(thumbnail_frame, 112, 112);
+    lv_obj_clear_flag(thumbnail_frame, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_bg_color(thumbnail_frame, lv_color_hex(0x404040), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(thumbnail_frame, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_border_width(thumbnail_frame, 0, LV_PART_MAIN);
+    lv_obj_set_style_radius(thumbnail_frame, 6, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(thumbnail_frame, 0, LV_PART_MAIN);
+
+    lv_obj_t *thumbnail = lv_img_create(thumbnail_frame);
+    lv_img_set_size_mode(thumbnail, LV_IMG_SIZE_MODE_REAL);
     lv_img_set_src(thumbnail, directory ? LV_SYMBOL_DIRECTORY : LV_SYMBOL_IMAGE);
+    lv_obj_set_size(thumbnail, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
     lv_obj_set_style_text_font(thumbnail, &lv_font_montserrat_20, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(thumbnail, lv_color_hex(0x404040), LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(thumbnail, LV_OPA_COVER, LV_PART_MAIN);
-    lv_obj_set_style_border_width(thumbnail, 0, LV_PART_MAIN);
-    lv_obj_set_style_radius(thumbnail, 6, LV_PART_MAIN);
-    lv_obj_set_style_pad_all(thumbnail, 0, LV_PART_MAIN);
     lv_obj_set_style_img_recolor(thumbnail,
                                  directory ? lv_color_hex(CREALITY_GREEN) : lv_color_hex(0xAAAAAA),
                                  LV_PART_MAIN);
     lv_obj_set_style_img_recolor_opa(thumbnail, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_center(thumbnail);
 
     lv_obj_t *name_label = lv_label_create(card);
     lv_obj_set_width(name_label, LV_PCT(100));
@@ -429,7 +434,9 @@ void PrintPanel::update_file_card(const std::string &path, json &metadata) {
       lv_img_cache_invalidate_src(card.thumbnail_source.c_str());
       lv_img_set_src(card.thumbnail, card.thumbnail_source.c_str());
       lv_obj_set_style_img_recolor_opa(card.thumbnail, LV_OPA_TRANSP, LV_PART_MAIN);
+      lv_obj_set_size(card.thumbnail, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
       lv_img_set_zoom(card.thumbnail, LV_IMG_ZOOM_NONE);
+      lv_obj_center(card.thumbnail);
       lv_obj_invalidate(card.thumbnail);
     }
     return;
