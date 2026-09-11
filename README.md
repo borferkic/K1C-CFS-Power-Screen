@@ -166,7 +166,7 @@ Interface and CFS workflow testing must be performed on a real K1C. A successful
 ## Pending work
 
 Internal change and pending logs are kept locally in `DEV LOG/` and are not included in the repository.
-The project history is documented in [CHANGELOG.md](CHANGELOG.md).
+The project history is documented in [CHANGELOG.md](CHANGELOG.md) and [CHANGELOG-ES.md](CHANGELOG-ES.md).
 
 ## Support the project
 
@@ -356,7 +356,7 @@ Las pruebas de interfaz y del flujo CFS deben realizarse en una K1C real. Una co
 ## Pendientes
 
 Los registros internos de cambios y pendientes se guardan localmente en `DEV LOG/` y no se incluyen en el repositorio.
-El historial del proyecto se documenta en [CHANGELOG.md](CHANGELOG.md).
+El historial del proyecto se documenta en [CHANGELOG-ES.md](CHANGELOG-ES.md) y [CHANGELOG.md](CHANGELOG.md).
 
 ## Apoyo al proyecto
 
