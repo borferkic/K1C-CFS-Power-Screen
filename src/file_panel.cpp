@@ -44,6 +44,7 @@ FilePanel::FilePanel(lv_obj_t *parent)
   lv_obj_set_height(detail_cont, LV_SIZE_CONTENT);
   lv_obj_set_grid_cell(detail_cont, LV_GRID_ALIGN_STRETCH, 0, 1,
                        LV_GRID_ALIGN_CENTER, 2, 1);
+  lv_obj_set_style_translate_y(detail_cont, -20, LV_PART_MAIN);
 
   lv_obj_clear_flag(detail_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_style_pad_all(detail_cont, 0, LV_PART_MAIN);
