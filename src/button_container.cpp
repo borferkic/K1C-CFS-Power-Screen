@@ -97,6 +97,12 @@ void ButtonContainer::set_image(const void *img) {
   lv_imgbtn_set_src(btn, LV_IMGBTN_STATE_RELEASED, NULL, img, NULL);
 }
 
+void ButtonContainer::set_image_color(lv_color_t color) {
+  lv_obj_set_style_img_recolor(btn, color, LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_img_recolor_opa(btn, LV_OPA_COVER,
+                                   LV_PART_MAIN | LV_STATE_DEFAULT);
+}
+
 void ButtonContainer::set_active(bool active, lv_color_t active_color) {
   lv_obj_set_style_img_recolor(btn, active_color,
                                LV_PART_MAIN | LV_STATE_CHECKED);

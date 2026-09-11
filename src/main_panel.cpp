@@ -50,7 +50,7 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   , temp_cont(lv_obj_create(main_cont))
   , temp_chart(lv_chart_create(main_cont))
   , homing_btn(main_cont, &move, "Homing", &MainPanel::_handle_homing_cb, this)
-  , extrude_btn(main_cont, &filament_img, "Extrude", &MainPanel::_handle_extrude_cb, this)
+  , extrude_btn(main_cont, &filament_img, "Filament", &MainPanel::_handle_extrude_cb, this)
   , action_btn(main_cont, &fan, "Fans", &MainPanel::_handle_fanpanel_cb, this)
   , led_btn(main_cont, &light_img, "LED", &MainPanel::_handle_ledpanel_cb, this)
   , print_btn(main_cont, &print, "Print", &MainPanel::_handle_print_cb, this)
@@ -60,6 +60,7 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
     lv_style_set_img_recolor(&style, lv_color_black());
     lv_style_set_border_width(&style, 0);
     lv_style_set_bg_color(&style, lv_palette_darken(LV_PALETTE_GREY, 4));
+    print_btn.set_image_color(lv_color_hex(CREALITY_GREEN));
 
     ws.register_notify_update(this);
     led_panel.set_state_callback([this](bool active) {
