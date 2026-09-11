@@ -142,10 +142,11 @@ void MainPanel::create_panel() {
   lv_obj_set_style_outline_width(tab_btns, 0, LV_PART_ITEMS | LV_STATE_FOCUS_KEY | LV_STATE_FOCUS_KEY);
   lv_obj_set_style_border_side(tab_btns, 0, LV_PART_ITEMS | LV_STATE_CHECKED);
   lv_obj_set_style_text_font(tab_btns, &materialdesign_font_40, LV_STATE_DEFAULT);
-  lv_obj_set_style_border_width(tab_btns, 2, LV_PART_MAIN);
-  lv_obj_set_style_border_side(tab_btns, LV_BORDER_SIDE_RIGHT, LV_PART_MAIN);
-  lv_obj_set_style_border_color(tab_btns, lv_color_hex(0x4CAF50), LV_PART_MAIN);
-  lv_obj_set_style_border_opa(tab_btns, LV_OPA_COVER, LV_PART_MAIN);
+  // Keep the button matrix at the full display height. A main border would
+  // reduce LVGL's content height and make the five rows progressively drift.
+  lv_obj_set_style_pad_all(tab_btns, 0, LV_PART_MAIN);
+  lv_obj_set_style_border_width(tab_btns, 0, LV_PART_MAIN);
+  lv_obj_set_style_border_side(tab_btns, 0, LV_PART_MAIN);
   lv_obj_update_layout(tab_btns);
 
   lv_obj_t *nav_vertical_left = lv_obj_create(tab_btns);
@@ -156,6 +157,15 @@ void MainPanel::create_panel() {
   lv_obj_set_style_bg_opa(nav_vertical_left, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_clear_flag(nav_vertical_left, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_set_pos(nav_vertical_left, lv_obj_get_width(tab_btns) - 3, 0);
+
+  lv_obj_t *nav_vertical_right = lv_obj_create(tab_btns);
+  lv_obj_remove_style_all(nav_vertical_right);
+  lv_obj_set_width(nav_vertical_right, 2);
+  lv_obj_set_height(nav_vertical_right, LV_PCT(100));
+  lv_obj_set_style_bg_color(nav_vertical_right, lv_color_hex(0x4CAF50), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(nav_vertical_right, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_clear_flag(nav_vertical_right, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_set_pos(nav_vertical_right, lv_obj_get_width(tab_btns) - 2, 0);
 
   for (int divider_index = 1; divider_index < 5; ++divider_index) {
     lv_obj_t *nav_divider_top = lv_obj_create(tab_btns);
