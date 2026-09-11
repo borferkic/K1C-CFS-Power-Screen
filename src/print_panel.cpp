@@ -10,7 +10,9 @@
 LV_IMG_DECLARE(info_img);
 LV_IMG_DECLARE(print);
 LV_IMG_DECLARE(back);
-LV_FONT_DECLARE(lv_font_montserrat_32);
+extern "C" {
+  LV_FONT_DECLARE(lv_font_montserrat_32);
+}
 
 constexpr uint32_t CREALITY_GREEN = 0x4CAF50;
 
