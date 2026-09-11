@@ -61,7 +61,6 @@ class PrintPanel : public NotifyConsumer {
   struct FileCard {
     lv_obj_t *card;
     lv_obj_t *thumbnail;
-    lv_obj_t *eta_label;
     std::string path;
     Tree *node;
     bool directory;
@@ -73,6 +72,8 @@ class PrintPanel : public NotifyConsumer {
   void request_file_metadata(Tree *file);
   void update_file_card(const std::string &path, json &metadata);
   void select_file_card(FileCard &card);
+  void request_last_printed(const std::string &path);
+  void handle_last_printed(const std::string &path, json &data);
   
   KWebSocketClient &ws;
   lv_obj_t *files_cont;

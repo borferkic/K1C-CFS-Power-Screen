@@ -4,6 +4,8 @@
 #include "utils.h"
 #include "spdlog/spdlog.h"
 
+#include <ctime>
+#include <iomanip>
 #include <map>
 #include <sstream>
 
@@ -55,6 +57,10 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_clear_flag(left_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_flex_flow(left_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_style_pad_all(left_cont, 0, 0);
+  lv_obj_set_style_bg_color(left_cont, lv_palette_darken(LV_PALETTE_GREY, 4), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(left_cont, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_border_width(left_cont, 0, LV_PART_MAIN);
+  lv_obj_set_style_pad_row(left_cont, 0, LV_PART_MAIN);
 
   // file view buttons
   lv_obj_t * label = NULL;
@@ -79,6 +85,8 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_set_style_pad_all(file_table_btns, 4, 0);
   lv_obj_set_style_bg_color(file_table_btns, lv_palette_darken(LV_PALETTE_GREY, 4), 0);
   lv_obj_set_style_bg_opa(file_table_btns, LV_OPA_COVER, 0);
+  lv_obj_set_style_border_width(file_table_btns, 0, 0);
+  lv_obj_set_style_radius(file_table_btns, 0, 0);
 
   lv_obj_clear_flag(file_table_btns, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_flex_flow(file_table_btns, LV_FLEX_FLOW_ROW);
@@ -106,6 +114,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_set_style_bg_color(file_grid, lv_palette_darken(LV_PALETTE_GREY, 4), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(file_grid, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_width(file_grid, 0, LV_PART_MAIN);
+  lv_obj_set_style_radius(file_grid, 0, LV_PART_MAIN);
   lv_obj_set_scroll_dir(file_grid, LV_DIR_VER);
 
   lv_obj_set_size(file_view, LV_PCT(50), LV_PCT(100));
@@ -261,7 +270,7 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_set_flex_align(card, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
     lv_obj_t *thumbnail = lv_img_create(card);
-    lv_obj_set_size(thumbnail, LV_PCT(100), 96);
+    lv_obj_set_size(thumbnail, LV_PCT(100), 84);
     lv_img_set_size_mode(thumbnail, LV_IMG_SIZE_MODE_VIRTUAL);
     lv_img_set_src(thumbnail, directory ? LV_SYMBOL_DIRECTORY : LV_SYMBOL_IMAGE);
     lv_obj_set_style_text_font(thumbnail, &lv_font_montserrat_20, LV_PART_MAIN);
@@ -278,14 +287,7 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_set_style_text_color(name_label, lv_color_white(), LV_PART_MAIN);
     lv_obj_set_style_text_font(name_label, &lv_font_montserrat_14, LV_PART_MAIN);
 
-    lv_obj_t *eta_label = lv_label_create(card);
-    lv_obj_set_width(eta_label, LV_PCT(100));
-    lv_label_set_text(eta_label, directory ? "" : "Print: --");
-    lv_obj_set_style_text_align(eta_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-    lv_obj_set_style_text_color(eta_label, lv_color_hex(0xB8E6B8), LV_PART_MAIN);
-    lv_obj_set_style_text_font(eta_label, &lv_font_montserrat_12, LV_PART_MAIN);
-
-    file_cards.push_back({card, thumbnail, eta_label, path, node, directory});
+    file_cards.push_back({card, thumbnail, path, node, directory});
     if (!directory && node->contains_metadata()) {
       update_file_card(path, node->metadata);
     }
@@ -417,23 +419,63 @@ void PrintPanel::update_file_card(const std::string &path, json &metadata) {
       continue;
     }
 
-    auto eta_value = metadata["/result/estimated_time"_json_pointer];
-    int eta = eta_value.is_null() ? -1 : eta_value.template get<int>();
-    const std::string eta_text = eta > 0
-      ? fmt::format("Print: {}", KUtils::eta_string(eta))
-      : "Print: --";
-    lv_label_set_text(card.eta_label, eta_text.c_str());
-
     auto width_scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
     auto thumb_detail = KUtils::get_thumbnail(path, metadata, width_scale);
     if (!thumb_detail.first.empty()) {
       lv_img_set_src(card.thumbnail, ("A:" + thumb_detail.first).c_str());
       size_t thumb_width = thumb_detail.second > 0 ? thumb_detail.second : 300;
       uint32_t normalized_thumb_scale =
-        (static_cast<uint32_t>(140.0 * width_scale) * 256) / thumb_width;
+        (static_cast<uint32_t>(76.0 * width_scale) * 256) / thumb_width;
       lv_img_set_zoom(card.thumbnail, normalized_thumb_scale);
     }
     return;
+  }
+}
+
+void PrintPanel::request_last_printed(const std::string &path) {
+  ws.send_jsonrpc("server.history.list",
+                  json{{"limit", 100}},
+                  [this, path](json &data) { this->handle_last_printed(path, data); });
+}
+
+void PrintPanel::handle_last_printed(const std::string &path, json &data) {
+  if (!data.contains("result")) {
+    return;
+  }
+
+  const auto &jobs = data["/result/jobs"_json_pointer];
+  if (!jobs.is_array()) {
+    return;
+  }
+
+  double latest_timestamp = 0;
+  for (const auto &job : jobs) {
+    if (!job.contains("filename") || job["filename"] != path) {
+      continue;
+    }
+
+    double timestamp = 0;
+    if (job.contains("end_time") && job["end_time"].is_number()) {
+      timestamp = job["end_time"].template get<double>();
+    }
+    if (timestamp <= 0 && job.contains("start_time") && job["start_time"].is_number()) {
+      timestamp = job["start_time"].template get<double>();
+    }
+    latest_timestamp = std::max(latest_timestamp, timestamp);
+  }
+
+  std::string last_printed = "(unknown)";
+  if (latest_timestamp > 0) {
+    std::time_t timestamp = static_cast<std::time_t>(latest_timestamp);
+    std::tm local_time = *std::localtime(&timestamp);
+    std::ostringstream time_stream;
+    time_stream << std::put_time(&local_time, "%Y-%m-%d %H:%M");
+    last_printed = time_stream.str();
+  }
+
+  std::lock_guard<std::mutex> lock(lv_lock);
+  if (cur_file != NULL && cur_file->full_path == path) {
+    file_panel.set_last_printed(last_printed);
   }
 }
 
@@ -441,6 +483,7 @@ void PrintPanel::show_file_detail(Tree *f) {
   if (f->is_leaf()) {
     if (f->contains_metadata()) {
       file_panel.refresh_view(f->metadata, f->full_path);
+      request_last_printed(f->full_path);
     } else {
       spdlog::trace("getting metadata for {}", f->name);
       const std::string path = f->full_path;
@@ -464,6 +507,7 @@ void PrintPanel::handle_metadata(const std::string &path, json &j) {
       update_file_card(path, j);
       if (cur_file == card.node) {
         file_panel.refresh_view(card.node->metadata, card.node->full_path);
+        request_last_printed(card.node->full_path);
       }
       return;
     }
