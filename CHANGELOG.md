@@ -23,6 +23,7 @@ All notable changes to K1C CFS POWER SCREEN are documented in this file.
 
 ### Changed
 
+- Updated nightly release versions to a Fluidd-compatible SemVer format with UTC timestamps.
 - Simplified the M600 dialog to a centered title and a large action layout.
 - Centered the action labels and increased their font size for easier touchscreen use.
 - Limited the project scope to the Creality K1C and removed ARM/smallscreen variants from the build matrix.

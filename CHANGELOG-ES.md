@@ -23,6 +23,7 @@ Todos los cambios importantes de K1C CFS POWER SCREEN se documentan en este arch
 
 ### Cambiado
 
+- Actualizado el formato de las versiones nightly a SemVer compatible con Fluidd, conservando la fecha y hora UTC.
 - Simplificado el diálogo M600 con un título centrado y una distribución amplia de acciones.
 - Centradas las etiquetas de acción y aumentada su fuente para facilitar el uso táctil.
 - Limitado el alcance a la Creality K1C y eliminadas las variantes ARM/smallscreen de la matriz de compilación.

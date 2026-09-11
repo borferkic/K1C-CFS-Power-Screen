@@ -46,7 +46,7 @@ jobs:
         if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
           echo "POWERSCREEN_VERSION=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
         else
-          NIGHTLY_VERSION="nightly-$(date -u +'%Y%m%d-%H%M%SZ')"
+          NIGHTLY_VERSION="v0.0.0-nightly.$(date -u +'%Y%m%d.%H%M%SZ')"
           echo "POWERSCREEN_VERSION=$NIGHTLY_VERSION" >> "$GITHUB_ENV"
         fi
 

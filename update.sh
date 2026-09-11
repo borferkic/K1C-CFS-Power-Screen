@@ -6,8 +6,9 @@ CUSTOM_UPGRADE_SCRIPT=$POWERSCREEN_DIR/custom_upgrade.sh
 POWERSCREEN_REPOSITORY="borferkic/K1C-CFS-POWER-SCREEN"
 ASSET_NAME="powerscreen-zbolt.tar.gz"
 
-if [ -f $VERSION_FILE ]; then
-    CURRENT_VERSION=`cat $VERSION_FILE | jq -r .version`
+CURRENT_VERSION=""
+if [ -f "$VERSION_FILE" ]; then
+    CURRENT_VERSION=`jq -r '.version // empty' "$VERSION_FILE"`
 fi
 
 CURL=`which curl`
@@ -21,7 +22,15 @@ fi
 $CURL -s https://api.github.com/repos/$POWERSCREEN_REPOSITORY/releases -o /tmp/powerscreen-releases.json
 latest_version=`jq -r '.[0].tag_name' /tmp/powerscreen-releases.json`
 
-if [ "$(printf '%s\n' "$CURRENT_VERSION" "$latest_version" | sort -V | head -n1)" = "$latest_version" ]; then 
+legacy_version=false
+case "$CURRENT_VERSION" in
+    nightly-*) legacy_version=true ;;
+esac
+
+if [ "$CURRENT_VERSION" = "$latest_version" ] || {
+    [ "$legacy_version" = false ] &&
+    [ "$(printf '%s\n' "$CURRENT_VERSION" "$latest_version" | sort -V | head -n1)" = "$latest_version" ]
+}; then
     echo "Current version $CURRENT_VERSION is up to date."
     exit 0
 else
