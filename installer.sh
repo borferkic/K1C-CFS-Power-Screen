@@ -61,6 +61,8 @@ else
     printf "${green} Found config dir: $K1_CONFIG_DIR ${white}\n"
 fi
 
+POWERSCREEN_UPDATE_CONFIG=$K1_POWERSCREEN_DIR/powerscreen-update.conf
+
 # kill pip cache to free up overlayfs
 rm -rf /root/.cache
 
@@ -114,6 +116,17 @@ fi
 mkdir -p $K1_CONFIG_DIR/PowerScreen/scripts
 cp $K1_POWERSCREEN_DIR/scripts/*.cfg $K1_CONFIG_DIR/PowerScreen
 cp $K1_POWERSCREEN_DIR/scripts/*.py $K1_CONFIG_DIR/PowerScreen/scripts
+
+## register PowerScreen in Moonraker/Fluidd Update Manager
+if [ -f "$POWERSCREEN_UPDATE_CONFIG" ] && [ -f "$K1_CONFIG_DIR/moonraker.conf" ]; then
+    cp "$POWERSCREEN_UPDATE_CONFIG" "$K1_CONFIG_DIR/powerscreen-update.conf"
+    if grep -q "include powerscreen-update.conf" "$K1_CONFIG_DIR/moonraker.conf"; then
+        echo "moonraker.conf already includes PowerScreen updater"
+    else
+        printf "\n[include powerscreen-update.conf]\n" >> "$K1_CONFIG_DIR/moonraker.conf"
+        echo "Registered PowerScreen in Moonraker Update Manager"
+    fi
+fi
 
 ## includ powerscreen *.cfg in printer.cfg
 if grep -q "include PowerScreen" $K1_CONFIG_DIR/printer.cfg ; then

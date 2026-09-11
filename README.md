@@ -99,6 +99,8 @@ sh ./installer.sh
 
 The installer is configured exclusively for the K1C Z-Bolt package. It downloads the latest `powerscreen-zbolt.tar.gz` from this repository's GitHub Releases, extracts it under `/usr/data/powerscreen`, configures the service and helper files, and starts PowerScreen.
 
+The installer also registers PowerScreen in Moonraker's Update Manager so it appears in Fluidd under the available software services. The registered repository is `borferkic/K1C-CFS-POWER-SCREEN`.
+
 The installer may ask whether to continue when Moonraker is not connected, whether to disable Creality services, and whether to restart Klipper. Read each prompt before answering. Answer `n` to preserve Creality Cloud and Creality Slicer services.
 
 ### 3. Validate the installation
@@ -286,6 +288,8 @@ sh ./installer.sh
 ```
 
 El instalador está configurado exclusivamente para el paquete K1C Z-Bolt. Descarga el último `powerscreen-zbolt.tar.gz` desde las GitHub Releases de este repositorio, lo extrae en `/usr/data/powerscreen`, configura el servicio y los archivos auxiliares, y arranca PowerScreen.
+
+El instalador también registra PowerScreen en el Update Manager de Moonraker para que aparezca en Fluidd entre los servicios de software disponibles. El repositorio registrado es `borferkic/K1C-CFS-POWER-SCREEN`.
 
 El instalador puede preguntar si debe continuar cuando Moonraker no está conectado, si debe deshabilitar servicios de Creality y si debe reiniciar Klipper. Lee cada pregunta antes de responder. Responde `n` si deseas conservar Creality Cloud y Creality Slicer.
 
