@@ -148,14 +148,16 @@ void MainPanel::create_panel() {
   lv_obj_set_style_border_opa(tab_btns, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_update_layout(tab_btns);
 
-  lv_obj_t *nav_group_divider = lv_obj_create(tab_btns);
-  lv_obj_remove_style_all(nav_group_divider);
-  lv_obj_set_width(nav_group_divider, LV_PCT(100));
-  lv_obj_set_height(nav_group_divider, 2);
-  lv_obj_set_style_bg_color(nav_group_divider, lv_color_hex(0x4CAF50), LV_PART_MAIN);
-  lv_obj_set_style_bg_opa(nav_group_divider, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_clear_flag(nav_group_divider, LV_OBJ_FLAG_CLICKABLE);
-  lv_obj_set_pos(nav_group_divider, 0, (lv_obj_get_height(tab_btns) * 3) / 5 - 1);
+  for (int divider_index = 1; divider_index < 5; ++divider_index) {
+    lv_obj_t *nav_divider = lv_obj_create(tab_btns);
+    lv_obj_remove_style_all(nav_divider);
+    lv_obj_set_width(nav_divider, LV_PCT(100));
+    lv_obj_set_height(nav_divider, 2);
+    lv_obj_set_style_bg_color(nav_divider, lv_color_hex(0x4CAF50), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(nav_divider, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_clear_flag(nav_divider, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_pos(nav_divider, 0, (lv_obj_get_height(tab_btns) * divider_index) / 5 - 1);
+  }
 
   lv_obj_set_style_pad_all(main_tab, 0, 0);
   lv_obj_set_style_pad_all(macros_tab, 0, 0);
