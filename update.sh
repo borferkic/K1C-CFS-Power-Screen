@@ -25,7 +25,7 @@ if [ "$(printf '%s\n' "$CURRENT_VERSION" "$latest_version" | sort -V | head -n1)
     echo "Current version $CURRENT_VERSION is up to date."
     exit 0
 else
-    asset_url=`jq -r ".[0].assets[] | select(.name == "$ASSET_NAME").browser_download_url" /tmp/powerscreen-releases.json`
+    asset_url=`jq -r --arg asset "$ASSET_NAME" '.[0].assets[] | select(.name == $asset) | .browser_download_url' /tmp/powerscreen-releases.json`
     echo "Downloading latest version $latest_version, $asset_url"
     $CURL -L "$asset_url" -o /tmp/powerscreen.tar.gz
 fi

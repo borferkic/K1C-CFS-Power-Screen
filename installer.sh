@@ -128,6 +128,17 @@ if [ -f "$POWERSCREEN_UPDATE_CONFIG" ] && [ -f "$K1_CONFIG_DIR/moonraker.conf" ]
     fi
 fi
 
+## allow Moonraker to restart PowerScreen after an Update Manager upgrade
+MOONRAKER_ASVC_FILE=/usr/data/printer_data/moonraker.asvc
+if [ -f "$MOONRAKER_ASVC_FILE" ]; then
+    if grep -qx "powerscreen" "$MOONRAKER_ASVC_FILE"; then
+        echo "Moonraker service allowlist already includes PowerScreen"
+    else
+        printf "\npowerscreen\n" >> "$MOONRAKER_ASVC_FILE"
+        echo "Added PowerScreen to Moonraker service allowlist"
+    fi
+fi
+
 ## includ powerscreen *.cfg in printer.cfg
 if grep -q "include PowerScreen" $K1_CONFIG_DIR/printer.cfg ; then
     echo "printer.cfg already includes PowerScreen cfgs"
