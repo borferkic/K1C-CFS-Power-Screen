@@ -264,7 +264,7 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_set_style_border_color(card, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN | LV_STATE_CHECKED);
     lv_obj_set_style_radius(card, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_all(card, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_row(card, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_row(card, 9, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_flex_flow(card, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(card, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER,
                           LV_FLEX_ALIGN_CENTER);
