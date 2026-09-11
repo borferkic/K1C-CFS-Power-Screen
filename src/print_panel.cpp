@@ -429,10 +429,7 @@ void PrintPanel::update_file_card(const std::string &path, json &metadata) {
       lv_img_cache_invalidate_src(card.thumbnail_source.c_str());
       lv_img_set_src(card.thumbnail, card.thumbnail_source.c_str());
       lv_obj_set_style_img_recolor_opa(card.thumbnail, LV_OPA_TRANSP, LV_PART_MAIN);
-      size_t thumb_width = thumb_detail.second > 0 ? thumb_detail.second : 300;
-      uint32_t normalized_thumb_scale =
-        (static_cast<uint32_t>(104.0) * 256) / thumb_width;
-      lv_img_set_zoom(card.thumbnail, normalized_thumb_scale);
+      lv_img_set_zoom(card.thumbnail, LV_IMG_ZOOM_NONE);
       lv_obj_invalidate(card.thumbnail);
     }
     return;
