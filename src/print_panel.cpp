@@ -264,7 +264,7 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_set_style_border_color(card, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN | LV_STATE_CHECKED);
     lv_obj_set_style_radius(card, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_all(card, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_row(card, 4, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_row(card, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_flex_flow(card, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(card, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER,
                           LV_FLEX_ALIGN_CENTER);
@@ -274,7 +274,7 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_img_set_size_mode(thumbnail, LV_IMG_SIZE_MODE_VIRTUAL);
     lv_img_set_src(thumbnail, directory ? LV_SYMBOL_DIRECTORY : LV_SYMBOL_IMAGE);
     lv_obj_set_style_text_font(thumbnail, &lv_font_montserrat_20, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(thumbnail, lv_color_black(), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(thumbnail, lv_color_hex(0x404040), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(thumbnail, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_set_style_border_width(thumbnail, 0, LV_PART_MAIN);
     lv_obj_set_style_radius(thumbnail, 6, LV_PART_MAIN);
