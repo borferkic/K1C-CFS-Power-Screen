@@ -5,6 +5,7 @@
 #include "notify_consumer.h"
 #include "sensor_container.h"
 #include "button_container.h"
+#include "square_button.h"
 #include "wide_button.h"
 #include "prompt_panel.h"
 #include "numpad.h"
@@ -85,6 +86,7 @@ class MainPanel : public NotifyConsumer {
 
  private:
   void create_main(lv_obj_t *parent);
+  void update_header();
   KWebSocketClient &ws;
   HomingPanel homing_panel;
   FanPanel fan_panel;
@@ -98,6 +100,9 @@ class MainPanel : public NotifyConsumer {
   lv_obj_t *printertune_tab;
   lv_obj_t *setting_tab;
   SettingPanel setting_panel;
+  lv_obj_t *title_bar;
+  lv_obj_t *title_label;
+  lv_obj_t *wifi_icon;
   lv_obj_t *main_cont;
   PrintStatusPanel print_status_panel;
   PrintPanel print_panel;
@@ -114,10 +119,10 @@ class MainPanel : public NotifyConsumer {
 
   std::map<std::string, std::shared_ptr<SensorContainer>> sensors;
   
-  ButtonContainer homing_btn;
-  ButtonContainer extrude_btn;
-  ButtonContainer action_btn;
-  ButtonContainer led_btn;
+  SquareButton homing_btn;
+  SquareButton extrude_btn;
+  SquareButton action_btn;
+  SquareButton led_btn;
   WideButton print_btn;
 };
 #endif // __MAIN_PANEL_H__
