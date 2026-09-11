@@ -87,14 +87,17 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
 
   lv_obj_clear_flag(file_table_btns, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_flex_flow(file_table_btns, LV_FLEX_FLOW_ROW);
-  lv_obj_set_flex_align(file_table_btns, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_END);
+  // Leave only 2 px between the sort buttons so Modified can remain readable.
+  lv_obj_set_flex_align(file_table_btns, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_END);
 
   lv_obj_t *sort_buttons[] = {refresh_btn, modified_sort_btn, az_sort_btn};
   for (lv_obj_t *sort_button : sort_buttons) {
-    lv_obj_set_size(sort_button, LV_PCT(30), 38);
-    lv_obj_set_style_bg_color(sort_button, lv_color_hex(0x555555), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_size(sort_button, sort_button == modified_sort_btn ? 88 : 70, 38);
+    lv_obj_set_style_pad_all(sort_button, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(sort_button, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(sort_button, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(sort_button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(sort_button, lv_color_hex(0x444444), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(sort_button, lv_color_hex(0x388E3C), LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_bg_opa(sort_button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_border_width(sort_button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(sort_button, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
