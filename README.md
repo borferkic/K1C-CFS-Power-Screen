@@ -21,11 +21,25 @@ There are no builds, instructions, or support for Android, Raspberry Pi, `PowerS
 
 ## Screenshots
 
-The following captures were taken directly from a running K1C after the manual M600 dialog was opened. They document the current interface and the custom CFS workflow; they are not historical screenshots from the original project.
+The following captures were taken directly from a running K1C. They document the current interface and the custom CFS workflow; they are not historical screenshots from the original project.
 
 | Main screen | Manual M600 dialog |
 | --- | --- |
-| <img src="screenshots/home-live.png" alt="PowerScreen main screen captured on a K1C" width="400"> | <img src="screenshots/m600-live.png" alt="Manual M600 dialog captured on a K1C" width="400"> |
+| <img src="screenshots/home-live.png" alt="PowerScreen main screen captured on a K1C" width="300"> | <img src="screenshots/m600-live.png" alt="Manual M600 dialog captured on a K1C" width="300"> |
+
+| Extrusion | Print and file list |
+| --- | --- |
+| <img src="screenshots/extrusion-live.png" alt="Extrusion panel captured on a K1C" width="300"> | <img src="screenshots/print-files-live.png" alt="Print file list captured on a K1C" width="300"> |
+
+| Macros | Tune |
+| --- | --- |
+| <img src="screenshots/macros-live.png" alt="Macros panel captured on a K1C" width="300"> | <img src="screenshots/tune-live.png" alt="Tune panel captured on a K1C" width="300"> |
+
+| Console |
+| --- |
+| <img src="screenshots/console-live.png" alt="Console panel captured on a K1C" width="300"> |
+
+The Settings capture will be added after the PowerScreen replacement so the documentation does not preserve outdated labels from the previous installation.
 
 ## Installation on a K1C
 
@@ -265,11 +279,25 @@ No se incluyen builds, instrucciones ni soporte para Android, Raspberry Pi, `Pow
 
 ## Capturas de pantalla
 
-Las siguientes capturas se tomaron directamente de una K1C en funcionamiento después de abrir el diálogo M600 manual. Documentan la interfaz actual y el flujo CFS personalizado; no son capturas históricas del proyecto original.
+Las siguientes capturas se tomaron directamente de una K1C en funcionamiento. Documentan la interfaz actual y el flujo CFS personalizado; no son capturas históricas del proyecto original.
 
 | Pantalla principal | Diálogo M600 manual |
 | --- | --- |
-| <img src="screenshots/home-live.png" alt="Pantalla principal de PowerScreen capturada en una K1C" width="400"> | <img src="screenshots/m600-live.png" alt="Diálogo M600 manual capturado en una K1C" width="400"> |
+| <img src="screenshots/home-live.png" alt="Pantalla principal de PowerScreen capturada en una K1C" width="300"> | <img src="screenshots/m600-live.png" alt="Diálogo M600 manual capturado en una K1C" width="300"> |
+
+| Extrusión | Impresión y lista de archivos |
+| --- | --- |
+| <img src="screenshots/extrusion-live.png" alt="Panel de extrusión capturado en una K1C" width="300"> | <img src="screenshots/print-files-live.png" alt="Lista de archivos de impresión capturada en una K1C" width="300"> |
+
+| Macros | Tune |
+| --- | --- |
+| <img src="screenshots/macros-live.png" alt="Panel de macros capturado en una K1C" width="300"> | <img src="screenshots/tune-live.png" alt="Panel Tune capturado en una K1C" width="300"> |
+
+| Consola |
+| --- |
+| <img src="screenshots/console-live.png" alt="Panel de consola capturado en una K1C" width="300"> |
+
+La captura de `Settings` se añadirá después del reemplazo por PowerScreen para no conservar etiquetas antiguas de la instalación anterior.
 
 ## Instalación en una K1C
 
