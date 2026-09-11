@@ -10,9 +10,6 @@
 LV_IMG_DECLARE(info_img);
 LV_IMG_DECLARE(print);
 LV_IMG_DECLARE(back);
-extern "C" {
-  LV_FONT_DECLARE(lv_font_montserrat_32);
-}
 
 constexpr uint32_t CREALITY_GREEN = 0x4CAF50;
 
@@ -267,7 +264,7 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_set_size(thumbnail, LV_PCT(100), 96);
     lv_img_set_size_mode(thumbnail, LV_IMG_SIZE_MODE_VIRTUAL);
     lv_img_set_src(thumbnail, directory ? LV_SYMBOL_DIRECTORY : LV_SYMBOL_IMAGE);
-    lv_obj_set_style_text_font(thumbnail, &lv_font_montserrat_32, LV_PART_MAIN);
+    lv_obj_set_style_text_font(thumbnail, &lv_font_montserrat_20, LV_PART_MAIN);
     lv_obj_set_style_img_recolor(thumbnail,
                                  directory ? lv_color_hex(CREALITY_GREEN) : lv_color_hex(0xAAAAAA),
                                  LV_PART_MAIN);
