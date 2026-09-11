@@ -5,6 +5,7 @@
 #include "notify_consumer.h"
 #include "sensor_container.h"
 #include "button_container.h"
+#include "wide_button.h"
 #include "prompt_panel.h"
 #include "numpad.h"
 #include "homing_panel.h"
@@ -117,6 +118,6 @@ class MainPanel : public NotifyConsumer {
   ButtonContainer extrude_btn;
   ButtonContainer action_btn;
   ButtonContainer led_btn;
-  ButtonContainer print_btn;
+  WideButton print_btn;
 };
 #endif // __MAIN_PANEL_H__

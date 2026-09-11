@@ -60,15 +60,6 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
     lv_style_set_img_recolor(&style, lv_color_black());
     lv_style_set_border_width(&style, 0);
     lv_style_set_bg_color(&style, lv_palette_darken(LV_PALETTE_GREY, 4));
-    // Keep the print glyph white and use Creality green for the visible button
-    // background. The image button is 64x64; the surrounding container is the
-    // larger layout/touch area shared by ButtonContainer.
-    print_btn.set_image_color(lv_color_white());
-    lv_obj_set_style_bg_color(print_btn.get_button(), lv_color_hex(CREALITY_GREEN),
-                              LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(print_btn.get_button(), LV_OPA_COVER,
-                            LV_PART_MAIN | LV_STATE_DEFAULT);
-
     ws.register_notify_update(this);
     led_panel.set_state_callback([this](bool active) {
       led_btn.set_active(active, lv_color_hex(CREALITY_GREEN));
@@ -265,7 +256,11 @@ void MainPanel::create_main(lv_obj_t * parent)
     lv_obj_set_grid_cell(extrude_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 0, 1);
     lv_obj_set_grid_cell(action_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1);
     lv_obj_set_grid_cell(led_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-    lv_obj_set_grid_cell(print_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 2, LV_GRID_ALIGN_CENTER, 2, 1);
+    // The print control is a single wide button spanning the two lower action
+    // columns, matching the icon-and-label controls used by the M600 prompt.
+    lv_obj_set_grid_cell(print_btn.get_button(), LV_GRID_ALIGN_STRETCH, 2, 2,
+                         LV_GRID_ALIGN_CENTER, 2, 1);
+    lv_obj_set_height(print_btn.get_button(), 100);
 
     lv_obj_clear_flag(temp_cont, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_size(temp_cont, LV_PCT(50), LV_PCT(50));
