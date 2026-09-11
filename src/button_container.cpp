@@ -97,6 +97,23 @@ void ButtonContainer::set_image(const void *img) {
   lv_imgbtn_set_src(btn, LV_IMGBTN_STATE_RELEASED, NULL, img, NULL);
 }
 
+void ButtonContainer::set_active(bool active, lv_color_t active_color) {
+  lv_obj_set_style_img_recolor(btn, active_color,
+                               LV_PART_MAIN | LV_STATE_CHECKED);
+  lv_obj_set_style_img_recolor_opa(btn, LV_OPA_COVER,
+                                   LV_PART_MAIN | LV_STATE_CHECKED);
+  lv_obj_set_style_text_color(label, active_color,
+                              LV_PART_MAIN | LV_STATE_CHECKED);
+
+  if (active) {
+    lv_obj_add_state(btn, LV_STATE_CHECKED);
+    lv_obj_add_state(label, LV_STATE_CHECKED);
+  } else {
+    lv_obj_clear_state(btn, LV_STATE_CHECKED);
+    lv_obj_clear_state(label, LV_STATE_CHECKED);
+  }
+}
+
 void ButtonContainer::handle_callback(lv_event_t *e) {
   const lv_event_code_t code = lv_event_get_code(e);
   if (code == LV_EVENT_PRESSED) {

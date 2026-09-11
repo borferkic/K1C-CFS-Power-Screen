@@ -15,6 +15,7 @@ LV_IMG_DECLARE(fan);
 LV_IMG_DECLARE(heater);
 
 LV_FONT_DECLARE(materialdesign_font_40);
+#define CREALITY_GREEN 0x4CAF50
 #define MACROS_SYMBOL "\xF3\xB1\xB2\x83"
 #define CONSOLE_SYMBOL "\xF3\xB0\x86\x8D"
 #define TUNE_SYMBOL "\xF3\xB1\x95\x82"
@@ -60,7 +61,10 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
     lv_style_set_border_width(&style, 0);
     lv_style_set_bg_color(&style, lv_palette_darken(LV_PALETTE_GREY, 4));
 
-    ws.register_notify_update(this);    
+    ws.register_notify_update(this);
+    led_panel.set_state_callback([this](bool active) {
+      led_btn.set_active(active, lv_color_hex(CREALITY_GREEN));
+    });
 }
 
 MainPanel::~MainPanel() {
@@ -84,6 +88,8 @@ PrinterTunePanel& MainPanel::get_tune_panel() {
 
 void MainPanel::init(json &j) {
   std::lock_guard<std::mutex> lock(lv_lock);
+  led_panel.refresh();
+
   for (const auto &el : sensors) {
     auto target_value = j[json::json_pointer(fmt::format("/result/status/{}/target", el.first))];
     if (!target_value.is_null()) {
@@ -153,7 +159,7 @@ void MainPanel::create_panel() {
   lv_obj_remove_style_all(nav_vertical_left);
   lv_obj_set_width(nav_vertical_left, 1);
   lv_obj_set_height(nav_vertical_left, LV_PCT(100));
-  lv_obj_set_style_bg_color(nav_vertical_left, lv_color_hex(0x4CAF50), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(nav_vertical_left, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(nav_vertical_left, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_clear_flag(nav_vertical_left, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_set_pos(nav_vertical_left, lv_obj_get_width(tab_btns) - 3, 0);
@@ -162,7 +168,7 @@ void MainPanel::create_panel() {
   lv_obj_remove_style_all(nav_vertical_right);
   lv_obj_set_width(nav_vertical_right, 2);
   lv_obj_set_height(nav_vertical_right, LV_PCT(100));
-  lv_obj_set_style_bg_color(nav_vertical_right, lv_color_hex(0x4CAF50), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(nav_vertical_right, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(nav_vertical_right, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_clear_flag(nav_vertical_right, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_set_pos(nav_vertical_right, lv_obj_get_width(tab_btns) - 2, 0);
@@ -172,7 +178,7 @@ void MainPanel::create_panel() {
     lv_obj_remove_style_all(nav_divider_top);
     lv_obj_set_width(nav_divider_top, LV_PCT(100));
     lv_obj_set_height(nav_divider_top, 1);
-    lv_obj_set_style_bg_color(nav_divider_top, lv_color_hex(0x4CAF50), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(nav_divider_top, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(nav_divider_top, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_clear_flag(nav_divider_top, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_set_pos(nav_divider_top, 0, (lv_obj_get_height(tab_btns) * divider_index) / 5 - 2);
@@ -181,7 +187,7 @@ void MainPanel::create_panel() {
     lv_obj_remove_style_all(nav_divider);
     lv_obj_set_width(nav_divider, LV_PCT(100));
     lv_obj_set_height(nav_divider, 2);
-    lv_obj_set_style_bg_color(nav_divider, lv_color_hex(0x4CAF50), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(nav_divider, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(nav_divider, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_clear_flag(nav_divider, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_set_pos(nav_divider, 0, (lv_obj_get_height(tab_btns) * divider_index) / 5 - 1);
@@ -221,8 +227,8 @@ void MainPanel::handle_fanpanel_cb(lv_event_t *event) {
 
 void MainPanel::handle_ledpanel_cb(lv_event_t *event) {
   if (lv_event_get_code(event) == LV_EVENT_CLICKED) {
-    spdlog::trace("clicked led panel");
-    led_panel.foreground();
+    spdlog::trace("toggling led");
+    led_panel.toggle();
   }
 }
 
