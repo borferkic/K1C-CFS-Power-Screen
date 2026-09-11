@@ -264,8 +264,6 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_set_style_border_color(card, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN | LV_STATE_CHECKED);
     lv_obj_set_style_radius(card, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_all(card, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_flex_flow(card, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_flex_align(card, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
     lv_obj_t *thumbnail = lv_img_create(card);
     lv_obj_set_size(thumbnail, 64, 64);
@@ -281,15 +279,23 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
                                  directory ? lv_color_hex(CREALITY_GREEN) : lv_color_hex(0xAAAAAA),
                                  LV_PART_MAIN);
     lv_obj_set_style_img_recolor_opa(thumbnail, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_align(thumbnail, LV_ALIGN_TOP_MID, 0, 12);
 
     lv_obj_t *name_label = lv_label_create(card);
     lv_obj_set_width(name_label, LV_PCT(100));
-    lv_obj_set_height(name_label, lv_font_get_line_height(&lv_font_montserrat_14));
+    lv_obj_set_height(name_label, 30);
     lv_label_set_long_mode(name_label, LV_LABEL_LONG_DOT);
     lv_label_set_text(name_label, node == NULL ? ".." : node->name.c_str());
-    lv_obj_set_style_text_align(name_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+    lv_obj_set_style_text_align(name_label, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
     lv_obj_set_style_text_color(name_label, lv_color_white(), LV_PART_MAIN);
     lv_obj_set_style_text_font(name_label, &lv_font_montserrat_14, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(name_label, lv_color_hex(0x666666), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(name_label, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_radius(name_label, 4, LV_PART_MAIN);
+    lv_obj_set_style_pad_left(name_label, 5, LV_PART_MAIN);
+    lv_obj_set_style_pad_right(name_label, 5, LV_PART_MAIN);
+    lv_obj_set_style_pad_top(name_label, 7, LV_PART_MAIN);
+    lv_obj_align(name_label, LV_ALIGN_BOTTOM_MID, 0, 0);
 
     file_cards.push_back({card, thumbnail, path, node, directory, ""});
     if (!directory && node->contains_metadata()) {
@@ -424,14 +430,17 @@ void PrintPanel::update_file_card(const std::string &path, json &metadata) {
     }
 
     auto width_scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
-    auto thumb_detail = KUtils::get_thumbnail(path, metadata, width_scale);
+    auto thumb_detail = KUtils::get_thumbnail(path, metadata, 96.0 / 300.0);
     if (!thumb_detail.first.empty()) {
       card.thumbnail_source = "A:" + thumb_detail.first;
+      lv_img_cache_invalidate_src(card.thumbnail_source.c_str());
       lv_img_set_src(card.thumbnail, card.thumbnail_source.c_str());
+      lv_obj_set_style_img_recolor_opa(card.thumbnail, LV_OPA_TRANSP, LV_PART_MAIN);
       size_t thumb_width = thumb_detail.second > 0 ? thumb_detail.second : 300;
       uint32_t normalized_thumb_scale =
         (static_cast<uint32_t>(56.0 * width_scale) * 256) / thumb_width;
       lv_img_set_zoom(card.thumbnail, normalized_thumb_scale);
+      lv_obj_invalidate(card.thumbnail);
     }
     return;
   }
