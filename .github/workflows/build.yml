@@ -101,15 +101,11 @@ jobs:
         name: powerscreen-zbolt
         path: artifacts
 
-    - name: Publish nightly release
+    - name: Publish nightly assets
       if: github.ref == 'refs/heads/main'
-      uses: softprops/action-gh-release@v2
-      with:
-        prerelease: true
-        name: nightly
-        tag_name: nightly
-        files: artifacts/*
-        fail_on_unmatched_files: true
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: gh release upload nightly artifacts/* --clobber
 
     - name: Publish stable release
       if: startsWith(github.ref, 'refs/tags/')
