@@ -51,11 +51,10 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   , spoolman_panel(sm)
   , temp_cont(lv_obj_create(main_cont))
   , temp_chart(lv_chart_create(main_cont))
-  , fan_led_group(lv_obj_create(main_cont))
   , homing_btn(main_cont, &move, "Homing", &MainPanel::_handle_homing_cb, this)
   , extrude_btn(main_cont, &filament_img, "Filament", &MainPanel::_handle_extrude_cb, this)
-  , action_btn(fan_led_group, &fan, "Fans", &MainPanel::_handle_fanpanel_cb, this)
-  , led_btn(fan_led_group, &light_img, "LED", &MainPanel::_handle_ledpanel_cb, this)
+  , action_btn(main_cont, &fan, "Fans", &MainPanel::_handle_fanpanel_cb, this)
+  , led_btn(main_cont, &light_img, "LED", &MainPanel::_handle_ledpanel_cb, this)
   , print_btn(main_cont, &print, "Print", &MainPanel::_handle_print_cb, this)
 {
     const lv_color_t button_grey = lv_color_hex(0x555555);
@@ -95,22 +94,6 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
     lv_obj_set_pos(tabview, 0, 32);
     lv_obj_set_width(tabview, LV_PCT(100));
     lv_obj_set_height(tabview, lv_obj_get_height(lv_scr_act()) - 32);
-
-    lv_obj_clear_flag(fan_led_group, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_size(fan_led_group, 300, 150);
-    lv_obj_set_style_pad_all(fan_led_group, 0, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(fan_led_group, button_grey, LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(fan_led_group, LV_OPA_COVER, LV_PART_MAIN);
-    lv_obj_set_style_border_width(fan_led_group, 0, LV_PART_MAIN);
-    lv_obj_set_style_radius(fan_led_group, 12, LV_PART_MAIN);
-    lv_obj_set_layout(fan_led_group, LV_LAYOUT_FLEX);
-    lv_obj_set_flex_flow(fan_led_group, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(fan_led_group, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START,
-                          LV_FLEX_ALIGN_START);
-    lv_obj_set_style_radius(action_btn.get_button(), 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(action_btn.get_button(), 0, LV_PART_MAIN | LV_STATE_PRESSED);
-    lv_obj_set_style_radius(led_btn.get_button(), 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(led_btn.get_button(), 0, LV_PART_MAIN | LV_STATE_PRESSED);
 
     homing_btn.set_icon_color(lv_color_white());
     extrude_btn.set_icon_color(lv_color_white());
@@ -323,7 +306,8 @@ void MainPanel::create_main(lv_obj_t * parent)
 
     lv_obj_set_grid_cell(homing_btn.get_button(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
     lv_obj_set_grid_cell(extrude_btn.get_button(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-    lv_obj_set_grid_cell(fan_led_group, LV_GRID_ALIGN_CENTER, 2, 2, LV_GRID_ALIGN_CENTER, 1, 1);
+    lv_obj_set_grid_cell(action_btn.get_button(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1);
+    lv_obj_set_grid_cell(led_btn.get_button(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
     // The print control is a single wide button spanning the two lower action
     // columns, matching the icon-and-label controls used by the M600 prompt.
     lv_obj_set_grid_cell(print_btn.get_button(), LV_GRID_ALIGN_STRETCH, 2, 2,
@@ -335,7 +319,7 @@ void MainPanel::create_main(lv_obj_t * parent)
     lv_obj_set_style_pad_all(temp_cont, 8, 0);
     lv_obj_set_style_bg_opa(temp_cont, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_set_style_border_width(temp_cont, 0, LV_PART_MAIN);
-    lv_obj_set_style_translate_y(temp_cont, -10, LV_PART_MAIN);
+    lv_obj_set_style_translate_y(temp_cont, -15, LV_PART_MAIN);
 
     lv_obj_set_flex_flow(temp_cont, LV_FLEX_FLOW_ROW_WRAP);
     lv_obj_set_grid_cell(temp_cont, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_CENTER, 0, 2);

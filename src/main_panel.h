@@ -119,7 +119,6 @@ class MainPanel : public NotifyConsumer {
 
   lv_obj_t *temp_cont;
   lv_obj_t *temp_chart;
-  lv_obj_t *fan_led_group;
 
   std::map<std::string, std::shared_ptr<SensorContainer>> sensors;
   
