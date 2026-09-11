@@ -14,6 +14,7 @@ class SquareButton {
 
   lv_obj_t *get_button();
   void set_icon_color(lv_color_t color);
+  void set_background_visible(bool visible);
   void set_active(bool active, lv_color_t active_color);
   void disable();
   void enable();

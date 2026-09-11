@@ -69,6 +69,13 @@ void SquareButton::set_icon_color(lv_color_t color) {
                                    LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
+void SquareButton::set_background_visible(bool visible) {
+  const lv_opa_t opacity = visible ? LV_OPA_COVER : LV_OPA_TRANSP;
+  lv_obj_set_style_bg_opa(button, opacity, LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_bg_opa(button, opacity, LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_set_style_bg_opa(button, opacity, LV_PART_MAIN | LV_STATE_DISABLED);
+}
+
 void SquareButton::set_active(bool active, lv_color_t active_color) {
   if (active) {
     lv_obj_set_style_img_recolor(icon, active_color,

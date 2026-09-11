@@ -99,6 +99,8 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
     extrude_btn.set_icon_color(lv_color_white());
     action_btn.set_icon_color(lv_color_white());
     led_btn.set_icon_color(lv_color_white());
+    action_btn.set_background_visible(false);
+    led_btn.set_background_visible(false);
 
     lv_style_init(&style);
     lv_style_set_img_recolor_opa(&style, LV_OPA_30);

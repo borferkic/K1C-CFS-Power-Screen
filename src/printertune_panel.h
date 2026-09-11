@@ -9,7 +9,7 @@
 #include "tmc_tune_panel.h"
 #include "tmc_status_panel.h"
 #include "power_panel.h"
-#include "button_container.h"
+#include "square_button.h"
 #include "lvgl/lvgl.h"
 
 #include <mutex>
@@ -39,14 +39,14 @@ class PrinterTunePanel {
   TmcTunePanel tmc_tune_panel;
   TmcStatusPanel tmc_status_panel;
   PowerPanel power_panel;
-  ButtonContainer bedmesh_btn;  
-  ButtonContainer finetune_btn;
-  ButtonContainer inputshaper_btn;
-  ButtonContainer belts_calibration_btn;
-  ButtonContainer limits_btn;
-  ButtonContainer tmc_tune_btn;
-  ButtonContainer tmc_status_btn;
-  ButtonContainer power_devices_btn;
+  SquareButton bedmesh_btn;
+  SquareButton finetune_btn;
+  SquareButton inputshaper_btn;
+  SquareButton belts_calibration_btn;
+  SquareButton limits_btn;
+  SquareButton tmc_tune_btn;
+  SquareButton tmc_status_btn;
+  SquareButton power_devices_btn;
   
 };
 

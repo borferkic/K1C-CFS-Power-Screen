@@ -48,16 +48,16 @@ PrinterTunePanel::PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t 
   lv_obj_set_grid_dsc_array(cont, grid_main_col_dsc, grid_main_row_dsc);
 
   // row 1
-  lv_obj_set_grid_cell(bedmesh_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 1, 1);
-  lv_obj_set_grid_cell(finetune_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 1, 1);
-  lv_obj_set_grid_cell(inputshaper_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 1, 1);
-  lv_obj_set_grid_cell(belts_calibration_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 1, 1);
+  lv_obj_set_grid_cell(bedmesh_btn.get_button(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 1, 1);
+  lv_obj_set_grid_cell(finetune_btn.get_button(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 1, 1);
+  lv_obj_set_grid_cell(inputshaper_btn.get_button(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 1, 1);
+  lv_obj_set_grid_cell(belts_calibration_btn.get_button(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 1, 1);
 
   // row 2
-  lv_obj_set_grid_cell(limits_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(tmc_tune_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(tmc_status_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(power_devices_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
+  lv_obj_set_grid_cell(limits_btn.get_button(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 2, 1);
+  lv_obj_set_grid_cell(tmc_tune_btn.get_button(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
+  lv_obj_set_grid_cell(tmc_status_btn.get_button(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 1);
+  lv_obj_set_grid_cell(power_devices_btn.get_button(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
   // lv_obj_set_grid_cell(restart_firmware_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
 }
 
@@ -103,28 +103,28 @@ void PrinterTunePanel::handle_callback(lv_event_t *event) {
   if (lv_event_get_code(event) == LV_EVENT_CLICKED) {
     lv_obj_t *btn = lv_event_get_current_target(event);
 
-    if (btn == finetune_btn.get_container()) {
+    if (btn == finetune_btn.get_button()) {
       spdlog::trace("tune finetune pressed");
       finetune_panel.foreground();
-    } else if (btn == bedmesh_btn.get_container()) {
+    } else if (btn == bedmesh_btn.get_button()) {
       spdlog::trace("tune bedmesh pressed");
       bedmesh_panel.foreground();
-    } else if (btn == inputshaper_btn.get_container()) {
+    } else if (btn == inputshaper_btn.get_button()) {
       spdlog::trace("tune inputshaper pressed");
       inputshaper_panel.foreground();
-    } else if (btn == belts_calibration_btn.get_container()) {
+    } else if (btn == belts_calibration_btn.get_button()) {
       spdlog::trace("tune belts pressed");
       belts_calibration_panel.foreground();
-    } else if (btn == limits_btn.get_container()) {
+    } else if (btn == limits_btn.get_button()) {
       spdlog::trace("limits pressed");
       limits_panel.foreground();
-    } else if (btn == tmc_tune_btn.get_container()) {
+    } else if (btn == tmc_tune_btn.get_button()) {
       spdlog::trace("tmc auto tune pressed");
       tmc_tune_panel.foreground();
-    } else if (btn == tmc_status_btn.get_container()) {
+    } else if (btn == tmc_status_btn.get_button()) {
       spdlog::trace("tmc metrics pressed");
       tmc_status_panel.foreground();
-    } else if (btn == power_devices_btn.get_container()) {
+    } else if (btn == power_devices_btn.get_button()) {
       spdlog::trace("power devices pressed");
       power_panel.foreground();
     }

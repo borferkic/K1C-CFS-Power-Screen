@@ -48,6 +48,18 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
 
   lv_obj_set_grid_dsc_array(cont, grid_main_col_dsc, grid_main_row_dsc);
 
+  const auto raise_button = [](lv_obj_t *button) {
+    lv_obj_set_style_translate_y(button, -20, LV_PART_MAIN);
+  };
+  raise_button(wifi_btn.get_button());
+  raise_button(restart_klipper_btn.get_button());
+  raise_button(restart_firmware_btn.get_button());
+  raise_button(sysinfo_btn.get_button());
+  raise_button(spoolman_btn.get_button());
+  raise_button(powerscreen_restart_btn.get_button());
+  raise_button(powerscreen_update_btn.get_button());
+  raise_button(printer_select_btn.get_button());
+
   // row 1
   lv_obj_set_grid_cell(wifi_btn.get_button(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 1, 1);
   lv_obj_set_grid_cell(restart_klipper_btn.get_button(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 1, 1);
