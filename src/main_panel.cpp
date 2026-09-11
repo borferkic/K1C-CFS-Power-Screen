@@ -14,11 +14,12 @@ LV_IMG_DECLARE(bed);
 LV_IMG_DECLARE(fan);
 LV_IMG_DECLARE(heater);
 
-#define MACROS_TAB "MACROS"
-#define CONSOLE_TAB "CONSOLE"
-#define TUNE_TAB "TUNE"
-#define HOME_TAB "HOME"
-#define SETTING_TAB "SETTINGS"
+LV_FONT_DECLARE(materialdesign_font_40);
+#define MACROS_SYMBOL "\xF3\xB1\xB2\x83"
+#define CONSOLE_SYMBOL "\xF3\xB0\x86\x8D"
+#define TUNE_SYMBOL "\xF3\xB1\x95\x82"
+#define HOME_SYMBOL "\xF3\xB0\x8B\x9C"
+#define SETTING_SYMBOL "\xF3\xB0\x92\x93"
 
 MainPanel::MainPanel(KWebSocketClient &websocket,
 		     std::mutex &lock,
@@ -27,15 +28,15 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   , ws(websocket)
   , homing_panel(ws, lock)
   , fan_panel(ws, lock)
-  , led_panel(ws, lock)    
+  , led_panel(ws, lock)
   , tabview(lv_tabview_create(lv_scr_act(), LV_DIR_LEFT, 60))
-  , main_tab(lv_tabview_add_tab(tabview, HOME_TAB))
-  , macros_tab(lv_tabview_add_tab(tabview, MACROS_TAB))
+  , main_tab(lv_tabview_add_tab(tabview, HOME_SYMBOL))
+  , macros_tab(lv_tabview_add_tab(tabview, MACROS_SYMBOL))
   , macros_panel(ws, lock, macros_tab)
-  , console_tab(lv_tabview_add_tab(tabview, CONSOLE_TAB))
+  , console_tab(lv_tabview_add_tab(tabview, CONSOLE_SYMBOL))
   , console_panel(ws, lock, console_tab)
-  , printertune_tab(lv_tabview_add_tab(tabview, TUNE_TAB))
-  , setting_tab(lv_tabview_add_tab(tabview, SETTING_TAB))
+  , printertune_tab(lv_tabview_add_tab(tabview, TUNE_SYMBOL))
+  , setting_tab(lv_tabview_add_tab(tabview, SETTING_SYMBOL))
   , setting_panel(websocket, lock, setting_tab, sm)
   , main_cont(lv_obj_create(main_tab))
   , print_status_panel(websocket, lock, main_cont)
@@ -140,7 +141,7 @@ void MainPanel::create_panel() {
   lv_obj_set_style_bg_color(tab_btns, lv_palette_main(LV_PALETTE_GREY), LV_STATE_CHECKED | LV_PART_ITEMS);
   lv_obj_set_style_outline_width(tab_btns, 0, LV_PART_ITEMS | LV_STATE_FOCUS_KEY | LV_STATE_FOCUS_KEY);
   lv_obj_set_style_border_side(tab_btns, 0, LV_PART_ITEMS | LV_STATE_CHECKED);
-  lv_obj_set_style_text_font(tab_btns, LV_FONT_DEFAULT, LV_STATE_DEFAULT);
+  lv_obj_set_style_text_font(tab_btns, &materialdesign_font_40, LV_STATE_DEFAULT);
 
   lv_obj_set_style_pad_all(main_tab, 0, 0);
   lv_obj_set_style_pad_all(macros_tab, 0, 0);
