@@ -1,14 +1,13 @@
 #include "main_panel.h"
-#include "config.h"
 #include "state.h"
 #include "lvgl/lvgl.h"
 #include "spdlog/spdlog.h"
 
+#include <ctime>
 #include <string>
 
 LV_IMG_DECLARE(filament_img);
 LV_IMG_DECLARE(light_img);
-LV_IMG_DECLARE(network_img);
 LV_IMG_DECLARE(move);
 LV_IMG_DECLARE(print);
 LV_IMG_DECLARE(extruder);
@@ -18,7 +17,6 @@ LV_IMG_DECLARE(heater);
 
 LV_FONT_DECLARE(materialdesign_font_40);
 #define CREALITY_GREEN 0x4CAF50
-#define MACROS_SYMBOL "\xF3\xB1\xB2\x83"
 #define CONSOLE_SYMBOL "\xF3\xB0\x86\x8D"
 #define TUNE_SYMBOL "\xF3\xB1\x95\x82"
 #define HOME_SYMBOL "\xF3\xB0\x8B\x9C"
@@ -34,16 +32,15 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   , led_panel(ws, lock)
   , tabview(lv_tabview_create(lv_scr_act(), LV_DIR_LEFT, 60))
   , main_tab(lv_tabview_add_tab(tabview, HOME_SYMBOL))
-  , macros_tab(lv_tabview_add_tab(tabview, MACROS_SYMBOL))
-  , macros_panel(ws, lock, macros_tab)
   , console_tab(lv_tabview_add_tab(tabview, CONSOLE_SYMBOL))
   , console_panel(ws, lock, console_tab)
   , printertune_tab(lv_tabview_add_tab(tabview, TUNE_SYMBOL))
   , setting_tab(lv_tabview_add_tab(tabview, SETTING_SYMBOL))
   , setting_panel(websocket, lock, setting_tab, sm)
-  , title_bar(lv_obj_create(main_tab))
+  , title_bar(lv_obj_create(lv_scr_act()))
   , title_label(lv_label_create(title_bar))
-  , wifi_icon(lv_img_create(title_bar))
+  , time_label(lv_label_create(title_bar))
+  , clock_timer(NULL)
   , main_cont(lv_obj_create(main_tab))
   , print_status_panel(websocket, lock, main_cont)
   , print_panel(ws, lock, print_status_panel)
@@ -54,16 +51,19 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   , spoolman_panel(sm)
   , temp_cont(lv_obj_create(main_cont))
   , temp_chart(lv_chart_create(main_cont))
+  , fan_led_group(lv_obj_create(main_cont))
   , homing_btn(main_cont, &move, "Homing", &MainPanel::_handle_homing_cb, this)
   , extrude_btn(main_cont, &filament_img, "Filament", &MainPanel::_handle_extrude_cb, this)
-  , action_btn(main_cont, &fan, "Fans", &MainPanel::_handle_fanpanel_cb, this)
-  , led_btn(main_cont, &light_img, "LED", &MainPanel::_handle_ledpanel_cb, this)
+  , action_btn(fan_led_group, &fan, "Fans", &MainPanel::_handle_fanpanel_cb, this)
+  , led_btn(fan_led_group, &light_img, "LED", &MainPanel::_handle_ledpanel_cb, this)
   , print_btn(main_cont, &print, "Print", &MainPanel::_handle_print_cb, this)
 {
     const lv_color_t button_grey = lv_color_hex(0x555555);
+    const lv_color_t screen_background = lv_palette_darken(LV_PALETTE_GREY, 4);
 
     lv_obj_clear_flag(title_bar, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_size(title_bar, LV_PCT(100), 32);
+    lv_obj_set_pos(title_bar, 0, 0);
     lv_obj_set_style_pad_all(title_bar, 0, LV_PART_MAIN);
     lv_obj_set_style_bg_color(title_bar, button_grey, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(title_bar, LV_OPA_COVER, LV_PART_MAIN);
@@ -76,10 +76,41 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
     lv_obj_set_style_text_font(title_label, &lv_font_montserrat_20, LV_PART_MAIN);
     lv_obj_align(title_label, LV_ALIGN_CENTER, 0, 0);
 
-    lv_img_set_src(wifi_icon, &network_img);
-    lv_obj_set_style_img_recolor(wifi_icon, lv_color_white(), LV_PART_MAIN);
-    lv_obj_set_style_img_recolor_opa(wifi_icon, LV_OPA_COVER, LV_PART_MAIN);
-    lv_obj_align(wifi_icon, LV_ALIGN_RIGHT_MID, -10, 0);
+    lv_obj_set_width(time_label, LV_SIZE_CONTENT);
+    lv_obj_set_style_text_color(time_label, lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_text_font(time_label, &lv_font_montserrat_20, LV_PART_MAIN);
+    lv_obj_align(time_label, LV_ALIGN_RIGHT_MID, -10, 0);
+    update_clock();
+    clock_timer = lv_timer_create(&MainPanel::_update_clock_cb, 1000, this);
+
+    lv_obj_set_style_bg_color(lv_scr_act(), screen_background, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(lv_scr_act(), LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(tabview, screen_background, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(tabview, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(lv_tabview_get_content(tabview), screen_background, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(lv_tabview_get_content(tabview), LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(main_tab, screen_background, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(main_tab, LV_OPA_COVER, LV_PART_MAIN);
+
+    lv_obj_set_pos(tabview, 0, 32);
+    lv_obj_set_width(tabview, LV_PCT(100));
+    lv_obj_set_height(tabview, lv_obj_get_height(lv_scr_act()) - 32);
+
+    lv_obj_clear_flag(fan_led_group, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_size(fan_led_group, 300, 150);
+    lv_obj_set_style_pad_all(fan_led_group, 0, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(fan_led_group, button_grey, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(fan_led_group, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_border_width(fan_led_group, 0, LV_PART_MAIN);
+    lv_obj_set_style_radius(fan_led_group, 12, LV_PART_MAIN);
+    lv_obj_set_layout(fan_led_group, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(fan_led_group, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(fan_led_group, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START,
+                          LV_FLEX_ALIGN_START);
+    lv_obj_set_style_radius(action_btn.get_button(), 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(action_btn.get_button(), 0, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_radius(led_btn.get_button(), 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(led_btn.get_button(), 0, LV_PART_MAIN | LV_STATE_PRESSED);
 
     homing_btn.set_icon_color(lv_color_white());
     extrude_btn.set_icon_color(lv_color_white());
@@ -98,6 +129,11 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
 }
 
 MainPanel::~MainPanel() {
+  if (clock_timer != NULL) {
+    lv_timer_del(clock_timer);
+    clock_timer = NULL;
+  }
+
   if (tabview != NULL) {
     lv_obj_del(tabview);
     tabview = NULL;
@@ -135,8 +171,6 @@ void MainPanel::init(json &j) {
       el.second->update_value(value);
     }
   }
-
-  macros_panel.populate();
 
   auto fans = State::get_instance()->get_display_fans();
   print_status_panel.init(fans);
@@ -180,7 +214,7 @@ void MainPanel::create_panel() {
   lv_obj_set_style_border_side(tab_btns, 0, LV_PART_ITEMS | LV_STATE_CHECKED);
   lv_obj_set_style_text_font(tab_btns, &materialdesign_font_40, LV_STATE_DEFAULT);
   // Keep the button matrix at the full display height. A main border would
-  // reduce LVGL's content height and make the five rows progressively drift.
+  // reduce LVGL's content height and make the four rows progressively drift.
   lv_obj_set_style_pad_all(tab_btns, 0, LV_PART_MAIN);
   lv_obj_set_style_border_width(tab_btns, 0, LV_PART_MAIN);
   lv_obj_set_style_border_side(tab_btns, 0, LV_PART_MAIN);
@@ -204,7 +238,7 @@ void MainPanel::create_panel() {
   lv_obj_clear_flag(nav_vertical_right, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_set_pos(nav_vertical_right, lv_obj_get_width(tab_btns) - 2, 0);
 
-  for (int divider_index = 1; divider_index < 5; ++divider_index) {
+  for (int divider_index = 1; divider_index < 4; ++divider_index) {
     lv_obj_t *nav_divider_top = lv_obj_create(tab_btns);
     lv_obj_remove_style_all(nav_divider_top);
     lv_obj_set_width(nav_divider_top, LV_PCT(100));
@@ -212,7 +246,7 @@ void MainPanel::create_panel() {
     lv_obj_set_style_bg_color(nav_divider_top, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(nav_divider_top, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_clear_flag(nav_divider_top, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_set_pos(nav_divider_top, 0, (lv_obj_get_height(tab_btns) * divider_index) / 5 - 2);
+    lv_obj_set_pos(nav_divider_top, 0, (lv_obj_get_height(tab_btns) * divider_index) / 4 - 2);
 
     lv_obj_t *nav_divider = lv_obj_create(tab_btns);
     lv_obj_remove_style_all(nav_divider);
@@ -221,12 +255,11 @@ void MainPanel::create_panel() {
     lv_obj_set_style_bg_color(nav_divider, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(nav_divider, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_clear_flag(nav_divider, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_set_pos(nav_divider, 0, (lv_obj_get_height(tab_btns) * divider_index) / 5 - 1);
+    lv_obj_set_pos(nav_divider, 0, (lv_obj_get_height(tab_btns) * divider_index) / 4 - 1);
   }
 
   lv_obj_set_style_pad_all(main_tab, 0, 0);
   lv_obj_clear_flag(main_tab, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_style_pad_all(macros_tab, 0, 0);
   lv_obj_set_style_pad_all(console_tab, 0, 0);
   lv_obj_set_style_pad_all(printertune_tab, 0, 0);
   lv_obj_set_style_pad_all(setting_tab, 0, 0);
@@ -290,8 +323,7 @@ void MainPanel::create_main(lv_obj_t * parent)
 
     lv_obj_set_grid_cell(homing_btn.get_button(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
     lv_obj_set_grid_cell(extrude_btn.get_button(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-    lv_obj_set_grid_cell(action_btn.get_button(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-    lv_obj_set_grid_cell(led_btn.get_button(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
+    lv_obj_set_grid_cell(fan_led_group, LV_GRID_ALIGN_CENTER, 2, 2, LV_GRID_ALIGN_CENTER, 1, 1);
     // The print control is a single wide button spanning the two lower action
     // columns, matching the icon-and-label controls used by the M600 prompt.
     lv_obj_set_grid_cell(print_btn.get_button(), LV_GRID_ALIGN_STRETCH, 2, 2,
@@ -301,20 +333,18 @@ void MainPanel::create_main(lv_obj_t * parent)
     lv_obj_clear_flag(temp_cont, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_size(temp_cont, LV_PCT(50), LV_PCT(50));
     lv_obj_set_style_pad_all(temp_cont, 8, 0);
-    lv_obj_set_style_bg_color(temp_cont, lv_color_hex(0x555555), LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(temp_cont, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(temp_cont, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_set_style_border_width(temp_cont, 0, LV_PART_MAIN);
-    lv_obj_set_style_radius(temp_cont, 12, LV_PART_MAIN);
+    lv_obj_set_style_translate_y(temp_cont, -10, LV_PART_MAIN);
 
     lv_obj_set_flex_flow(temp_cont, LV_FLEX_FLOW_ROW_WRAP);
     lv_obj_set_grid_cell(temp_cont, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_CENTER, 0, 2);
     
     lv_obj_align(temp_chart, LV_ALIGN_CENTER, 0, 0);
     lv_obj_set_size(temp_chart, LV_PCT(45), LV_PCT(40));
-    lv_obj_set_style_bg_color(temp_chart, lv_color_hex(0x555555), LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(temp_chart, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(temp_chart, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_set_style_border_width(temp_chart, 0, LV_PART_MAIN);
-    lv_obj_set_style_radius(temp_chart, 12, LV_PART_MAIN);
+    lv_obj_set_style_translate_y(temp_chart, -10, LV_PART_MAIN);
     lv_obj_set_style_size(temp_chart, 0, LV_PART_INDICATOR);
 
     lv_chart_set_range(temp_chart, LV_CHART_AXIS_PRIMARY_Y, 0, 300);
@@ -328,12 +358,15 @@ void MainPanel::create_main(lv_obj_t * parent)
 }
 
 void MainPanel::update_header() {
-  Config *conf = Config::get_instance();
-  auto printer = conf->get_json("/default_printer");
-  const std::string name = printer.is_null() || printer.empty()
-      ? "PowerScreen"
-      : printer.template get<std::string>();
-  lv_label_set_text(title_label, name.c_str());
+  lv_label_set_text(title_label, "POWER SCREEN K1C");
+}
+
+void MainPanel::update_clock() {
+  const std::time_t now = std::time(nullptr);
+  const std::tm local_time = *std::localtime(&now);
+  char time_text[6] = {};
+  std::strftime(time_text, sizeof(time_text), "%H:%M", &local_time);
+  lv_label_set_text(time_label, time_text);
 }
 
 void MainPanel::create_sensors(json &temp_sensors) {

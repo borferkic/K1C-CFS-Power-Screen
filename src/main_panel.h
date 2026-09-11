@@ -14,7 +14,6 @@
 #include "fan_panel.h"
 #include "led_panel.h"
 #include "print_panel.h"
-#include "macros_panel.h"
 #include "console_panel.h"
 #include "printertune_panel.h"
 #include "setting_panel.h"
@@ -84,17 +83,20 @@ class MainPanel : public NotifyConsumer {
     panel->handle_print_cb(event);
   };
 
- private:
+  private:
   void create_main(lv_obj_t *parent);
   void update_header();
+  void update_clock();
+  static void _update_clock_cb(lv_timer_t *timer) {
+    MainPanel *panel = static_cast<MainPanel *>(timer->user_data);
+    panel->update_clock();
+  }
   KWebSocketClient &ws;
   HomingPanel homing_panel;
   FanPanel fan_panel;
   LedPanel led_panel;
   lv_obj_t *tabview;
   lv_obj_t *main_tab;
-  lv_obj_t *macros_tab;
-  MacrosPanel macros_panel;
   lv_obj_t *console_tab;
   ConsolePanel console_panel;
   lv_obj_t *printertune_tab;
@@ -102,7 +104,8 @@ class MainPanel : public NotifyConsumer {
   SettingPanel setting_panel;
   lv_obj_t *title_bar;
   lv_obj_t *title_label;
-  lv_obj_t *wifi_icon;
+  lv_obj_t *time_label;
+  lv_timer_t *clock_timer;
   lv_obj_t *main_cont;
   PrintStatusPanel print_status_panel;
   PrintPanel print_panel;
@@ -116,6 +119,7 @@ class MainPanel : public NotifyConsumer {
 
   lv_obj_t *temp_cont;
   lv_obj_t *temp_chart;
+  lv_obj_t *fan_led_group;
 
   std::map<std::string, std::shared_ptr<SensorContainer>> sensors;
   

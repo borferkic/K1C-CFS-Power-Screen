@@ -30,9 +30,8 @@ SensorContainer::SensorContainer(KWebSocketClient &c,
   , last_updated_ts(std::time(nullptr))
 {
     lv_obj_clear_flag(sensor_cont, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_style_bg_color(sensor_cont, lv_color_hex(0x555555), LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(sensor_cont, LV_OPA_COVER, LV_PART_MAIN);
-    lv_obj_set_style_radius(sensor_cont, 8, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(sensor_cont, LV_OPA_TRANSP, LV_PART_MAIN);
+    lv_obj_set_style_radius(sensor_cont, 0, LV_PART_MAIN);
     lv_obj_set_style_border_color(sensor_cont, color, LV_PART_MAIN);
     lv_obj_set_style_border_side(sensor_cont, LV_BORDER_SIDE_LEFT, LV_PART_MAIN);
     lv_obj_set_style_border_width(sensor_cont, 5, LV_PART_MAIN);

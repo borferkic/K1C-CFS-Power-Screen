@@ -72,7 +72,8 @@ void Config::init(std::string config_path, const std::string thumbdir) {
         {"log_path", "/usr/data/printer_data/logs/powerscreen.log"},
         {"thumbnail_path", thumbdir},
         {"wpa_supplicant", "/var/run/wpa_supplicant"},
-        {"display_sleep_sec", 600}
+        {"theme", "green"},
+        {"display_sleep_sec", -1}
 #ifndef OS_ANDROID
         , {"default_printer", "k1"},
         {"printers", {{"k1", {
@@ -149,7 +150,12 @@ void Config::init(std::string config_path, const std::string thumbdir) {
 
   auto &display_sleep = data["/display_sleep_sec"_json_pointer];
   if (display_sleep.is_null()) {
-    data["/display_sleep_sec"_json_pointer] = 600;
+    data["/display_sleep_sec"_json_pointer] = -1;
+  }
+
+  auto &theme = data["/theme"_json_pointer];
+  if (theme.is_null()) {
+    data["/theme"_json_pointer] = "green";
   }
   
   std::ofstream o(config_path);

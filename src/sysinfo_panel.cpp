@@ -80,7 +80,7 @@ SysInfoPanel::SysInfoPanel()
   // log level
   , theme_cont(lv_obj_create(left_cont))
   , theme_dd(lv_dropdown_create(theme_cont))
-  , theme(0)
+  , theme(2)
 
   , back_btn(cont, &back, "Back", &SysInfoPanel::_handle_callback, this)
 {
@@ -241,7 +241,7 @@ void SysInfoPanel::foreground() {
     auto ip = KUtils::interface_ip(iface);
     network_detail.push_back(fmt::format("\t{}: {}", iface, ip));
   }
-  lv_label_set_text(network_label, fmt::format("{}\n\nPowerScreen\n\tVersion: " GS_VERSION,
+  lv_label_set_text(network_label, fmt::format("{}\n\nPowerScreen\n\tVersion: " GS_VERSION "\n\tDeveloped by Boris SdK - 2026",
 					       fmt::join(network_detail, "\n")).c_str());
 }
 
