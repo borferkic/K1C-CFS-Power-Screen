@@ -35,9 +35,9 @@ The following captures were taken directly from a running K1C. They document the
 | --- | --- |
 | <img src="screenshots/macros-live.png" alt="Macros panel captured on a K1C" width="300"> | <img src="screenshots/tune-live.png" alt="Tune panel captured on a K1C" width="300"> |
 
-| Console |
-| --- |
-| <img src="screenshots/console-live.png" alt="Console panel captured on a K1C" width="300"> |
+| Console | Fans |
+| --- | --- |
+| <img src="screenshots/console-live.png" alt="Console panel captured on a K1C" width="300"> | <img src="screenshots/fans-live.png" alt="Fans panel captured on a K1C" width="300"> |
 
 The Settings capture will be added after the PowerScreen replacement so the documentation does not preserve outdated labels from the previous installation.
 
@@ -293,9 +293,9 @@ Las siguientes capturas se tomaron directamente de una K1C en funcionamiento. Do
 | --- | --- |
 | <img src="screenshots/macros-live.png" alt="Panel de macros capturado en una K1C" width="300"> | <img src="screenshots/tune-live.png" alt="Panel Tune capturado en una K1C" width="300"> |
 
-| Consola |
-| --- |
-| <img src="screenshots/console-live.png" alt="Panel de consola capturado en una K1C" width="300"> |
+| Consola | Ventiladores |
+| --- | --- |
+| <img src="screenshots/console-live.png" alt="Panel de consola capturado en una K1C" width="300"> | <img src="screenshots/fans-live.png" alt="Panel de ventiladores capturado en una K1C" width="300"> |
 
 La captura de `Settings` se añadirá después del reemplazo por PowerScreen para no conservar etiquetas antiguas de la instalación anterior.
 
