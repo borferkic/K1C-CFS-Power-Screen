@@ -32,9 +32,9 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   , led_panel(ws, lock)
   , tabview(lv_tabview_create(lv_scr_act(), LV_DIR_LEFT, 60))
   , main_tab(lv_tabview_add_tab(tabview, HOME_SYMBOL))
+  , printertune_tab(lv_tabview_add_tab(tabview, TUNE_SYMBOL))
   , console_tab(lv_tabview_add_tab(tabview, CONSOLE_SYMBOL))
   , console_panel(ws, lock, console_tab)
-  , printertune_tab(lv_tabview_add_tab(tabview, TUNE_SYMBOL))
   , setting_tab(lv_tabview_add_tab(tabview, SETTING_SYMBOL))
   , setting_panel(websocket, lock, setting_tab, sm)
   , title_bar(lv_obj_create(lv_scr_act()))
@@ -194,6 +194,10 @@ void MainPanel::create_panel() {
   lv_obj_add_event_cb(lv_tabview_get_content(tabview), scroll_begin_event, LV_EVENT_SCROLL_BEGIN, NULL);
   
   lv_obj_t * tab_btns = lv_tabview_get_tab_btns(tabview);
+  lv_obj_add_event_cb(tab_btns, &MainPanel::_handle_tab_change_cb,
+                      LV_EVENT_VALUE_CHANGED, this);
+  lv_obj_add_event_cb(tabview, &MainPanel::_handle_tab_change_cb,
+                      LV_EVENT_VALUE_CHANGED, this);
   lv_obj_set_style_bg_color(tab_btns, lv_palette_main(LV_PALETTE_GREY), LV_STATE_CHECKED | LV_PART_ITEMS);
   lv_obj_set_style_outline_width(tab_btns, 0, LV_PART_ITEMS | LV_STATE_FOCUS_KEY | LV_STATE_FOCUS_KEY);
   lv_obj_set_style_border_side(tab_btns, 0, LV_PART_ITEMS | LV_STATE_CHECKED);
@@ -289,6 +293,12 @@ void MainPanel::handle_print_cb(lv_event_t *event) {
   }
 }
 
+void MainPanel::handle_tab_change_cb(lv_event_t *event) {
+  if (lv_event_get_code(event) == LV_EVENT_VALUE_CHANGED) {
+    update_header();
+  }
+}
+
 void MainPanel::create_main(lv_obj_t * parent)
 {
     lv_obj_set_flex_flow(parent, LV_FLEX_FLOW_COLUMN);
@@ -344,7 +354,21 @@ void MainPanel::create_main(lv_obj_t * parent)
 }
 
 void MainPanel::update_header() {
-  lv_label_set_text(title_label, "POWER SCREEN K1C");
+  const char *title = "POWER SCREEN K1C";
+  switch (lv_tabview_get_tab_act(tabview)) {
+    case 1:
+      title = "CALIBRATIONS";
+      break;
+    case 2:
+      title = "CONSOLE";
+      break;
+    case 3:
+      title = "SETTINGS";
+      break;
+    default:
+      break;
+  }
+  lv_label_set_text(title_label, title);
 }
 
 void MainPanel::update_clock() {

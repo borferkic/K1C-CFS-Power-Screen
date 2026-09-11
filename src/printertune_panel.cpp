@@ -41,23 +41,12 @@ PrinterTunePanel::PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t 
 
   tmc_tune_btn.disable();
 
-  static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(2), LV_GRID_FR(5), LV_GRID_FR(5), LV_GRID_TEMPLATE_LAST};
+  static lv_coord_t grid_main_row_dsc[] = {20, 150, 150, LV_GRID_TEMPLATE_LAST};
   static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1),
       LV_GRID_TEMPLATE_LAST};
 
   lv_obj_set_grid_dsc_array(cont, grid_main_col_dsc, grid_main_row_dsc);
-
-  const auto raise_button = [](lv_obj_t *button) {
-    lv_obj_set_style_translate_y(button, -25, LV_PART_MAIN);
-  };
-  raise_button(bedmesh_btn.get_button());
-  raise_button(finetune_btn.get_button());
-  raise_button(inputshaper_btn.get_button());
-  raise_button(belts_calibration_btn.get_button());
-  raise_button(limits_btn.get_button());
-  raise_button(tmc_tune_btn.get_button());
-  raise_button(tmc_status_btn.get_button());
-  raise_button(power_devices_btn.get_button());
+  lv_obj_set_style_pad_row(cont, 20, LV_PART_MAIN);
 
   // row 1
   lv_obj_set_grid_cell(bedmesh_btn.get_button(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 1, 1);
