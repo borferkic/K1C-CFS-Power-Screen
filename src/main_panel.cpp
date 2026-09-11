@@ -60,7 +60,14 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
     lv_style_set_img_recolor(&style, lv_color_black());
     lv_style_set_border_width(&style, 0);
     lv_style_set_bg_color(&style, lv_palette_darken(LV_PALETTE_GREY, 4));
-    print_btn.set_image_color(lv_color_hex(CREALITY_GREEN));
+    // Keep the print glyph white and use Creality green for the visible button
+    // background. The image button is 64x64; the surrounding container is the
+    // larger layout/touch area shared by ButtonContainer.
+    print_btn.set_image_color(lv_color_white());
+    lv_obj_set_style_bg_color(print_btn.get_button(), lv_color_hex(CREALITY_GREEN),
+                              LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(print_btn.get_button(), LV_OPA_COVER,
+                            LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ws.register_notify_update(this);
     led_panel.set_state_callback([this](bool active) {
