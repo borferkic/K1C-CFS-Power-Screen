@@ -198,7 +198,12 @@ void MainPanel::create_panel() {
                       LV_EVENT_VALUE_CHANGED, this);
   lv_obj_add_event_cb(tabview, &MainPanel::_handle_tab_change_cb,
                       LV_EVENT_VALUE_CHANGED, this);
-  lv_obj_set_style_bg_color(tab_btns, lv_palette_main(LV_PALETTE_GREY), LV_STATE_CHECKED | LV_PART_ITEMS);
+  // Invert the navigation colors: inactive tabs keep the former selected
+  // gray, while the active tab uses the former unselected white background.
+  lv_obj_set_style_bg_color(tab_btns, lv_palette_main(LV_PALETTE_GREY), LV_PART_ITEMS);
+  lv_obj_set_style_bg_opa(tab_btns, LV_OPA_COVER, LV_PART_ITEMS);
+  lv_obj_set_style_bg_color(tab_btns, lv_color_white(), LV_STATE_CHECKED | LV_PART_ITEMS);
+  lv_obj_set_style_bg_opa(tab_btns, LV_OPA_COVER, LV_STATE_CHECKED | LV_PART_ITEMS);
   lv_obj_set_style_outline_width(tab_btns, 0, LV_PART_ITEMS | LV_STATE_FOCUS_KEY | LV_STATE_FOCUS_KEY);
   lv_obj_set_style_border_side(tab_btns, 0, LV_PART_ITEMS | LV_STATE_CHECKED);
   lv_obj_set_style_text_font(tab_btns, &materialdesign_font_40, LV_STATE_DEFAULT);
@@ -209,23 +214,21 @@ void MainPanel::create_panel() {
   lv_obj_set_style_border_side(tab_btns, 0, LV_PART_MAIN);
   lv_obj_update_layout(tab_btns);
 
-  lv_obj_t *nav_vertical_left = lv_obj_create(tab_btns);
-  lv_obj_remove_style_all(nav_vertical_left);
-  lv_obj_set_width(nav_vertical_left, 1);
-  lv_obj_set_height(nav_vertical_left, LV_PCT(100));
-  lv_obj_set_style_bg_color(nav_vertical_left, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
-  lv_obj_set_style_bg_opa(nav_vertical_left, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_clear_flag(nav_vertical_left, LV_OBJ_FLAG_CLICKABLE);
-  lv_obj_set_pos(nav_vertical_left, lv_obj_get_width(tab_btns) - 3, 0);
-
-  lv_obj_t *nav_vertical_right = lv_obj_create(tab_btns);
-  lv_obj_remove_style_all(nav_vertical_right);
-  lv_obj_set_width(nav_vertical_right, 2);
-  lv_obj_set_height(nav_vertical_right, LV_PCT(100));
-  lv_obj_set_style_bg_color(nav_vertical_right, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
-  lv_obj_set_style_bg_opa(nav_vertical_right, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_clear_flag(nav_vertical_right, LV_OBJ_FLAG_CLICKABLE);
-  lv_obj_set_pos(nav_vertical_right, lv_obj_get_width(tab_btns) - 2, 0);
+  // Keep the green edge as four independent segments so the active tab can
+  // hide only its own segment.
+  const lv_coord_t tab_btns_width = lv_obj_get_width(tab_btns);
+  const lv_coord_t tab_btns_height = lv_obj_get_height(tab_btns);
+  for (int tab_index = 0; tab_index < 4; ++tab_index) {
+    const lv_coord_t segment_top = (tab_btns_height * tab_index) / 4;
+    const lv_coord_t segment_bottom = (tab_btns_height * (tab_index + 1)) / 4;
+    nav_indicators[tab_index] = lv_obj_create(tab_btns);
+    lv_obj_remove_style_all(nav_indicators[tab_index]);
+    lv_obj_set_size(nav_indicators[tab_index], 3, segment_bottom - segment_top);
+    lv_obj_set_style_bg_color(nav_indicators[tab_index], lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(nav_indicators[tab_index], LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_clear_flag(nav_indicators[tab_index], LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_pos(nav_indicators[tab_index], tab_btns_width - 3, segment_top);
+  }
 
   for (int divider_index = 1; divider_index < 4; ++divider_index) {
     lv_obj_t *nav_divider_top = lv_obj_create(tab_btns);
@@ -252,6 +255,8 @@ void MainPanel::create_panel() {
   lv_obj_set_style_pad_all(console_tab, 0, 0);
   lv_obj_set_style_pad_all(printertune_tab, 0, 0);
   lv_obj_set_style_pad_all(setting_tab, 0, 0);
+
+  update_nav_indicator();
 
   create_main(main_tab);
   
@@ -369,6 +374,26 @@ void MainPanel::update_header() {
       break;
   }
   lv_label_set_text(title_label, title);
+  update_nav_indicator();
+}
+
+void MainPanel::update_nav_indicator() {
+  if (tabview == NULL) {
+    return;
+  }
+
+  const uint32_t active_tab = lv_tabview_get_tab_act(tabview);
+  for (uint32_t tab_index = 0; tab_index < 4; ++tab_index) {
+    if (nav_indicators[tab_index] == NULL) {
+      continue;
+    }
+
+    if (tab_index == active_tab) {
+      lv_obj_add_flag(nav_indicators[tab_index], LV_OBJ_FLAG_HIDDEN);
+    } else {
+      lv_obj_clear_flag(nav_indicators[tab_index], LV_OBJ_FLAG_HIDDEN);
+    }
+  }
 }
 
 void MainPanel::update_clock() {

@@ -92,6 +92,7 @@ class MainPanel : public NotifyConsumer {
   private:
   void create_main(lv_obj_t *parent);
   void update_header();
+  void update_nav_indicator();
   void update_clock();
   static void _update_clock_cb(lv_timer_t *timer) {
     MainPanel *panel = static_cast<MainPanel *>(timer->user_data);
@@ -102,6 +103,7 @@ class MainPanel : public NotifyConsumer {
   FanPanel fan_panel;
   LedPanel led_panel;
   lv_obj_t *tabview;
+  lv_obj_t *nav_indicators[4];
   lv_obj_t *main_tab;
   lv_obj_t *printertune_tab;
   lv_obj_t *console_tab;
