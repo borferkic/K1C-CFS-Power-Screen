@@ -7,8 +7,9 @@
 ## Objetivo
 
 Mantener el repositorio público centrado en el código, los recursos necesarios
-para compilar y ejecutar PowerScreen, los instaladores, el flujo de GitHub
-Actions y las capturas que utiliza el README.
+para compilar y ejecutar PowerScreen, los instaladores y el flujo de GitHub
+Actions. La evidencia visual se volverá a publicar cuando represente la
+interfaz actual.
 
 La documentación de desarrollo, las reglas internas, el backlog de trabajo y
 el historial de versiones se conservan fuera del árbol público en
@@ -35,9 +36,15 @@ reescribe el historial Git ni elimina tags o releases existentes.
 - Workflow de `.github/workflows/build.yml`.
 - Submódulos `lvgl`, `lv_drivers`, `libhv` y `spdlog`.
 - `wpa_supplicant`, requerido por el objetivo `wpaclient` del build.
-- `screenshots/`, conservado en el repositorio mientras se prepara una galería
-  actualizada; las imágenes antiguas ya no se muestran en `README.md`.
 - `README.md`, `LICENSE` y los recursos fuente de los iconos Z-Bolt.
+
+## Material visual retirado
+
+- Las ocho imágenes antiguas de `screenshots/` se retiraron del árbol público
+  porque ya no representan la interfaz actual.
+- Las copias verificadas se conservaron en
+  `90-Archivo-Local/PowerScreen/capturas-duplicadas/screenshots-viejos-powerscreen/`.
+- Se podrán volver a publicar capturas nuevas cuando la interfaz esté lista.
 
 ## Temporales y archivos históricos
 
@@ -48,7 +55,8 @@ organizado por la migración y están excluidos mediante las reglas aplicables.
 ## Validación de esta limpieza
 
 - El repositorio remoto consultado es público y usa `main` como rama principal.
-- La sección de capturas del README fue reemplazada por un aviso temporal.
+- La sección de capturas del README fue reemplazada por un aviso temporal y ya
+  no existen imágenes antiguas publicadas en `screenshots/`.
 - No quedan enlaces del README hacia los documentos privados retirados.
 - El README ya no muestra capturas antiguas; la sección indica `Coming soon...
   working on it.` hasta disponer de imágenes que representen la interfaz real.
@@ -75,6 +83,7 @@ organizado por la migración y están excluidos mediante las reglas aplicables.
 ## Reversión
 
 Para revertir esta limpieza después de publicarla, usar un commit de reversión
-con `git revert` y devolver los documentos desde
-`00-Documentacion-Privada/PowerScreen/` al árbol del proyecto. No usar
-`git reset --hard` ni reescribir la historia remota.
+con `git revert`, devolver los documentos desde
+`00-Documentacion-Privada/PowerScreen/` y, si se necesitan imágenes, restaurar
+las copias desde `90-Archivo-Local/PowerScreen/capturas-duplicadas/`.
+No usar `git reset --hard` ni reescribir la historia remota.
