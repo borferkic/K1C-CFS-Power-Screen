@@ -28,7 +28,7 @@ Estados: `[x]` implementado en código, `[~]` requiere verificación en la impre
 - [x] Panel derecho con Print Time y Filament Weight.
 - [x] Valores alineados a la derecha.
 - [x] Títulos verdes y en negrita.
-- [x] Barra superior con distribución `4-70-6-80-6-70-4`.
+- [x] Barra superior con distribución `4-120-4-144-4-120-4`.
 - [x] Botones de la barra en verde Creality.
 - [x] Toda la pastilla seleccionable desde cualquier punto.
 - [~] Confirmar en la K1C que las miniaturas aparecen y la selección táctil funciona.
