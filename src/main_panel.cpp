@@ -198,7 +198,7 @@ void MainPanel::create_panel() {
                       LV_EVENT_VALUE_CHANGED, this);
   lv_obj_add_event_cb(tabview, &MainPanel::_handle_tab_change_cb,
                       LV_EVENT_VALUE_CHANGED, this);
-  const lv_color_t nav_selected_bg = lv_palette_darken(LV_PALETTE_GREY, 4);
+  const lv_color_t nav_selected_bg = lv_color_hex(0x282B30);
   const lv_color_t nav_unselected_bg = lv_color_hex(0x555555);
   // The active tab blends with the Home background; inactive tabs use the
   // same gray as the title bar.
