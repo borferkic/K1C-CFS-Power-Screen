@@ -11,3 +11,12 @@ build/
 /.tmp-k1c-install/
 /.tmp-build-final/
 /.tmp-live-screenshots/
+/REGISTRO-TRABAJO.md
+# Other local build, package, capture and scratch outputs.
+/.tmp-fluidd-package/
+/.tmp-macro-build/
+/.tmp-zbolt-icons/
+/.tmp-powerscreen-current.raw
+/.tmp-powerscreen-diagnostic.png
+/.tmp-powerscreen-post-reboot.png
+/updatescript.txt

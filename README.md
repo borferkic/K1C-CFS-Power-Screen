@@ -155,7 +155,7 @@ git clone --recursive https://github.com/borferkic/K1C-CFS-POWER-SCREEN.git Powe
 cd PowerScreen
 ```
 
-Building for the K1C requires the MIPS toolchain described in [DEVELOPMENT.md](DEVELOPMENT.md). The main configuration uses the `mipsel-buildroot-linux-musl-` compiler and generates:
+Building for the K1C uses the MIPS toolchain and workflow maintained in private project documentation. The main configuration uses the `mipsel-buildroot-linux-musl-` compiler and generates:
 
 ```text
 build/bin/powerscreen
@@ -165,8 +165,7 @@ Interface and CFS workflow testing must be performed on a real K1C. A successful
 
 ## Pending work
 
-Internal change and pending logs are kept locally in `DEV LOG/` and are not included in the repository.
-The project history is documented in [CHANGELOG.md](CHANGELOG.md) and [CHANGELOG-ES.md](CHANGELOG-ES.md).
+Internal change logs, pending work and release history are kept in private project documentation outside the public repository.
 
 ## Support the project
 
@@ -345,7 +344,7 @@ git clone --recursive https://github.com/borferkic/K1C-CFS-POWER-SCREEN.git Powe
 cd PowerScreen
 ```
 
-La compilación para la K1C requiere el toolchain MIPS indicado en [DEVELOPMENT.md](DEVELOPMENT.md). La configuración principal usa el compilador `mipsel-buildroot-linux-musl-` y genera:
+La compilación para la K1C utiliza el toolchain MIPS y el flujo de trabajo conservados en la documentación privada del proyecto. La configuración principal usa el compilador `mipsel-buildroot-linux-musl-` y genera:
 
 ```text
 build/bin/powerscreen
@@ -355,8 +354,7 @@ Las pruebas de interfaz y del flujo CFS deben realizarse en una K1C real. Una co
 
 ## Pendientes
 
-Los registros internos de cambios y pendientes se guardan localmente en `DEV LOG/` y no se incluyen en el repositorio.
-El historial del proyecto se documenta en [CHANGELOG-ES.md](CHANGELOG-ES.md) y [CHANGELOG.md](CHANGELOG.md).
+Los registros internos de cambios, pendientes e historial de versiones se conservan en documentación privada fuera del repositorio público.
 
 ## Apoyo al proyecto
 
