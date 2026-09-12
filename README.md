@@ -1,3 +1,12 @@
+<!--
+METADATOS DEL DOCUMENTO
+Nombre: `README.md`
+Fecha de creación: `2026-09-10`
+Descripción: Presentación pública, alcance e instrucciones de PowerScreen para la Creality K1C.
+Proyecto: `PowerScreen`
+Última modificación: `2026-09-12`
+-->
+
 [English](#english) | [Español](#espanol)
 
 ---

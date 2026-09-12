@@ -1,3 +1,21 @@
+<!--
+METADATOS DEL DOCUMENTO
+Nombre: `GIT-CLEAN.MD`
+Fecha de creación: `2026-09-12`
+Descripción: Registro de limpieza y límites del repositorio público de PowerScreen.
+Proyecto: `PowerScreen`
+Última modificación: `2026-09-12`
+-->
+
+<!--
+METADATOS DEL DOCUMENTO
+Nombre: `GIT-CLEAN.MD`
+Fecha de creación: `2026-09-12`
+Descripción: Registro de limpieza y límites del repositorio público de PowerScreen.
+Proyecto: `PowerScreen`
+Última modificación: `2026-09-12`
+-->
+
 # Limpieza del repositorio Git de PowerScreen
 
 **Fecha:** 2026-09-12
