@@ -51,7 +51,10 @@ organizado por la migración y están excluidos mediante las reglas aplicables.
 - No quedan enlaces del README hacia los documentos privados retirados.
 - Los submódulos conservan sus commits registrados.
 - Se ejecutó `git diff --check` sin errores de formato.
-- No se ejecutó una compilación ni se modificaron instalaciones de la K1C.
+- El push del commit `23be7d8` ejecutó Actions `34689227751`; los jobs `build`
+  y `release` terminaron correctamente.
+- Actions generó la nightly `v0.33.3-nightly.20260912.104520Z`.
+- No se modificó ni instaló nada directamente en la K1C.
 
 ## Reversión
 
