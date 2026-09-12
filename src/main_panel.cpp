@@ -198,11 +198,13 @@ void MainPanel::create_panel() {
                       LV_EVENT_VALUE_CHANGED, this);
   lv_obj_add_event_cb(tabview, &MainPanel::_handle_tab_change_cb,
                       LV_EVENT_VALUE_CHANGED, this);
-  // Invert the navigation colors: inactive tabs keep the former selected
-  // gray, while the active tab uses the former unselected white background.
-  lv_obj_set_style_bg_color(tab_btns, lv_palette_main(LV_PALETTE_GREY), LV_PART_ITEMS);
+  const lv_color_t nav_selected_bg = lv_palette_darken(LV_PALETTE_GREY, 4);
+  const lv_color_t nav_unselected_bg = lv_color_hex(0x555555);
+  // The active tab blends with the Home background; inactive tabs use the
+  // same gray as the title bar.
+  lv_obj_set_style_bg_color(tab_btns, nav_unselected_bg, LV_PART_ITEMS);
   lv_obj_set_style_bg_opa(tab_btns, LV_OPA_COVER, LV_PART_ITEMS);
-  lv_obj_set_style_bg_color(tab_btns, lv_color_white(), LV_STATE_CHECKED | LV_PART_ITEMS);
+  lv_obj_set_style_bg_color(tab_btns, nav_selected_bg, LV_STATE_CHECKED | LV_PART_ITEMS);
   lv_obj_set_style_bg_opa(tab_btns, LV_OPA_COVER, LV_STATE_CHECKED | LV_PART_ITEMS);
   lv_obj_set_style_outline_width(tab_btns, 0, LV_PART_ITEMS | LV_STATE_FOCUS_KEY | LV_STATE_FOCUS_KEY);
   lv_obj_set_style_border_side(tab_btns, 0, LV_PART_ITEMS | LV_STATE_CHECKED);
