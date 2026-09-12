@@ -92,7 +92,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
 
   lv_obj_t *sort_buttons[] = {refresh_btn, modified_sort_btn, az_sort_btn};
   for (lv_obj_t *sort_button : sort_buttons) {
-    lv_obj_set_size(sort_button, sort_button == modified_sort_btn ? 88 : 70, 38);
+    lv_obj_set_size(sort_button, sort_button == modified_sort_btn ? 80 : 70, 38);
     lv_obj_set_style_pad_all(sort_button, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(sort_button, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(sort_button, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -274,6 +274,7 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
 
     lv_obj_t *thumbnail_frame = lv_obj_create(card);
     lv_obj_set_size(thumbnail_frame, 112, 112);
+    lv_obj_clear_flag(thumbnail_frame, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_clear_flag(thumbnail_frame, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_bg_color(thumbnail_frame, lv_color_hex(0x404040), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(thumbnail_frame, LV_OPA_COVER, LV_PART_MAIN);
@@ -283,6 +284,7 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
 
     lv_obj_t *thumbnail = lv_img_create(thumbnail_frame);
     lv_img_set_size_mode(thumbnail, LV_IMG_SIZE_MODE_REAL);
+    lv_obj_clear_flag(thumbnail, LV_OBJ_FLAG_CLICKABLE);
     lv_img_set_src(thumbnail, directory ? LV_SYMBOL_DIRECTORY : LV_SYMBOL_IMAGE);
     lv_obj_set_size(thumbnail, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
     lv_obj_set_style_text_font(thumbnail, &lv_font_montserrat_20, LV_PART_MAIN);
@@ -293,6 +295,7 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_center(thumbnail);
 
     lv_obj_t *name_label = lv_label_create(card);
+    lv_obj_clear_flag(name_label, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_set_width(name_label, LV_PCT(100));
     lv_obj_set_height(name_label, lv_font_get_line_height(&lv_font_montserrat_14));
     lv_label_set_long_mode(name_label, LV_LABEL_LONG_DOT);
