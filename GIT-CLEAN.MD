@@ -59,12 +59,12 @@ organizado por la migración y están excluidos mediante las reglas aplicables.
 - Actions generó la nightly `v0.33.3-nightly.20260912.104520Z`.
 - No se modificó ni instaló nada directamente en la K1C.
 
-## Revisión de referencias a Guppy
+## Revisión de referencias del nombre anterior
 
 - Se revisó el árbol activo de `main` y no quedan rutas, nombres ni contenido
-  propio de PowerScreen con `Guppy`, `GuppyScreen` o `guppyify`.
+  propio de PowerScreen con el nombre anterior de la interfaz.
 - No existen issues ni pull requests públicos con comentarios pendientes que
-  contengan esas referencias.
+  contengan referencias al nombre anterior.
 - GitHub Discussions está deshabilitado para este repositorio, por lo que no
   hay comentarios de Discussions que limpiar.
 - Los commits y tags históricos todavía pueden contener referencias al nombre
