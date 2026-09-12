@@ -35,7 +35,8 @@ reescribe el historial Git ni elimina tags o releases existentes.
 - Workflow de `.github/workflows/build.yml`.
 - Submódulos `lvgl`, `lv_drivers`, `libhv` y `spdlog`.
 - `wpa_supplicant`, requerido por el objetivo `wpaclient` del build.
-- `screenshots/`, porque las ocho imágenes son referenciadas por `README.md`.
+- `screenshots/`, conservado en el repositorio mientras se prepara una galería
+  actualizada; las imágenes antiguas ya no se muestran en `README.md`.
 - `README.md`, `LICENSE` y los recursos fuente de los iconos Z-Bolt.
 
 ## Temporales y archivos históricos
@@ -47,14 +48,29 @@ organizado por la migración y están excluidos mediante las reglas aplicables.
 ## Validación de esta limpieza
 
 - El repositorio remoto consultado es público y usa `main` como rama principal.
-- Las ocho rutas de captura del README existen en `screenshots/`.
+- La sección de capturas del README fue reemplazada por un aviso temporal.
 - No quedan enlaces del README hacia los documentos privados retirados.
+- El README ya no muestra capturas antiguas; la sección indica `Coming soon...
+  working on it.` hasta disponer de imágenes que representen la interfaz real.
 - Los submódulos conservan sus commits registrados.
 - Se ejecutó `git diff --check` sin errores de formato.
 - El push del commit `23be7d8` ejecutó Actions `34689227751`; los jobs `build`
   y `release` terminaron correctamente.
 - Actions generó la nightly `v0.33.3-nightly.20260912.104520Z`.
 - No se modificó ni instaló nada directamente en la K1C.
+
+## Revisión de referencias a Guppy
+
+- Se revisó el árbol activo de `main` y no quedan rutas, nombres ni contenido
+  propio de PowerScreen con `Guppy`, `GuppyScreen` o `guppyify`.
+- No existen issues ni pull requests públicos con comentarios pendientes que
+  contengan esas referencias.
+- GitHub Discussions está deshabilitado para este repositorio, por lo que no
+  hay comentarios de Discussions que limpiar.
+- Los commits y tags históricos todavía pueden contener referencias al nombre
+  anterior. No se reescribió el historial ni se eliminaron tags, porque eso
+  rompería enlaces, referencias y releases existentes.
+- Las dependencias externas no fueron modificadas.
 
 ## Reversión
 
