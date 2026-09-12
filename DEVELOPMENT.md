@@ -21,6 +21,46 @@ The PowerScreen uses features (filesystem) from C++17, so a gcc/g++ version (7.2
 The build uses the Z-Bolt icon set exclusively.
 `POWERSCREEN_VERSION` - Version string displayed in the System Panel in the UI.
 
+## Proceso oficial de compilación de este repositorio
+
+Para la K1C con el tema Z-Bolt, la compilación reproducible se realiza mediante
+GitHub Actions en Ubuntu 22.04. El workflow oficial es
+`.github/workflows/build.yml`; no se debe intentar la compilación MIPS desde
+PowerShell o desde Git Bash si no está instalado un entorno Linux con `make`,
+`cmake` y el toolchain MIPS.
+
+El flujo asociado a Git es el siguiente:
+
+1. Trabajar sobre una copia con submódulos: `git clone --recursive ...`.
+2. Revisar el cambio y ejecutar `git diff --check`.
+3. Hacer commit y subirlo a la rama correspondiente.
+4. Verificar el workflow `build.yml` en GitHub Actions.
+
+Las ramas y resultados son:
+
+- `develop`: ejecuta la compilación y conserva el artefacto para pruebas.
+- `main`: ejecuta la compilación y publica una nightly pre-release.
+- Un tag: ejecuta la compilación y publica una release estable.
+
+El workflow instala las dependencias, descarga automáticamente
+`mips-gcc720-glibc229.tar.gz`, detecta el prefijo del compilador, aplica los
+parches de `lv_drivers`, `spdlog` y `lvgl`, y ejecuta estas fases:
+`wpaclient`, `libhv`, `libspdlog`, `powerscreen` y `kd_graphic_mode`.
+Después llama a `release.sh` y genera `powerscreen-zbolt.tar.gz` para la
+instalación en la impresora y `powerscreen-zbolt.zip` para el Update Manager
+de Fluidd.
+
+Para comprobar una ejecución desde una terminal con GitHub CLI:
+
+```bash
+gh run list --repo borferkic/K1C-CFS-POWER-SCREEN --workflow build.yml --limit 1
+gh run view <RUN_ID> --repo borferkic/K1C-CFS-POWER-SCREEN
+```
+
+Un build correcto solo confirma la compilación y el empaquetado. La interfaz,
+el diálogo numérico, los macros CFS y el comportamiento físico del extrusor
+deben validarse después en una K1C real.
+
 ### Build Environment
 
 #### Ubuntu and Debian

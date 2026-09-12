@@ -21,6 +21,14 @@ Numpad::Numpad(lv_obj_t *parent)
   lv_obj_set_flex_align(edit_cont, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
   lv_obj_align(edit_cont, LV_ALIGN_RIGHT_MID, 0, 0);
 
+  // Keep the temperature input panel visually tied to the Creality UI while
+  // leaving the numeric input and its event handling unchanged.
+  lv_obj_set_style_border_color(edit_cont, lv_color_hex(0x4CAF50), LV_PART_MAIN);
+  lv_obj_set_style_border_opa(edit_cont, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_border_width(edit_cont, 3, LV_PART_MAIN);
+  lv_obj_set_style_border_side(edit_cont, LV_BORDER_SIDE_FULL, LV_PART_MAIN);
+  lv_obj_set_style_radius(edit_cont, 12, LV_PART_MAIN);
+
   lv_obj_set_flex_flow(edit_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_style_pad_all(edit_cont, 0, 0);
 
