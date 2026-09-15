@@ -27,7 +27,8 @@ namespace {
 constexpr uint32_t CARD_BORDER = 0x4CAF50;
 constexpr uint32_t CREALITY_GREEN = 0x4CAF50;
 constexpr uint32_t BUTTON_GREY = 0x555555;
-constexpr uint32_t BACK_BUTTON_BACKGROUND = 0x282B30;
+constexpr uint32_t SCREEN_BACKGROUND = 0x282B30;
+constexpr uint32_t BACK_BUTTON_BACKGROUND = SCREEN_BACKGROUND;
 
 lv_color_t screen_background_color() {
   return lv_palette_darken(LV_PALETTE_GREY, 4);
@@ -122,7 +123,7 @@ SysInfoPanel::SysInfoPanel()
 
   style_screen_object(cont);
   lv_obj_set_size(cont, LV_PCT(100), LV_PCT(100));
-  lv_obj_set_style_bg_color(cont, screen_background_color(), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(cont, lv_color_hex(SCREEN_BACKGROUND), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(cont, LV_OPA_COVER, LV_PART_MAIN);
 
   lv_obj_clear_flag(title_bar, LV_OBJ_FLAG_SCROLLABLE);
