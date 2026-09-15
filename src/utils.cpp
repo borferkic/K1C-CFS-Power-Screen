@@ -4,6 +4,7 @@
 #include "state.h"
 #include "spdlog/spdlog.h"
 #include "platform.h"
+#include "wpa_ctrl.h"
 
 #include <cmath>
 #include <time.h>
@@ -179,6 +180,49 @@ namespace KUtils {
       for (const auto &e : fs::directory_iterator(wpa_socket)) {
         if (fs::is_socket(e.path()) && e.path().string().find("p2p") == std::string::npos) {
           return e.path().filename().string();
+        }
+      }
+    }
+
+    return "";
+  }
+
+  std::string get_wifi_network() {
+    const std::string wpa_directory = Config::get_instance()->get<std::string>("/wpa_supplicant");
+    if (!fs::is_directory(fs::status(wpa_directory))) {
+      return "";
+    }
+
+    for (const auto &entry : fs::directory_iterator(wpa_directory)) {
+      if (!fs::is_socket(entry.path()) || entry.path().string().find("p2p") != std::string::npos) {
+        continue;
+      }
+
+      struct wpa_ctrl *control = wpa_ctrl_open(entry.path().c_str());
+      if (control == nullptr) {
+        continue;
+      }
+
+      char response[4096] = {};
+      size_t response_length = sizeof(response) - 1;
+      const int result = wpa_ctrl_request(control,
+                                          "LIST_NETWORKS",
+                                          strlen("LIST_NETWORKS"),
+                                          response,
+                                          &response_length,
+                                          nullptr);
+      wpa_ctrl_close(control);
+
+      if (result != 0) {
+        continue;
+      }
+
+      std::istringstream networks(std::string(response, response_length));
+      std::string line;
+      while (std::getline(networks, line)) {
+        const auto parts = split(line, '\t');
+        if (parts.size() == 4 && line.find("[CURRENT]") != std::string::npos) {
+          return parts[1];
         }
       }
     }

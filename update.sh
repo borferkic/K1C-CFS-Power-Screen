@@ -5,6 +5,11 @@ VERSION_FILE=$POWERSCREEN_DIR/.version
 CUSTOM_UPGRADE_SCRIPT=$POWERSCREEN_DIR/custom_upgrade.sh
 POWERSCREEN_REPOSITORY="borferkic/K1C-CFS-POWER-SCREEN"
 ASSET_NAME="powerscreen-zbolt.tar.gz"
+CHECK_ONLY=false
+
+if [ "$1" = "--check" ]; then
+    CHECK_ONLY=true
+fi
 
 CURRENT_VERSION=""
 if [ -f "$VERSION_FILE" ]; then
@@ -22,6 +27,11 @@ fi
 $CURL -s https://api.github.com/repos/$POWERSCREEN_REPOSITORY/releases -o /tmp/powerscreen-releases.json
 latest_version=`jq -r '.[0].tag_name' /tmp/powerscreen-releases.json`
 
+if [ -z "$latest_version" ] || [ "$latest_version" = "null" ]; then
+    echo "UPDATE_CHECK_FAILED"
+    exit 1
+fi
+
 legacy_version=false
 case "$CURRENT_VERSION" in
     nightly-*) legacy_version=true ;;
@@ -31,9 +41,18 @@ if [ "$CURRENT_VERSION" = "$latest_version" ] || {
     [ "$legacy_version" = false ] &&
     [ "$(printf '%s\n' "$CURRENT_VERSION" "$latest_version" | sort -V | head -n1)" = "$latest_version" ]
 }; then
-    echo "Current version $CURRENT_VERSION is up to date."
+    if [ "$CHECK_ONLY" = "true" ]; then
+        echo "UP_TO_DATE:$latest_version"
+    else
+        echo "Current version $CURRENT_VERSION is up to date."
+    fi
     exit 0
 else
+    if [ "$CHECK_ONLY" = "true" ]; then
+        echo "UPDATE_AVAILABLE:$latest_version"
+        exit 0
+    fi
+
     asset_url=`jq -r --arg asset "$ASSET_NAME" '.[0].assets[] | select(.name == $asset) | .browser_download_url' /tmp/powerscreen-releases.json`
     echo "Downloading latest version $latest_version, $asset_url"
     $CURL -L "$asset_url" -o /tmp/powerscreen.tar.gz
