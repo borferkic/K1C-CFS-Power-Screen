@@ -27,6 +27,7 @@ namespace {
 constexpr uint32_t CARD_BORDER = 0x4CAF50;
 constexpr uint32_t CREALITY_GREEN = 0x4CAF50;
 constexpr uint32_t BUTTON_GREY = 0x555555;
+constexpr uint32_t BACK_BUTTON_BACKGROUND = 0x282B30;
 
 lv_color_t screen_background_color() {
   return lv_palette_darken(LV_PALETTE_GREY, 4);
@@ -289,6 +290,25 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_add_flag(update_status, LV_OBJ_FLAG_HIDDEN);
 
   lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_FLOATING);
+  lv_obj_t *back_container = back_btn.get_container();
+  lv_obj_set_style_pad_top(back_container, 6, LV_PART_MAIN);
+  lv_obj_set_style_pad_bottom(back_container, 6, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(back_container, lv_color_hex(BACK_BUTTON_BACKGROUND),
+                            LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(back_container, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_radius(back_container, 12, LV_PART_MAIN);
+  // LVGL only supports a uniform radius. This opaque right strip squares the
+  // right corners while preserving the 12 px radius on the left side.
+  lv_obj_set_style_clip_corner(back_container, false, LV_PART_MAIN);
+  lv_obj_update_layout(back_container);
+  lv_obj_t *back_right_edge = lv_obj_create(back_container);
+  lv_obj_remove_style_all(back_right_edge);
+  lv_obj_set_size(back_right_edge, 12, LV_PCT(100));
+  lv_obj_align(back_right_edge, LV_ALIGN_RIGHT_MID, 0, 0);
+  lv_obj_set_style_bg_color(back_right_edge,
+                            lv_color_hex(BACK_BUTTON_BACKGROUND), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(back_right_edge, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_clear_flag(back_right_edge, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, 0, -14);
   lv_obj_move_background(cont);
 }
