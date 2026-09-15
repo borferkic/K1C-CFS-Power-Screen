@@ -60,6 +60,7 @@ lv_obj_t *create_row_label(lv_obj_t *row, const char *text) {
   lv_label_set_text(label, text);
   lv_obj_set_style_text_color(label, lv_color_white(), LV_PART_MAIN);
   lv_obj_set_style_text_font(label, &lv_font_montserrat_20, LV_PART_MAIN);
+  lv_obj_set_style_translate_y(label, 5, LV_PART_MAIN);
   lv_obj_align(label, LV_ALIGN_LEFT_MID, 22, 0);
   return label;
 }
