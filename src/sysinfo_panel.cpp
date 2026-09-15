@@ -24,10 +24,13 @@ LV_IMG_DECLARE(device);
 #endif
 
 namespace {
-constexpr uint32_t SCREEN_BACKGROUND = 0x212121;
 constexpr uint32_t CARD_BORDER = 0x4CAF50;
-constexpr uint32_t VALUE_RED = 0xF44336;
+constexpr uint32_t CREALITY_GREEN = 0x4CAF50;
 constexpr uint32_t BUTTON_GREY = 0x555555;
+
+lv_color_t screen_background_color() {
+  return lv_palette_darken(LV_PALETTE_GREY, 4);
+}
 
 void style_screen_object(lv_obj_t *obj) {
   lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
@@ -38,7 +41,7 @@ void style_screen_object(lv_obj_t *obj) {
 
 void style_card(lv_obj_t *card) {
   style_screen_object(card);
-  lv_obj_set_style_bg_color(card, lv_color_hex(SCREEN_BACKGROUND), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(card, screen_background_color(), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(card, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_color(card, lv_color_hex(CARD_BORDER), LV_PART_MAIN);
   lv_obj_set_style_border_width(card, 1, LV_PART_MAIN);
@@ -87,8 +90,9 @@ static std::map<std::string, int32_t> sleep_label_to_sec = {
 
 SysInfoPanel::SysInfoPanel()
   : cont(lv_obj_create(lv_scr_act()))
-  , title_label(lv_label_create(cont))
-  , time_label(lv_label_create(cont))
+  , title_bar(lv_obj_create(cont))
+  , title_label(lv_label_create(title_bar))
+  , time_label(lv_label_create(title_bar))
   , clock_timer(NULL)
   , network_card(lv_obj_create(cont))
   , network_title_label(lv_label_create(network_card))
@@ -116,20 +120,29 @@ SysInfoPanel::SysInfoPanel()
 
   style_screen_object(cont);
   lv_obj_set_size(cont, LV_PCT(100), LV_PCT(100));
-  lv_obj_set_style_bg_color(cont, lv_color_hex(SCREEN_BACKGROUND), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(cont, screen_background_color(), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(cont, LV_OPA_COVER, LV_PART_MAIN);
 
+  lv_obj_clear_flag(title_bar, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_size(title_bar, LV_PCT(100), 32);
+  lv_obj_set_pos(title_bar, 0, 0);
+  lv_obj_set_style_pad_all(title_bar, 0, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(title_bar, lv_color_hex(BUTTON_GREY), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(title_bar, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_border_width(title_bar, 0, LV_PART_MAIN);
+
   lv_label_set_text(title_label, "SYSTEM");
-  lv_obj_set_size(title_label, LV_PCT(100), 32);
+  lv_obj_set_width(title_label, LV_PCT(100));
+  lv_label_set_long_mode(title_label, LV_LABEL_LONG_DOT);
   lv_obj_set_style_text_align(title_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
   lv_obj_set_style_text_color(title_label, lv_color_white(), LV_PART_MAIN);
   lv_obj_set_style_text_font(title_label, &lv_font_montserrat_20, LV_PART_MAIN);
-  lv_obj_set_pos(title_label, 0, 0);
+  lv_obj_align(title_label, LV_ALIGN_CENTER, 0, 0);
 
   lv_obj_set_width(time_label, LV_SIZE_CONTENT);
   lv_obj_set_style_text_color(time_label, lv_color_white(), LV_PART_MAIN);
   lv_obj_set_style_text_font(time_label, &lv_font_montserrat_20, LV_PART_MAIN);
-  lv_obj_align(time_label, LV_ALIGN_TOP_RIGHT, -10, 0);
+  lv_obj_align(time_label, LV_ALIGN_RIGHT_MID, -10, 0);
   update_clock();
   clock_timer = lv_timer_create(&SysInfoPanel::_update_clock_cb, 1000, this);
 
@@ -143,13 +156,15 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_set_pos(network_title_label, 32, 8);
 
   lv_obj_set_width(network_name_label, 225);
-  lv_obj_set_style_text_color(network_name_label, lv_color_hex(VALUE_RED), LV_PART_MAIN);
+  lv_obj_set_height(network_name_label, 24);
+  lv_obj_set_style_text_color(network_name_label, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
   lv_obj_set_style_text_font(network_name_label, &lv_font_montserrat_20, LV_PART_MAIN);
-  lv_label_set_long_mode(network_name_label, LV_LABEL_LONG_CLIP);
+  lv_label_set_long_mode(network_name_label, LV_LABEL_LONG_DOT);
   lv_obj_set_pos(network_name_label, 32, 32);
 
   lv_obj_set_width(network_ip_label, 225);
-  lv_obj_set_style_text_color(network_ip_label, lv_color_hex(VALUE_RED), LV_PART_MAIN);
+  lv_obj_set_height(network_ip_label, 24);
+  lv_obj_set_style_text_color(network_ip_label, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
   lv_obj_set_style_text_font(network_ip_label, &lv_font_montserrat_20, LV_PART_MAIN);
   lv_obj_set_pos(network_ip_label, 32, 56);
 
@@ -258,7 +273,7 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_set_style_border_width(update_button, 0, LV_PART_MAIN);
   lv_obj_set_style_radius(update_button, 12, LV_PART_MAIN);
 
-  lv_label_set_text(update_button_label, "UPDATE");
+  lv_label_set_text(update_button_label, "Check for Updates");
   lv_obj_set_width(update_button_label, LV_PCT(100));
   lv_obj_set_style_text_align(update_button_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
   lv_obj_set_style_text_color(update_button_label, lv_color_white(), LV_PART_MAIN);
