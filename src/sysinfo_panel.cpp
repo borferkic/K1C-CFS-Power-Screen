@@ -272,8 +272,13 @@ SysInfoPanel::SysInfoPanel()
                             LV_PART_MAIN | LV_STATE_PRESSED);
   lv_obj_set_style_bg_opa(update_button, LV_OPA_COVER,
                           LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_set_style_bg_color(update_button, lv_color_hex(0x3A3A3A),
+                            LV_PART_MAIN | LV_STATE_DISABLED);
+  lv_obj_set_style_bg_opa(update_button, LV_OPA_COVER,
+                          LV_PART_MAIN | LV_STATE_DISABLED);
   lv_obj_set_style_border_width(update_button, 0, LV_PART_MAIN);
   lv_obj_set_style_radius(update_button, 12, LV_PART_MAIN);
+  lv_obj_add_state(update_button, LV_STATE_DISABLED);
 
   lv_label_set_text(update_button_label, "UPDATE");
   lv_obj_set_width(update_button_label, LV_PCT(100));
@@ -348,6 +353,7 @@ void SysInfoPanel::refresh_network() {
 
 void SysInfoPanel::check_for_update() {
   lv_obj_add_flag(update_status, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_add_state(update_button, LV_STATE_DISABLED);
 
   try {
     const fs::path script = fs::canonical("/proc/self/exe").parent_path() / "update.sh";
@@ -361,6 +367,7 @@ void SysInfoPanel::check_for_update() {
     const std::string result(output.buf.data(), output.length);
     if (result.rfind("UPDATE_AVAILABLE:", 0) == 0) {
       lv_obj_clear_flag(update_status, LV_OBJ_FLAG_HIDDEN);
+      lv_obj_clear_state(update_button, LV_STATE_DISABLED);
     }
   } catch (const std::exception &error) {
     spdlog::warn("Failed to check for PowerScreen updates: {}", error.what());
@@ -397,6 +404,9 @@ void SysInfoPanel::handle_callback(lv_event_t *e)
     if (btn == back_btn.get_container()) {
       lv_obj_move_background(cont);
     } else if (btn == update_button) {
+      if (lv_obj_has_state(update_button, LV_STATE_DISABLED)) {
+        return;
+      }
       spdlog::trace("update powerscreen pressed from system info");
       run_update();
     }
