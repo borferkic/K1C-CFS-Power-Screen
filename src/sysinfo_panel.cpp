@@ -154,20 +154,20 @@ SysInfoPanel::SysInfoPanel()
   lv_label_set_text(network_title_label, "Network:");
   lv_obj_set_style_text_color(network_title_label, lv_color_white(), LV_PART_MAIN);
   lv_obj_set_style_text_font(network_title_label, &lv_font_montserrat_20, LV_PART_MAIN);
-  lv_obj_set_pos(network_title_label, 32, 8);
+  lv_obj_set_pos(network_title_label, 32, 18);
 
   lv_obj_set_width(network_name_label, 225);
   lv_obj_set_height(network_name_label, 24);
   lv_obj_set_style_text_color(network_name_label, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
   lv_obj_set_style_text_font(network_name_label, &lv_font_montserrat_20, LV_PART_MAIN);
   lv_label_set_long_mode(network_name_label, LV_LABEL_LONG_DOT);
-  lv_obj_set_pos(network_name_label, 32, 32);
+  lv_obj_set_pos(network_name_label, 32, 42);
 
   lv_obj_set_width(network_ip_label, 225);
   lv_obj_set_height(network_ip_label, 24);
   lv_obj_set_style_text_color(network_ip_label, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
   lv_obj_set_style_text_font(network_ip_label, &lv_font_montserrat_20, LV_PART_MAIN);
-  lv_obj_set_pos(network_ip_label, 32, 56);
+  lv_obj_set_pos(network_ip_label, 32, 66);
 
   lv_img_set_src(printer_img, &device);
   lv_obj_set_pos(printer_img, 0, 130);
@@ -274,7 +274,7 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_set_style_border_width(update_button, 0, LV_PART_MAIN);
   lv_obj_set_style_radius(update_button, 12, LV_PART_MAIN);
 
-  lv_label_set_text(update_button_label, "Check for Updates");
+  lv_label_set_text(update_button_label, "UPDATE");
   lv_obj_set_width(update_button_label, LV_PCT(100));
   lv_obj_set_style_text_align(update_button_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
   lv_obj_set_style_text_color(update_button_label, lv_color_white(), LV_PART_MAIN);
@@ -283,10 +283,10 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_add_event_cb(update_button, &SysInfoPanel::_handle_callback,
                       LV_EVENT_CLICKED, this);
 
-  lv_label_set_text(update_status, "New Update!");
+  lv_label_set_text(update_status, "NEW UPDATE AVALIABLE!");
   lv_obj_set_style_text_color(update_status, lv_color_hex(CARD_BORDER), LV_PART_MAIN);
   lv_obj_set_style_text_font(update_status, &lv_font_montserrat_20, LV_PART_MAIN);
-  lv_obj_set_pos(update_status, 376, 410);
+  lv_obj_set_pos(update_status, 376, 344);
   lv_obj_add_flag(update_status, LV_OBJ_FLAG_HIDDEN);
 
   lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_FLOATING);
@@ -309,7 +309,7 @@ SysInfoPanel::SysInfoPanel()
                             lv_color_hex(BACK_BUTTON_BACKGROUND), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(back_right_edge, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_clear_flag(back_right_edge, LV_OBJ_FLAG_CLICKABLE);
-  lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, 0, -14);
+  lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, -10, -14);
   lv_obj_move_background(cont);
 }
 
