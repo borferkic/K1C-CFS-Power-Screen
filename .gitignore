@@ -20,3 +20,7 @@ build/
 /.tmp-powerscreen-diagnostic.png
 /.tmp-powerscreen-post-reboot.png
 /updatescript.txt
+# Private platform-specific guides and work logs. These stay outside the
+# published repository even if copied into this checkout.
+/.ubuntu/
+/.windows/

@@ -32,6 +32,10 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   , finetune_panel(websocket_client, lock)
   , mini_print_status(mini_parent, &PrintStatusPanel::_handle_callback, this)
   , status_cont(lv_obj_create(lv_scr_act()))
+  , title_bar(lv_obj_create(status_cont))
+  , title_label(lv_label_create(title_bar))
+  , time_label(lv_label_create(title_bar))
+  , clock_timer(NULL)
   , buttons_cont(lv_obj_create(status_cont))
   , finetune_btn(buttons_cont, &fine_tune_img, "Fine Tune", &PrintStatusPanel::_handle_callback, this)
   , pause_btn(buttons_cont, &pause_img, "Pause", &PrintStatusPanel::_handle_callback, this)
@@ -50,6 +54,8 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 		  })
   , back_btn(buttons_cont, &back, "Back", &PrintStatusPanel::_handle_callback, this)
   , thumbnail_cont(lv_obj_create(status_cont))
+  , file_label(lv_label_create(thumbnail_cont))
+  , status_label(lv_label_create(thumbnail_cont))
   , thumbnail(lv_img_create(thumbnail_cont))
   , pbar_cont(lv_obj_create(thumbnail_cont))
   , progress_bar(lv_bar_create(pbar_cont))
@@ -72,6 +78,35 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_move_background(status_cont);
   lv_obj_clear_flag(status_cont, LV_OBJ_FLAG_SCROLLABLE);  
   lv_obj_set_size(status_cont, LV_PCT(100), LV_PCT(100));
+  lv_obj_set_style_pad_all(status_cont, 0, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(status_cont, lv_color_hex(0x282B30), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(status_cont, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_border_width(status_cont, 0, LV_PART_MAIN);
+
+  // Match the Home title bar while keeping this overlay self-contained.
+  lv_obj_add_flag(title_bar, LV_OBJ_FLAG_IGNORE_LAYOUT);
+  lv_obj_clear_flag(title_bar, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_size(title_bar, LV_PCT(100), 32);
+  lv_obj_set_pos(title_bar, 0, 0);
+  lv_obj_set_style_pad_all(title_bar, 0, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(title_bar, lv_color_hex(0x555555), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(title_bar, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_border_width(title_bar, 0, LV_PART_MAIN);
+
+  lv_label_set_text(title_label, "PRINT STATUS");
+  lv_obj_set_width(title_label, LV_PCT(100));
+  lv_label_set_long_mode(title_label, LV_LABEL_LONG_DOT);
+  lv_obj_set_style_text_align(title_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+  lv_obj_set_style_text_color(title_label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_font(title_label, &lv_font_montserrat_20, LV_PART_MAIN);
+  lv_obj_align(title_label, LV_ALIGN_CENTER, 0, 0);
+
+  lv_obj_set_width(time_label, LV_SIZE_CONTENT);
+  lv_obj_set_style_text_color(time_label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_font(time_label, &lv_font_montserrat_20, LV_PART_MAIN);
+  lv_obj_align(time_label, LV_ALIGN_RIGHT_MID, -10, 0);
+  update_clock();
+  clock_timer = lv_timer_create(&PrintStatusPanel::_update_clock_cb, 1000, this);
 
   static lv_coord_t grid_main_row_dsc_detail[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1),
     LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
@@ -101,7 +136,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_grid_cell(time_left.get_container(), LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 4, 1);
   // lv_obj_set_grid_cell(fan2.get_container(), LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 4, 1);  
   
-  static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(2), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+  static lv_coord_t grid_main_row_dsc[] = {32, LV_GRID_FR(2), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
   static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
 
   lv_obj_set_grid_dsc_array(status_cont, grid_main_col_dsc, grid_main_row_dsc);
@@ -110,6 +145,19 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_clear_flag(buttons_cont, LV_OBJ_FLAG_SCROLLABLE);  
   lv_obj_set_flex_flow(buttons_cont, LV_FLEX_FLOW_ROW);
   lv_obj_set_flex_align(buttons_cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+  lv_obj_set_width(file_label, LV_PCT(100));
+  lv_obj_set_height(file_label, LV_SIZE_CONTENT);
+  lv_label_set_long_mode(file_label, LV_LABEL_LONG_DOT);
+  lv_obj_set_style_text_align(file_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+  lv_obj_set_style_text_color(file_label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_font(file_label, &lv_font_montserrat_14, LV_PART_MAIN);
+
+  lv_obj_set_width(status_label, LV_PCT(100));
+  lv_obj_set_height(status_label, LV_SIZE_CONTENT);
+  lv_obj_set_style_text_align(status_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+  lv_obj_set_style_text_color(status_label, lv_color_hex(0x4CAF50), LV_PART_MAIN);
+  lv_obj_set_style_text_font(status_label, &lv_font_montserrat_20, LV_PART_MAIN);
 
   lv_obj_set_style_pad_all(pbar_cont, 0, 0);
   lv_obj_set_size(pbar_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
@@ -124,25 +172,31 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_center(progress_bar);
 
   lv_label_set_text(progress_label, "0%");
+  lv_obj_set_style_text_font(progress_label, &lv_font_montserrat_20, LV_PART_MAIN);
   lv_obj_center(progress_label);
 
   lv_obj_set_flex_flow(thumbnail_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_align(thumbnail_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START);
   lv_obj_set_size(thumbnail_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
   lv_obj_set_style_pad_all(thumbnail_cont, 0, 0);
-  lv_obj_set_style_pad_row(thumbnail_cont, 20, 0);
+  lv_obj_set_style_pad_row(thumbnail_cont, 8, 0);
 
   // row 1
-  lv_obj_set_grid_cell(thumbnail_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(detail_cont, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);  
+  lv_obj_set_grid_cell(thumbnail_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1);
+  lv_obj_set_grid_cell(detail_cont, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
 
   //row 2
-  lv_obj_set_grid_cell(buttons_cont, LV_GRID_ALIGN_CENTER, 0, 2, LV_GRID_ALIGN_CENTER, 1, 1);
+  lv_obj_set_grid_cell(buttons_cont, LV_GRID_ALIGN_CENTER, 0, 2, LV_GRID_ALIGN_CENTER, 2, 1);
   
   ws.register_notify_update(this);
 }
 
 PrintStatusPanel::~PrintStatusPanel() {
+  if (clock_timer != NULL) {
+    lv_timer_del(clock_timer);
+    clock_timer = NULL;
+  }
+
   if (status_cont != NULL) {
     lv_obj_del(status_cont);
     status_cont = NULL;
@@ -168,6 +222,8 @@ void PrintStatusPanel::reset() {
   elapsed.update_label("0s");
   time_left.update_label("...");
   estimated_time_s = 0;
+  lv_label_set_text(file_label, "No active print");
+  update_status_label("ready");
 
   auto v = State::get_instance()
     ->get_data("/printer_state/configfile/config/extruder/filament_diameter"_json_pointer);
@@ -214,11 +270,13 @@ void PrintStatusPanel::init(json &fans) {
     ->get_data("/printer_state/print_stats/state"_json_pointer);
   if (!pstat_state.is_null()) {
     auto pstatus = pstat_state.template get<std::string>();
+    update_status_label(pstatus);
     if (pstatus != "printing" && pstatus != "paused") {
       mini_print_status.hide();
     }
     mini_print_status.update_status(pstatus);
   } else {
+    update_status_label("ready");
     mini_print_status.show();
   }
   
@@ -230,6 +288,12 @@ void PrintStatusPanel::populate() {
   if (!printfile.is_null()) {
     const std::string fname = printfile.template get<std::string>();
     if (fname.length() > 0) {
+      const size_t separator = fname.find_last_of("/\\");
+      const std::string display_name = separator == std::string::npos
+        ? fname
+        : fname.substr(separator + 1);
+      lv_label_set_text(file_label, display_name.c_str());
+
       json fname_input = {{"filename", fname }};
       ws.send_jsonrpc("server.files.metadata", fname_input,
 		      [fname, this](json &d) { this->handle_metadata(fname, d); });
@@ -312,6 +376,7 @@ void PrintStatusPanel::consume(json &j) {
   auto& pstate = j["/params/0/print_stats/state"_json_pointer];
   if (!pstate.is_null()) {
     auto print_status = pstate.template get<std::string>();
+    update_status_label(print_status);
     if (print_status != "printing" && print_status != "paused") {
       mini_print_status.hide();
     } else {
@@ -450,6 +515,39 @@ void PrintStatusPanel::handle_callback(lv_event_t *event) {
   } else if (btn == mini_print_status.get_container()) {
     foreground();
   }
+}
+
+void PrintStatusPanel::update_status_label(const std::string &status) {
+  const char *text = "READY";
+  lv_color_t color = lv_color_white();
+
+  if (status == "printing") {
+    text = "PRINTING";
+    color = lv_color_hex(0x4CAF50);
+  } else if (status == "paused") {
+    text = "PAUSED";
+    color = lv_palette_main(LV_PALETTE_ORANGE);
+  } else if (status == "complete") {
+    text = "COMPLETE";
+    color = lv_color_hex(0x4CAF50);
+  } else if (status == "cancelled") {
+    text = "CANCELLED";
+    color = lv_palette_main(LV_PALETTE_RED);
+  } else if (status == "error") {
+    text = "ERROR";
+    color = lv_palette_main(LV_PALETTE_RED);
+  }
+
+  lv_label_set_text(status_label, text);
+  lv_obj_set_style_text_color(status_label, color, LV_PART_MAIN);
+}
+
+void PrintStatusPanel::update_clock() {
+  const std::time_t now = std::time(nullptr);
+  const std::tm local_time = *std::localtime(&now);
+  char time_text[6] = {};
+  std::strftime(time_text, sizeof(time_text), "%H:%M", &local_time);
+  lv_label_set_text(time_label, time_text);
 }
 
 void PrintStatusPanel::update_time_progress(uint32_t time_passed) {

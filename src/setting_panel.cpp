@@ -26,7 +26,7 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
   , sysinfo_panel()
   , spoolman_panel(sm)
   , wifi_btn(cont, &network_img, "WIFI", &SettingPanel::_handle_callback, this)
-  , restart_klipper_btn(cont, &refresh_img, "Restart Klipper", &SettingPanel::_handle_callback, this)
+  , restart_klipper_btn(cont, &refresh_img, "Restart\nKlipper", &SettingPanel::_handle_callback, this)
   , restart_firmware_btn(cont, &refresh_img, "Restart\nFirmware", &SettingPanel::_handle_callback, this)
   , sysinfo_btn(cont, &info_img, "System", &SettingPanel::_handle_callback, this)
   , spoolman_btn(cont, &spoolman_img, "CFS", &SettingPanel::_handle_callback, this)

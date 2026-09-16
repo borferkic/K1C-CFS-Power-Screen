@@ -69,9 +69,15 @@ void Config::init(std::string config_path, const std::string thumbdir) {
     data = json::parse(std::fstream(config_path));
   } else {
     data = {
+#ifdef SIMULATOR
+        {"log_path", "/tmp/powerscreen-linux.log"},
+        {"thumbnail_path", "/tmp/powerscreen-thumbnails"},
+        {"wpa_supplicant", "/tmp/powerscreen-wpa"},
+#else
         {"log_path", "/usr/data/printer_data/logs/powerscreen.log"},
         {"thumbnail_path", thumbdir},
         {"wpa_supplicant", "/var/run/wpa_supplicant"},
+#endif
         {"theme", "green"},
         {"display_sleep_sec", -1}
 #ifndef OS_ANDROID

@@ -12,6 +12,7 @@
 #include <mutex>
 #include <ctime>
 #include <map>
+#include <string>
 
 class PrintStatusPanel : public NotifyConsumer {
  public:
@@ -27,11 +28,18 @@ class PrintStatusPanel : public NotifyConsumer {
 
   void handle_metadata(const std::string &gcode_file, json &j);
   void handle_callback(lv_event_t *event);
+  void update_status_label(const std::string &status);
+  void update_clock();
   
   static void _handle_callback(lv_event_t *event) {
     PrintStatusPanel *panel = (PrintStatusPanel*)event->user_data;
     panel->handle_callback(event);
   };
+
+  static void _update_clock_cb(lv_timer_t *timer) {
+    PrintStatusPanel *panel = static_cast<PrintStatusPanel *>(timer->user_data);
+    panel->update_clock();
+  }
 
   void consume(json &j);
   void update_time_progress(uint32_t time_passed);
@@ -47,6 +55,10 @@ class PrintStatusPanel : public NotifyConsumer {
   FineTunePanel finetune_panel;
   MiniPrintStatus mini_print_status;
   lv_obj_t *status_cont;
+  lv_obj_t *title_bar;
+  lv_obj_t *title_label;
+  lv_obj_t *time_label;
+  lv_timer_t *clock_timer;
   lv_obj_t *buttons_cont;
   ButtonContainer finetune_btn;
   ButtonContainer pause_btn;
@@ -55,6 +67,8 @@ class PrintStatusPanel : public NotifyConsumer {
   ButtonContainer emergency_btn;
   ButtonContainer back_btn;
   lv_obj_t *thumbnail_cont;
+  lv_obj_t *file_label;
+  lv_obj_t *status_label;
   lv_obj_t *thumbnail;
   lv_obj_t *pbar_cont;
   lv_obj_t *progress_bar;
