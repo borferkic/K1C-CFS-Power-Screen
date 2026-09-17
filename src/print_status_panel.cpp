@@ -23,6 +23,14 @@ LV_IMG_DECLARE(emergency);
 LV_IMG_DECLARE(back);
 
 namespace {
+constexpr lv_coord_t PREVIEW_SIZE = 225;
+constexpr lv_coord_t PROGRESS_WIDTH = 331;
+constexpr lv_coord_t ACTION_BUTTON_WIDTH = 150;
+constexpr lv_coord_t PAUSE_CANCEL_BUTTON_WIDTH = 136;
+constexpr lv_coord_t PAUSE_CANCEL_GROUP_WIDTH = 280;
+constexpr lv_coord_t PAUSE_CANCEL_GAP = 8;
+constexpr lv_coord_t ACTION_BUTTON_GAP = 22;
+
 lv_color_t system_background_color() {
   return lv_palette_darken(LV_PALETTE_GREY, 4);
 }
@@ -30,6 +38,16 @@ lv_color_t system_background_color() {
 void style_detail_item(lv_obj_t *item) {
   lv_obj_set_width(item, LV_PCT(48));
   lv_obj_set_height(item, LV_PCT(18));
+}
+
+void style_action_button(lv_obj_t *button, uint32_t border_color, bool show_border) {
+  lv_obj_set_style_radius(button, 12, LV_PART_MAIN);
+  lv_obj_set_style_clip_corner(button, true, LV_PART_MAIN);
+  if (show_border) {
+    lv_obj_set_style_border_width(button, 2, LV_PART_MAIN);
+    lv_obj_set_style_border_color(button, lv_color_hex(border_color), LV_PART_MAIN);
+    lv_obj_set_style_border_opa(button, LV_OPA_COVER, LV_PART_MAIN);
+  }
 }
 }
 
@@ -48,10 +66,11 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   , time_label(lv_label_create(title_bar))
   , clock_timer(NULL)
   , buttons_cont(lv_obj_create(status_cont))
-  , finetune_btn(buttons_cont, &fine_tune_img, "Fine Tune", &PrintStatusPanel::_handle_callback, this)
-  , pause_btn(buttons_cont, &pause_img, "Pause", &PrintStatusPanel::_handle_callback, this)
-  , resume_btn(buttons_cont, &resume, "Resume", &PrintStatusPanel::_handle_callback, this)
-  , cancel_btn(buttons_cont, &cancel, "Cancel", &PrintStatusPanel::_handle_callback, this,
+  , pause_cancel_group(lv_obj_create(buttons_cont))
+  , finetune_btn(buttons_cont, &fine_tune_img, "Tune", &PrintStatusPanel::_handle_callback, this)
+  , pause_btn(pause_cancel_group, &pause_img, "Pause", &PrintStatusPanel::_handle_callback, this)
+  , resume_btn(pause_cancel_group, &resume, "Resume", &PrintStatusPanel::_handle_callback, this)
+  , cancel_btn(pause_cancel_group, &cancel, "Cancel", &PrintStatusPanel::_handle_callback, this,
 	       "Do you want to cancel the print?",
 	       [&websocket_client]() {
 		 spdlog::debug("cancel print prompt");
@@ -158,8 +177,6 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_grid_cell(time_left.get_container(), LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 4, 1);
   // lv_obj_set_grid_cell(fan2.get_container(), LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 4, 1);  
   
-  auto screen_width = lv_disp_get_physical_hor_res(NULL);
-  auto preview_size = static_cast<lv_coord_t>(0.28 * (double)screen_width);
   auto hscale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
   auto progress_height = static_cast<lv_coord_t>(24 * hscale);
 
@@ -178,7 +195,29 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_style_pad_top(buttons_cont, 4, LV_PART_MAIN);
   lv_obj_set_style_pad_bottom(buttons_cont, 4, LV_PART_MAIN);
   lv_obj_set_flex_flow(buttons_cont, LV_FLEX_FLOW_ROW);
-  lv_obj_set_flex_align(buttons_cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_style_pad_column(buttons_cont, ACTION_BUTTON_GAP, LV_PART_MAIN);
+  lv_obj_set_flex_align(buttons_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+  lv_obj_clear_flag(pause_cancel_group, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_size(pause_cancel_group, PAUSE_CANCEL_GROUP_WIDTH, LV_SIZE_CONTENT);
+  lv_obj_set_style_pad_all(pause_cancel_group, 0, LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(pause_cancel_group, LV_OPA_TRANSP, LV_PART_MAIN);
+  lv_obj_set_style_border_width(pause_cancel_group, 0, LV_PART_MAIN);
+  lv_obj_set_style_pad_column(pause_cancel_group, PAUSE_CANCEL_GAP, LV_PART_MAIN);
+  lv_obj_set_flex_flow(pause_cancel_group, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(pause_cancel_group, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+  lv_obj_set_width(finetune_btn.get_container(), ACTION_BUTTON_WIDTH);
+  lv_obj_set_width(pause_btn.get_container(), PAUSE_CANCEL_BUTTON_WIDTH);
+  lv_obj_set_width(resume_btn.get_container(), PAUSE_CANCEL_BUTTON_WIDTH);
+  lv_obj_set_width(cancel_btn.get_container(), PAUSE_CANCEL_BUTTON_WIDTH);
+  lv_obj_set_width(emergency_btn.get_container(), ACTION_BUTTON_WIDTH);
+  lv_obj_set_width(back_btn.get_container(), ACTION_BUTTON_WIDTH);
+  style_action_button(pause_btn.get_container(), 0x4CAF50, true);
+  style_action_button(resume_btn.get_container(), 0x4CAF50, true);
+  style_action_button(cancel_btn.get_container(), 0x4CAF50, true);
+  style_action_button(finetune_btn.get_container(), 0, false);
+  style_action_button(emergency_btn.get_container(), 0xF44336, true);
 
   lv_obj_set_width(file_label, LV_PCT(100));
   lv_obj_set_height(file_label, LV_SIZE_CONTENT);
@@ -208,8 +247,8 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   // lv_obj_set_style_border_width(pbar_cont, 2, 0);
   // lv_obj_set_style_border_width(thumbnail_cont, 2, 0);
 
-  lv_obj_set_size(pbar_cont, preview_size, progress_height);
-  lv_obj_set_size(progress_bar, preview_size, 20 * hscale);
+  lv_obj_set_size(pbar_cont, PROGRESS_WIDTH, progress_height);
+  lv_obj_set_size(progress_bar, PROGRESS_WIDTH, 20 * hscale);
   lv_bar_set_value(progress_bar, 0, LV_ANIM_OFF);
   lv_obj_center(progress_bar);
 
@@ -219,7 +258,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 
   lv_obj_set_flex_flow(thumbnail_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_align(thumbnail_cont, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-  lv_obj_set_size(thumbnail_cont, preview_size, preview_size);
+  lv_obj_set_size(thumbnail_cont, PREVIEW_SIZE, PREVIEW_SIZE);
   lv_obj_clear_flag(thumbnail_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_style_bg_color(thumbnail_cont, system_background_color(), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(thumbnail_cont, LV_OPA_COVER, LV_PART_MAIN);
@@ -402,10 +441,7 @@ void PrintStatusPanel::handle_metadata(const std::string &gcode_file, json &j) {
     std::lock_guard<std::mutex> lock(lv_lock);
     const std::string img_path = "A:" + fullpath;
 
-    auto screen_width = lv_disp_get_physical_hor_res(NULL);
-    // Keep the preview inside the left content column with room for its labels
-    // and progress bar.
-    uint32_t normalized_thumb_scale = ((0.28 * (double)screen_width) / (double)thumb_detail.second) * 256;
+    uint32_t normalized_thumb_scale = ((double)PREVIEW_SIZE / (double)thumb_detail.second) * 256;
     lv_img_set_src(thumbnail, img_path.c_str());
     lv_img_set_zoom(thumbnail, normalized_thumb_scale);
     mini_print_status.update_img(img_path, thumb_detail.second);
