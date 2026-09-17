@@ -25,12 +25,15 @@ LV_IMG_DECLARE(back);
 namespace {
 constexpr lv_coord_t PREVIEW_SIZE = 225;
 constexpr lv_coord_t THUMBNAIL_CONTAINER_SIZE = 245;
+constexpr lv_coord_t PREVIEW_AREA_EXTRA_HEIGHT = 5;
 constexpr lv_coord_t PROGRESS_WIDTH = 311;
 constexpr lv_coord_t PAUSE_CANCEL_BUTTON_WIDTH = 152;
 constexpr lv_coord_t PAUSE_CANCEL_SIDE_PAD = 10;
 constexpr lv_coord_t PAUSE_CANCEL_GAP = 8;
 constexpr lv_coord_t SECONDARY_BUTTON_WIDTH = 141;
+constexpr lv_coord_t TUNE_BACK_BUTTON_WIDTH = 131;
 constexpr lv_coord_t ACTION_BUTTON_GAP = 12;
+constexpr lv_coord_t BUTTON_VERTICAL_PAD = 6;
 
 lv_color_t system_background_color() {
   return lv_palette_darken(LV_PALETTE_GREY, 4);
@@ -147,6 +150,10 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 
   lv_obj_clear_flag(detail_cont, LV_OBJ_FLAG_SCROLLABLE);  
   lv_obj_set_size(detail_cont, LV_PCT(100), LV_PCT(100));
+  // Mantener 5 px extra en la fila compartida de miniatura e informacion.
+  lv_obj_set_style_min_height(detail_cont,
+                              THUMBNAIL_CONTAINER_SIZE + PREVIEW_AREA_EXTRA_HEIGHT,
+                              LV_PART_MAIN);
   lv_obj_set_style_bg_color(detail_cont, system_background_color(), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(detail_cont, LV_OPA_COVER, LV_PART_MAIN);
   style_detail_item(extruder_temp.get_container());
@@ -194,8 +201,8 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_size(buttons_cont, LV_PCT(100), LV_SIZE_CONTENT);
   lv_obj_clear_flag(buttons_cont, LV_OBJ_FLAG_SCROLLABLE);  
   lv_obj_set_style_pad_all(buttons_cont, 0, LV_PART_MAIN);
-  lv_obj_set_style_pad_top(buttons_cont, 4, LV_PART_MAIN);
-  lv_obj_set_style_pad_bottom(buttons_cont, 4, LV_PART_MAIN);
+  lv_obj_set_style_pad_top(buttons_cont, BUTTON_VERTICAL_PAD, LV_PART_MAIN);
+  lv_obj_set_style_pad_bottom(buttons_cont, BUTTON_VERTICAL_PAD, LV_PART_MAIN);
   lv_obj_set_style_bg_color(buttons_cont, system_background_color(), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(buttons_cont, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_width(buttons_cont, 0, LV_PART_MAIN);
@@ -224,12 +231,12 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_flex_flow(secondary_buttons_group, LV_FLEX_FLOW_ROW);
   lv_obj_set_flex_align(secondary_buttons_group, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
-  lv_obj_set_width(finetune_btn.get_container(), SECONDARY_BUTTON_WIDTH);
+  lv_obj_set_width(finetune_btn.get_container(), TUNE_BACK_BUTTON_WIDTH);
   lv_obj_set_width(pause_btn.get_container(), PAUSE_CANCEL_BUTTON_WIDTH);
   lv_obj_set_width(resume_btn.get_container(), PAUSE_CANCEL_BUTTON_WIDTH);
   lv_obj_set_width(cancel_btn.get_container(), PAUSE_CANCEL_BUTTON_WIDTH);
   lv_obj_set_width(emergency_btn.get_container(), SECONDARY_BUTTON_WIDTH);
-  lv_obj_set_width(back_btn.get_container(), SECONDARY_BUTTON_WIDTH);
+  lv_obj_set_width(back_btn.get_container(), TUNE_BACK_BUTTON_WIDTH);
   style_action_button(pause_btn.get_container(), 0x4CAF50, true);
   style_action_button(resume_btn.get_container(), 0x4CAF50, true);
   style_action_button(cancel_btn.get_container(), 0x4CAF50, true);
