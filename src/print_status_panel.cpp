@@ -151,6 +151,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 
   lv_obj_set_width(file_label, LV_PCT(100));
   lv_obj_set_height(file_label, LV_SIZE_CONTENT);
+  lv_obj_add_flag(file_label, LV_OBJ_FLAG_HIDDEN);
   lv_label_set_long_mode(file_label, LV_LABEL_LONG_DOT);
   lv_obj_set_style_text_align(file_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
   lv_obj_set_style_text_color(file_label, lv_color_white(), LV_PART_MAIN);
@@ -169,6 +170,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_style_clip_corner(thumbnail, true, LV_PART_MAIN);
 
   lv_obj_set_style_pad_all(pbar_cont, 0, 0);
+  lv_obj_clear_flag(pbar_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(pbar_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
   // lv_obj_set_style_border_width(pbar_cont, 2, 0);
   // lv_obj_set_style_border_width(thumbnail_cont, 2, 0);
@@ -187,6 +189,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_flex_flow(thumbnail_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_align(thumbnail_cont, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
   lv_obj_set_size(thumbnail_cont, LV_PCT(100), LV_PCT(100));
+  lv_obj_clear_flag(thumbnail_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_style_pad_all(thumbnail_cont, 0, 0);
   lv_obj_set_style_pad_row(thumbnail_cont, 4, 0);
 
