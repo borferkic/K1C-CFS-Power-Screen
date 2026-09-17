@@ -26,10 +26,11 @@ namespace {
 constexpr lv_coord_t PREVIEW_SIZE = 225;
 constexpr lv_coord_t THUMBNAIL_CONTAINER_SIZE = 245;
 constexpr lv_coord_t PROGRESS_WIDTH = 311;
-constexpr lv_coord_t PAUSE_CANCEL_BUTTON_WIDTH = 162;
+constexpr lv_coord_t PAUSE_CANCEL_BUTTON_WIDTH = 152;
+constexpr lv_coord_t PAUSE_CANCEL_SIDE_PAD = 10;
 constexpr lv_coord_t PAUSE_CANCEL_GAP = 8;
 constexpr lv_coord_t SECONDARY_BUTTON_WIDTH = 141;
-constexpr lv_coord_t ACTION_BUTTON_GAP = 22;
+constexpr lv_coord_t ACTION_BUTTON_GAP = 12;
 
 lv_color_t system_background_color() {
   return lv_palette_darken(LV_PALETTE_GREY, 4);
@@ -77,7 +78,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 		 spdlog::debug("cancel print prompt");
 		 websocket_client.send_jsonrpc("printer.print.cancel");
 	       })
-  , emergency_btn(secondary_buttons_group, &emergency, "Stop", &PrintStatusPanel::_handle_callback, this,
+  , emergency_btn(secondary_buttons_group, &emergency, "Emergency Stop", &PrintStatusPanel::_handle_callback, this,
 		  "Do you want to emergency stop?",
 		  [&websocket_client]() {
 		    spdlog::debug("emergency stop pressed");
@@ -179,10 +180,10 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   // lv_obj_set_grid_cell(fan2.get_container(), LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 4, 1);  
   
   auto hscale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
-  auto progress_height = static_cast<lv_coord_t>(24 * hscale);
+  auto progress_height = static_cast<lv_coord_t>(20 * hscale);
 
   static lv_coord_t grid_main_row_dsc[] = {
-    32, LV_GRID_FR(1), 28, LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST
+    32, LV_GRID_FR(1), LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST
   };
   static lv_coord_t grid_main_col_dsc[] = {
     LV_GRID_FR(5), LV_GRID_FR(7), LV_GRID_TEMPLATE_LAST
@@ -208,6 +209,8 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_style_pad_all(pause_cancel_group, 0, LV_PART_MAIN);
   lv_obj_set_style_bg_opa(pause_cancel_group, LV_OPA_TRANSP, LV_PART_MAIN);
   lv_obj_set_style_border_width(pause_cancel_group, 0, LV_PART_MAIN);
+  lv_obj_set_style_pad_left(pause_cancel_group, PAUSE_CANCEL_SIDE_PAD, LV_PART_MAIN);
+  lv_obj_set_style_pad_right(pause_cancel_group, PAUSE_CANCEL_SIDE_PAD, LV_PART_MAIN);
   lv_obj_set_style_pad_column(pause_cancel_group, PAUSE_CANCEL_GAP, LV_PART_MAIN);
   lv_obj_set_flex_flow(pause_cancel_group, LV_FLEX_FLOW_ROW);
   lv_obj_set_flex_align(pause_cancel_group, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
@@ -219,7 +222,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_style_border_width(secondary_buttons_group, 0, LV_PART_MAIN);
   lv_obj_set_style_pad_column(secondary_buttons_group, ACTION_BUTTON_GAP, LV_PART_MAIN);
   lv_obj_set_flex_flow(secondary_buttons_group, LV_FLEX_FLOW_ROW);
-  lv_obj_set_flex_align(secondary_buttons_group, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_flex_align(secondary_buttons_group, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
   lv_obj_set_width(finetune_btn.get_container(), SECONDARY_BUTTON_WIDTH);
   lv_obj_set_width(pause_btn.get_container(), PAUSE_CANCEL_BUTTON_WIDTH);
@@ -232,6 +235,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   style_action_button(cancel_btn.get_container(), 0x4CAF50, true);
   style_action_button(finetune_btn.get_container(), 0, false);
   style_action_button(emergency_btn.get_container(), 0xF44336, true);
+  style_action_button(back_btn.get_container(), 0, false);
 
   lv_obj_set_width(file_label, LV_PCT(100));
   lv_obj_set_height(file_label, LV_SIZE_CONTENT);
