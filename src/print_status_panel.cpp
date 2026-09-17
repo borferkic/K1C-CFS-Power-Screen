@@ -23,7 +23,14 @@ LV_IMG_DECLARE(emergency);
 LV_IMG_DECLARE(back);
 
 namespace {
-constexpr uint32_t SYSTEM_BACKGROUND = 0x282B30;
+lv_color_t system_background_color() {
+  return lv_palette_darken(LV_PALETTE_GREY, 4);
+}
+
+void style_detail_item(lv_obj_t *item) {
+  lv_obj_set_width(item, LV_PCT(48));
+  lv_obj_set_height(item, LV_PCT(18));
+}
 }
 
 double pi() { return std::atan(1)*4; }
@@ -61,7 +68,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   , file_label(lv_label_create(thumbnail_cont))
   , status_label(lv_label_create(thumbnail_cont))
   , thumbnail(lv_img_create(thumbnail_cont))
-  , pbar_cont(lv_obj_create(thumbnail_cont))
+  , pbar_cont(lv_obj_create(status_cont))
   , progress_bar(lv_bar_create(pbar_cont))
   , progress_label(lv_label_create(pbar_cont))
   , detail_cont(lv_obj_create(status_cont))
@@ -83,7 +90,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_clear_flag(status_cont, LV_OBJ_FLAG_SCROLLABLE);  
   lv_obj_set_size(status_cont, LV_PCT(100), LV_PCT(100));
   lv_obj_set_style_pad_all(status_cont, 0, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(status_cont, lv_color_hex(SYSTEM_BACKGROUND), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(status_cont, system_background_color(), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(status_cont, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_width(status_cont, 0, LV_PART_MAIN);
 
@@ -119,8 +126,17 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 
   lv_obj_clear_flag(detail_cont, LV_OBJ_FLAG_SCROLLABLE);  
   lv_obj_set_size(detail_cont, LV_PCT(100), LV_PCT(100));
-  lv_obj_set_style_bg_color(detail_cont, lv_color_hex(SYSTEM_BACKGROUND), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(detail_cont, system_background_color(), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(detail_cont, LV_OPA_COVER, LV_PART_MAIN);
+  style_detail_item(extruder_temp.get_container());
+  style_detail_item(bed_temp.get_container());
+  style_detail_item(print_speed.get_container());
+  style_detail_item(z_offset.get_container());
+  style_detail_item(flow_rate.get_container());
+  style_detail_item(layers.get_container());
+  style_detail_item(fan0.get_container());
+  style_detail_item(elapsed.get_container());
+  style_detail_item(time_left.get_container());
 
   //detail containter row 1
   lv_obj_set_grid_cell(extruder_temp.get_container(), LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 0, 1);
@@ -142,8 +158,17 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_grid_cell(time_left.get_container(), LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 4, 1);
   // lv_obj_set_grid_cell(fan2.get_container(), LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 4, 1);  
   
-  static lv_coord_t grid_main_row_dsc[] = {32, LV_GRID_FR(1), LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST};
-  static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+  auto screen_width = lv_disp_get_physical_hor_res(NULL);
+  auto preview_size = static_cast<lv_coord_t>(0.28 * (double)screen_width);
+  auto hscale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
+  auto progress_height = static_cast<lv_coord_t>(24 * hscale);
+
+  static lv_coord_t grid_main_row_dsc[] = {
+    32, LV_GRID_FR(1), 28, LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST
+  };
+  static lv_coord_t grid_main_col_dsc[] = {
+    LV_GRID_FR(5), LV_GRID_FR(7), LV_GRID_TEMPLATE_LAST
+  };
 
   lv_obj_set_grid_dsc_array(status_cont, grid_main_col_dsc, grid_main_row_dsc);
 
@@ -177,14 +202,14 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 
   lv_obj_set_style_pad_all(pbar_cont, 0, 0);
   lv_obj_clear_flag(pbar_cont, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_size(pbar_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+  lv_obj_set_style_bg_color(pbar_cont, system_background_color(), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(pbar_cont, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_border_width(pbar_cont, 0, LV_PART_MAIN);
   // lv_obj_set_style_border_width(pbar_cont, 2, 0);
   // lv_obj_set_style_border_width(thumbnail_cont, 2, 0);
 
-  auto bar_width = (double)lv_disp_get_physical_hor_res(NULL) * 0.35;
-  auto hscale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
-
-  lv_obj_set_size(progress_bar, bar_width, 20 * hscale);
+  lv_obj_set_size(pbar_cont, preview_size, progress_height);
+  lv_obj_set_size(progress_bar, preview_size, 20 * hscale);
   lv_bar_set_value(progress_bar, 0, LV_ANIM_OFF);
   lv_obj_center(progress_bar);
 
@@ -194,20 +219,23 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 
   lv_obj_set_flex_flow(thumbnail_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_align(thumbnail_cont, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-  lv_obj_set_size(thumbnail_cont, LV_PCT(100), LV_PCT(100));
+  lv_obj_set_size(thumbnail_cont, preview_size, preview_size);
   lv_obj_clear_flag(thumbnail_cont, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_style_bg_color(thumbnail_cont, lv_color_hex(SYSTEM_BACKGROUND), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(thumbnail_cont, system_background_color(), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(thumbnail_cont, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_set_style_translate_y(thumbnail_cont, -25, LV_PART_MAIN);
+  lv_obj_set_style_border_width(thumbnail_cont, 0, LV_PART_MAIN);
   lv_obj_set_style_pad_all(thumbnail_cont, 0, 0);
-  lv_obj_set_style_pad_row(thumbnail_cont, 4, 0);
+  lv_obj_set_style_pad_row(thumbnail_cont, 0, 0);
 
   // row 1
-  lv_obj_set_grid_cell(thumbnail_cont, LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_STRETCH, 1, 1);
+  lv_obj_set_grid_cell(thumbnail_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 1, 1);
   lv_obj_set_grid_cell(detail_cont, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_STRETCH, 1, 1);
 
-  //row 2
-  lv_obj_set_grid_cell(buttons_cont, LV_GRID_ALIGN_STRETCH, 0, 2, LV_GRID_ALIGN_CENTER, 2, 1);
+  // row 2
+  lv_obj_set_grid_cell(pbar_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 2, 1);
+
+  // row 3
+  lv_obj_set_grid_cell(buttons_cont, LV_GRID_ALIGN_STRETCH, 0, 2, LV_GRID_ALIGN_CENTER, 3, 1);
   
   ws.register_notify_update(this);
 }
