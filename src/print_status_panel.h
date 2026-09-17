@@ -61,6 +61,7 @@ class PrintStatusPanel : public NotifyConsumer {
   lv_timer_t *clock_timer;
   lv_obj_t *buttons_cont;
   lv_obj_t *pause_cancel_group;
+  lv_obj_t *secondary_buttons_group;
   ButtonContainer finetune_btn;
   ButtonContainer pause_btn;
   ButtonContainer resume_btn;
