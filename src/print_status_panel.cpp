@@ -527,7 +527,7 @@ void PrintStatusPanel::update_status_label(const std::string &status) {
   lv_color_t color = lv_color_white();
 
   if (status == "printing") {
-    text = "PRINTING";
+    text = "";
     color = lv_color_hex(0x4CAF50);
   } else if (status == "paused") {
     text = "PAUSED";
