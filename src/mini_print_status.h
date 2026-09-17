@@ -24,7 +24,9 @@ class MiniPrintStatus {
 
  private:
   lv_obj_t *cont;
+  lv_obj_t *progress_label_cont;
   lv_obj_t *progress_label;
+  lv_obj_t *progress_label_bold;
   lv_obj_t *thumb;
   lv_obj_t *status_label;
   std::string status;

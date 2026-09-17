@@ -2,10 +2,12 @@
 #include "spdlog/spdlog.h"
 
 MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
-				 lv_event_cb_t cb,
-				 void* user_data)
+					 lv_event_cb_t cb,
+					 void* user_data)
   : cont(lv_obj_create(parent))
-  , progress_label(lv_label_create(cont))
+  , progress_label_cont(lv_obj_create(cont))
+  , progress_label(lv_label_create(progress_label_cont))
+  , progress_label_bold(lv_label_create(progress_label_cont))
   , thumb(lv_img_create(cont))
   , status_label(lv_label_create(cont))
   , status("n/a")
@@ -27,8 +29,8 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
   lv_obj_set_size(cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
   lv_obj_set_style_pad_top(cont, 2, 0);
   lv_obj_set_style_pad_bottom(cont, 2, 0);
-  lv_obj_set_style_pad_left(cont, 0, 0);
-  lv_obj_set_style_pad_right(cont, 0, 0);
+  lv_obj_set_style_pad_left(cont, 4, 0);
+  lv_obj_set_style_pad_right(cont, 4, 0);
   
   lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_ROW);
   
@@ -44,15 +46,25 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
 
   lv_label_set_text(status_label, fmt::format("ETA: {}\nStatus: {}", eta, status).c_str());
 
-  lv_label_set_text(progress_label, "0%");
-  lv_obj_set_size(progress_label, 40 * scale, 40 * scale);
   auto progress_label_height = lv_font_get_line_height(&lv_font_montserrat_16);
   auto progress_label_pad_top = static_cast<lv_coord_t>(
     (40 * scale - progress_label_height) / 2);
-  lv_obj_set_style_pad_top(progress_label, progress_label_pad_top, 0);
-  lv_obj_set_style_text_align(progress_label, LV_TEXT_ALIGN_CENTER, 0);
-  lv_obj_set_style_text_color(progress_label, lv_color_hex(0x4CAF50), 0);
-  lv_obj_set_style_text_font(progress_label, &lv_font_montserrat_16, 0);
+  lv_obj_set_size(progress_label_cont, 40 * scale, 40 * scale);
+  lv_obj_clear_flag(progress_label_cont, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_style_pad_all(progress_label_cont, 0, 0);
+  lv_obj_set_style_bg_opa(progress_label_cont, LV_OPA_TRANSP, 0);
+  lv_obj_set_style_border_width(progress_label_cont, 0, 0);
+
+  for (auto label : {progress_label, progress_label_bold}) {
+    lv_label_set_text(label, "0%");
+    lv_obj_set_size(label, 40 * scale, 40 * scale);
+    lv_obj_set_style_pad_top(label, progress_label_pad_top, 0);
+    lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_style_text_color(label, lv_color_hex(0x76FF03), 0);
+    lv_obj_set_style_text_font(label, &lv_font_montserrat_16, 0);
+  }
+  lv_obj_align(progress_label, LV_ALIGN_CENTER, 0, 0);
+  lv_obj_align(progress_label_bold, LV_ALIGN_CENTER, 1, 0);
 
   lv_img_set_size_mode(thumb, LV_IMG_SIZE_MODE_REAL);
   
@@ -91,7 +103,9 @@ void MiniPrintStatus::update_status(std::string &status_str) {
 }
 
 void MiniPrintStatus::update_progress(int p) {
-  lv_label_set_text(progress_label, fmt::format("{}%", p).c_str());
+  auto progress_text = fmt::format("{}%", p);
+  lv_label_set_text(progress_label, progress_text.c_str());
+  lv_label_set_text(progress_label_bold, progress_text.c_str());
 }
 
 void MiniPrintStatus::update_img(const std::string &img_path, size_t twidth) {
@@ -103,6 +117,7 @@ void MiniPrintStatus::update_img(const std::string &img_path, size_t twidth) {
 
 void MiniPrintStatus::reset() {
   lv_label_set_text(progress_label, "0%");
+  lv_label_set_text(progress_label_bold, "0%");
 
   // free src
   lv_img_set_src(thumb, NULL);
