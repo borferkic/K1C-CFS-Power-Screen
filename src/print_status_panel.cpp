@@ -162,6 +162,12 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_style_text_color(status_label, lv_color_hex(0x4CAF50), LV_PART_MAIN);
   lv_obj_set_style_text_font(status_label, &lv_font_montserrat_20, LV_PART_MAIN);
 
+  lv_obj_set_style_border_width(thumbnail, 2, LV_PART_MAIN);
+  lv_obj_set_style_border_color(thumbnail, lv_color_hex(0x4CAF50), LV_PART_MAIN);
+  lv_obj_set_style_border_opa(thumbnail, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_radius(thumbnail, 12, LV_PART_MAIN);
+  lv_obj_set_style_clip_corner(thumbnail, true, LV_PART_MAIN);
+
   lv_obj_set_style_pad_all(pbar_cont, 0, 0);
   lv_obj_set_size(pbar_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
   // lv_obj_set_style_border_width(pbar_cont, 2, 0);
