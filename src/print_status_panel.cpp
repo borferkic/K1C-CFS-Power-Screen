@@ -34,6 +34,7 @@ constexpr lv_coord_t SECONDARY_BUTTON_WIDTH = 141;
 constexpr lv_coord_t TUNE_BACK_BUTTON_WIDTH = 131;
 constexpr lv_coord_t ACTION_BUTTON_GAP = 12;
 constexpr lv_coord_t BUTTON_VERTICAL_PAD = 6;
+constexpr lv_coord_t PROGRESS_LABEL_GAP = 2;
 
 lv_color_t system_background_color() {
   return lv_palette_darken(LV_PALETTE_GREY, 4);
@@ -88,13 +89,13 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 		    websocket_client.send_jsonrpc("printer.emergency_stop");
 		  })
   , back_btn(secondary_buttons_group, &back, "Back", &PrintStatusPanel::_handle_callback, this)
-  , thumbnail_cont(lv_obj_create(status_cont))
-  , file_label(lv_label_create(thumbnail_cont))
-  , status_label(lv_label_create(thumbnail_cont))
-  , thumbnail(lv_img_create(thumbnail_cont))
   , pbar_cont(lv_obj_create(status_cont))
   , progress_bar(lv_bar_create(pbar_cont))
   , progress_label(lv_label_create(pbar_cont))
+  , status_label(lv_label_create(pbar_cont))
+  , thumbnail_cont(lv_obj_create(status_cont))
+  , file_label(lv_label_create(thumbnail_cont))
+  , thumbnail(lv_img_create(thumbnail_cont))
   , detail_cont(lv_obj_create(status_cont))
   , extruder_temp(detail_cont, &extruder, 100, "20")
   , bed_temp(detail_cont, &bed, 100, "21")
@@ -188,6 +189,8 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   
   auto hscale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
   auto progress_height = static_cast<lv_coord_t>(20 * hscale);
+  auto status_height = lv_font_get_line_height(&lv_font_montserrat_20);
+  auto progress_area_height = progress_height + status_height + PROGRESS_LABEL_GAP;
 
   static lv_coord_t grid_main_row_dsc[] = {
     32, LV_GRID_FR(1), LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST
@@ -252,8 +255,8 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_style_text_color(file_label, lv_color_white(), LV_PART_MAIN);
   lv_obj_set_style_text_font(file_label, &lv_font_montserrat_14, LV_PART_MAIN);
 
-  lv_obj_set_width(status_label, LV_PCT(100));
-  lv_obj_set_height(status_label, LV_SIZE_CONTENT);
+  lv_obj_set_width(status_label, PROGRESS_WIDTH);
+  lv_obj_set_height(status_label, status_height);
   lv_obj_set_style_text_align(status_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
   lv_obj_set_style_text_color(status_label, lv_color_hex(0x4CAF50), LV_PART_MAIN);
   lv_obj_set_style_text_font(status_label, &lv_font_montserrat_20, LV_PART_MAIN);
@@ -272,14 +275,19 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   // lv_obj_set_style_border_width(pbar_cont, 2, 0);
   // lv_obj_set_style_border_width(thumbnail_cont, 2, 0);
 
-  lv_obj_set_size(pbar_cont, PROGRESS_WIDTH, progress_height);
-  lv_obj_set_size(progress_bar, PROGRESS_WIDTH, 20 * hscale);
+  lv_obj_set_size(pbar_cont, PROGRESS_WIDTH, progress_area_height);
+  lv_obj_set_size(progress_bar, PROGRESS_WIDTH, progress_height);
   lv_bar_set_value(progress_bar, 0, LV_ANIM_OFF);
-  lv_obj_center(progress_bar);
+  lv_obj_align(progress_bar, LV_ALIGN_BOTTOM_MID, 0, 0);
 
   lv_label_set_text(progress_label, "0%");
+  lv_obj_set_width(progress_label, PROGRESS_WIDTH);
+  lv_obj_set_height(progress_label, progress_height);
   lv_obj_set_style_text_font(progress_label, &lv_font_montserrat_20, LV_PART_MAIN);
-  lv_obj_center(progress_label);
+  lv_obj_set_style_text_align(progress_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+  lv_obj_align(progress_label, LV_ALIGN_BOTTOM_MID, 0, 0);
+
+  lv_obj_align(status_label, LV_ALIGN_TOP_MID, 0, 0);
 
   lv_obj_set_flex_flow(thumbnail_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_align(thumbnail_cont, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
@@ -636,7 +644,7 @@ void PrintStatusPanel::update_status_label(const std::string &status) {
   lv_color_t color = lv_color_white();
 
   if (status == "printing") {
-    text = "";
+    text = "PRINTING";
     color = lv_color_hex(0x4CAF50);
   } else if (status == "paused") {
     text = "PAUSED";

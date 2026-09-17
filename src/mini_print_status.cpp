@@ -5,7 +5,7 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
 				 lv_event_cb_t cb,
 				 void* user_data)
   : cont(lv_obj_create(parent))
-  , progress_bar(lv_arc_create(cont))
+  , progress_label(lv_label_create(cont))
   , thumb(lv_img_create(cont))
   , status_label(lv_label_create(cont))
   , status("n/a")
@@ -25,12 +25,16 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
 
   
   lv_obj_set_size(cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-  lv_obj_set_style_pad_top(cont, 0, 0);
-  lv_obj_set_style_pad_bottom(cont, 0, 0);
+  lv_obj_set_style_pad_top(cont, 2, 0);
+  lv_obj_set_style_pad_bottom(cont, 2, 0);
+  lv_obj_set_style_pad_left(cont, 0, 0);
+  lv_obj_set_style_pad_right(cont, 0, 0);
   
   lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_ROW);
   
   lv_obj_set_style_border_width(cont, 2, 0);
+  lv_obj_set_style_border_color(cont, lv_color_hex(0x4CAF50), 0);
+  lv_obj_set_style_border_opa(cont, LV_OPA_COVER, 0);
   lv_obj_set_style_radius(cont, 4, 0);
   
   lv_obj_add_flag(cont, LV_OBJ_FLAG_FLOATING);
@@ -40,14 +44,15 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
 
   lv_label_set_text(status_label, fmt::format("ETA: {}\nStatus: {}", eta, status).c_str());
 
-  lv_arc_set_rotation(progress_bar, 270);
-  lv_obj_set_size(progress_bar, 40 * scale, 40 * scale);
-  lv_obj_set_style_arc_width(progress_bar, 10 * scale, LV_PART_MAIN);
-  lv_obj_set_style_arc_width(progress_bar, 10 * scale, LV_PART_INDICATOR);
-  lv_arc_set_bg_angles(progress_bar, 0, 360);
-  lv_obj_remove_style(progress_bar, NULL, LV_PART_KNOB);
-  lv_obj_clear_flag(progress_bar, LV_OBJ_FLAG_CLICKABLE);
-  lv_obj_center(progress_bar);
+  lv_label_set_text(progress_label, "0%");
+  lv_obj_set_size(progress_label, 40 * scale, 40 * scale);
+  auto progress_label_height = lv_font_get_line_height(&lv_font_montserrat_16);
+  auto progress_label_pad_top = static_cast<lv_coord_t>(
+    (40 * scale - progress_label_height) / 2);
+  lv_obj_set_style_pad_top(progress_label, progress_label_pad_top, 0);
+  lv_obj_set_style_text_align(progress_label, LV_TEXT_ALIGN_CENTER, 0);
+  lv_obj_set_style_text_color(progress_label, lv_color_hex(0x4CAF50), 0);
+  lv_obj_set_style_text_font(progress_label, &lv_font_montserrat_16, 0);
 
   lv_img_set_size_mode(thumb, LV_IMG_SIZE_MODE_REAL);
   
@@ -86,7 +91,7 @@ void MiniPrintStatus::update_status(std::string &status_str) {
 }
 
 void MiniPrintStatus::update_progress(int p) {
-  lv_arc_set_value(progress_bar, p);
+  lv_label_set_text(progress_label, fmt::format("{}%", p).c_str());
 }
 
 void MiniPrintStatus::update_img(const std::string &img_path, size_t twidth) {
@@ -97,7 +102,7 @@ void MiniPrintStatus::update_img(const std::string &img_path, size_t twidth) {
 }
 
 void MiniPrintStatus::reset() {
-  lv_arc_set_value(progress_bar, 0);
+  lv_label_set_text(progress_label, "0%");
 
   // free src
   lv_img_set_src(thumb, NULL);
