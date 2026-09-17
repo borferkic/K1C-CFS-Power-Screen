@@ -22,6 +22,10 @@ LV_IMG_DECLARE(cancel);
 LV_IMG_DECLARE(emergency);
 LV_IMG_DECLARE(back);
 
+namespace {
+constexpr uint32_t SYSTEM_BACKGROUND = 0x282B30;
+}
+
 double pi() { return std::atan(1)*4; }
 
 PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
@@ -79,7 +83,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_clear_flag(status_cont, LV_OBJ_FLAG_SCROLLABLE);  
   lv_obj_set_size(status_cont, LV_PCT(100), LV_PCT(100));
   lv_obj_set_style_pad_all(status_cont, 0, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(status_cont, lv_color_hex(0x282B30), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(status_cont, lv_color_hex(SYSTEM_BACKGROUND), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(status_cont, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_width(status_cont, 0, LV_PART_MAIN);
 
@@ -115,6 +119,8 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 
   lv_obj_clear_flag(detail_cont, LV_OBJ_FLAG_SCROLLABLE);  
   lv_obj_set_size(detail_cont, LV_PCT(100), LV_PCT(100));
+  lv_obj_set_style_bg_color(detail_cont, lv_color_hex(SYSTEM_BACKGROUND), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(detail_cont, LV_OPA_COVER, LV_PART_MAIN);
 
   //detail containter row 1
   lv_obj_set_grid_cell(extruder_temp.get_container(), LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 0, 1);
@@ -190,6 +196,9 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_flex_align(thumbnail_cont, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
   lv_obj_set_size(thumbnail_cont, LV_PCT(100), LV_PCT(100));
   lv_obj_clear_flag(thumbnail_cont, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_style_bg_color(thumbnail_cont, lv_color_hex(SYSTEM_BACKGROUND), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(thumbnail_cont, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_translate_y(thumbnail_cont, -25, LV_PART_MAIN);
   lv_obj_set_style_pad_all(thumbnail_cont, 0, 0);
   lv_obj_set_style_pad_row(thumbnail_cont, 4, 0);
 
