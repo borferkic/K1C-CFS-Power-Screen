@@ -57,13 +57,17 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
 {
   const auto width_scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
   const auto height_scale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
-  const lv_coord_t button_width = static_cast<lv_coord_t>(150 * width_scale);
-  const lv_coord_t button_height = static_cast<lv_coord_t>(100 * height_scale);
-  const lv_coord_t button_gap = static_cast<lv_coord_t>(10 * width_scale);
-  const lv_coord_t motion_width = button_width * 4 + button_gap * 3;
-  const lv_coord_t safety_width = button_width;
-  const lv_coord_t safety_height = button_height * 3 + button_gap * 2;
-  const lv_coord_t selector_y = button_height * 2 + button_gap * 2;
+  const lv_coord_t square_width = static_cast<lv_coord_t>(130 * width_scale);
+  const lv_coord_t square_height = static_cast<lv_coord_t>(130 * height_scale);
+  const lv_coord_t button_gap = static_cast<lv_coord_t>(14 * width_scale);
+  const lv_coord_t content_top = static_cast<lv_coord_t>(48 * height_scale);
+  const lv_coord_t right_margin = static_cast<lv_coord_t>(14 * width_scale);
+  const lv_coord_t motion_width = square_width * 4 + button_gap * 3;
+  const lv_coord_t safety_width = square_width;
+  const lv_coord_t emergency_height = static_cast<lv_coord_t>(160 * height_scale);
+  const lv_coord_t back_height = static_cast<lv_coord_t>(100 * height_scale);
+  const lv_coord_t safety_height = emergency_height + square_height + back_height + button_gap * 2;
+  const lv_coord_t selector_y = square_height * 2 + button_gap * 2;
 
   lv_obj_clear_flag(homing_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(homing_cont, LV_PCT(100), LV_PCT(100));
@@ -134,17 +138,21 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   style_group(motion_top_cont);
   style_group(motion_bottom_cont);
   style_vertical_group(safety_cont);
-  lv_obj_set_size(motion_top_cont, motion_width, button_height);
-  lv_obj_set_size(motion_bottom_cont, motion_width, button_height);
+  lv_obj_set_size(motion_top_cont, motion_width, square_height);
+  lv_obj_set_size(motion_bottom_cont, motion_width, square_height);
   lv_obj_set_size(motion_cont, motion_width, selector_y + static_cast<lv_coord_t>(105 * height_scale));
   lv_obj_set_size(safety_cont, safety_width, safety_height);
 
   for (ButtonContainer *button : {&home_all_btn, &home_xy_btn, &x_up_btn, &x_down_btn,
                                   &y_up_btn, &y_down_btn, &z_up_btn, &z_down_btn,
-                                  &emergency_btn, &motoroff_btn, &back_btn}) {
-    button->set_fixed_size(button_width, button_height);
+                                  &motoroff_btn}) {
+    button->set_fixed_size(square_width, square_height);
     style_button(*button);
   }
+  emergency_btn.set_fixed_size(safety_width, emergency_height);
+  back_btn.set_fixed_size(safety_width, back_height);
+  style_button(emergency_btn);
+  style_button(back_btn);
 
   lv_obj_set_style_bg_color(home_all_btn.get_container(), lv_color_hex(0x4CAF50),
                             LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -159,12 +167,12 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   lv_obj_set_style_border_color(emergency_btn.get_container(), lv_color_hex(0xF44336), LV_PART_MAIN);
 
   lv_obj_align(motion_cont, LV_ALIGN_TOP_RIGHT,
-               -(safety_width + button_gap * 2), static_cast<lv_coord_t>(42 * height_scale));
+               -(safety_width + button_gap + right_margin), content_top);
   lv_obj_align(motion_top_cont, LV_ALIGN_TOP_MID, 0, 0);
-  lv_obj_align(motion_bottom_cont, LV_ALIGN_TOP_MID, 0, button_height + button_gap);
+  lv_obj_align(motion_bottom_cont, LV_ALIGN_TOP_MID, 0, square_height + button_gap);
   lv_obj_set_width(distance_selector.get_container(), motion_width);
   lv_obj_align(distance_selector.get_container(), LV_ALIGN_TOP_MID, 0, selector_y);
-  lv_obj_align(safety_cont, LV_ALIGN_TOP_RIGHT, -button_gap, static_cast<lv_coord_t>(42 * height_scale));
+  lv_obj_align(safety_cont, LV_ALIGN_TOP_RIGHT, -right_margin, content_top);
 
   ws.register_notify_update(this);
 }
