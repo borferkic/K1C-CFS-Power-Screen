@@ -61,7 +61,7 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   const lv_coord_t square_height = static_cast<lv_coord_t>(130 * height_scale);
   const lv_coord_t horizontal_gap = static_cast<lv_coord_t>(30 * width_scale);
   const lv_coord_t vertical_gap = static_cast<lv_coord_t>(25 * height_scale);
-  const lv_coord_t selector_gap = static_cast<lv_coord_t>(50 * height_scale);
+  const lv_coord_t selector_gap = static_cast<lv_coord_t>(25 * height_scale);
   const lv_coord_t safety_gap = static_cast<lv_coord_t>(14 * width_scale);
   const lv_coord_t safety_top = static_cast<lv_coord_t>(48 * height_scale);
   const lv_coord_t right_margin = static_cast<lv_coord_t>(14 * width_scale);
