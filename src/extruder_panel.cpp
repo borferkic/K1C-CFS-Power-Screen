@@ -39,7 +39,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   , leftside_btns_cont(lv_obj_create(panel_cont))
   , load_btn(leftside_btns_cont, &load_filament_img, "LOAD", &ExtruderPanel::_handle_callback, this)
   , unload_btn(leftside_btns_cont, &unload_filament_img, "UNLOAD", &ExtruderPanel::_handle_callback, this)
-  , cooldown_btn(leftside_btns_cont, &cooldown_img, "COOLDOWN", &ExtruderPanel::_handle_callback, this)
+  , cooldown_btn(leftside_btns_cont, &cooldown_img, "COOL", &ExtruderPanel::_handle_callback, this)
   , manual_change_btn(leftside_btns_cont, NULL, "MANUAL\nCOLOR", &ExtruderPanel::_handle_callback, this)
   , spoolman_btn(rightside_btns_cont, NULL, "CFS", &ExtruderPanel::_handle_callback, this)
   , extrude_btn(rightside_btns_cont, &extrude_img, "EXTRUDE", &ExtruderPanel::_handle_callback, this)
@@ -100,6 +100,12 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
 
   auto width_scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
   auto height_scale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
+  load_btn.set_fixed_size(130 * width_scale, 100);
+  unload_btn.set_fixed_size(130 * width_scale, 100);
+  cooldown_btn.set_fixed_size(130 * width_scale, 100);
+  extrude_btn.set_fixed_size(130 * width_scale, 100);
+  retract_btn.set_fixed_size(130 * width_scale, 100);
+  back_btn.set_fixed_size(130 * width_scale, 100);
   lv_obj_set_width(extruder_temp.get_sensor(), 130 * width_scale);
   lv_obj_set_height(extruder_temp.get_sensor(), 32 * height_scale);
   extruder_temp.set_current_only(75 * width_scale, 5 * width_scale);

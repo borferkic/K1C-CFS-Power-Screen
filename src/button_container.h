@@ -19,6 +19,7 @@ class ButtonContainer {
 
   lv_obj_t *get_container();
   lv_obj_t *get_button();
+  void set_fixed_size(lv_coord_t width, lv_coord_t height);
   void disable();
   void enable();
   void hide();
@@ -41,6 +42,7 @@ class ButtonContainer {
   lv_obj_t *btn_cont;
   lv_obj_t *btn;
   lv_obj_t *label;
+  bool has_image;
   std::string prompt_text;
   std::function<void()> prompt_callback;
 };

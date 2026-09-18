@@ -12,6 +12,7 @@ ButtonContainer::ButtonContainer(lv_obj_t *parent,
   : btn_cont(lv_obj_create(parent))
   , btn(lv_imgbtn_create(btn_cont))
   , label(lv_label_create(btn_cont))
+  , has_image(btn_img != NULL)
   , prompt_text(prompt)
   , prompt_callback(pcb)
 {
@@ -83,6 +84,22 @@ lv_obj_t *ButtonContainer::get_container() {
 
 lv_obj_t *ButtonContainer::get_button() {
   return btn;
+}
+
+void ButtonContainer::set_fixed_size(lv_coord_t width, lv_coord_t height) {
+  lv_obj_set_size(btn_cont, width, height);
+
+  if (has_image) {
+    lv_obj_update_layout(btn_cont);
+    const lv_coord_t content_height = lv_obj_get_height(btn) + lv_obj_get_height(label);
+    const lv_coord_t top_offset = content_height < height ? (height - content_height) / 2 : 0;
+    lv_obj_align(btn, LV_ALIGN_TOP_MID, 0, top_offset);
+    lv_obj_align_to(label, btn, LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
+  } else {
+    lv_obj_set_size(btn, width, height);
+    lv_obj_align(btn, LV_ALIGN_TOP_MID, 0, 0);
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+  }
 }
 
 void ButtonContainer::disable() {
