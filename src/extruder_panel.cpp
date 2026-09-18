@@ -22,6 +22,10 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   : NotifyConsumer(lock)
   , ws(websocket_client)
   , panel_cont(lv_obj_create(lv_scr_act()))
+  , title_bar(lv_obj_create(panel_cont))
+  , title_label(lv_label_create(title_bar))
+  , time_label(lv_label_create(title_bar))
+  , clock_timer(NULL)
   , spoolman_panel(sm)
   , extruder_temp(ws, panel_cont, &extruder, 150,
 	  "EXTRUDER", lv_palette_main(LV_PALETTE_RED), false, true, numpad, "extruder", NULL, NULL)
@@ -35,8 +39,8 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   , leftside_btns_cont(lv_obj_create(panel_cont))
   , load_btn(leftside_btns_cont, &load_filament_img, "LOAD", &ExtruderPanel::_handle_callback, this)
   , unload_btn(leftside_btns_cont, &unload_filament_img, "UNLOAD", &ExtruderPanel::_handle_callback, this)
-  , manual_change_btn(leftside_btns_cont, &filament_img, "MANUAL M600", &ExtruderPanel::_handle_callback, this)
   , cooldown_btn(leftside_btns_cont, &cooldown_img, "COOLDOWN", &ExtruderPanel::_handle_callback, this)
+  , manual_change_btn(leftside_btns_cont, NULL, "MANUAL\nCOLOR", &ExtruderPanel::_handle_callback, this)
   , spoolman_btn(rightside_btns_cont, &spoolman_img, "CFS", &ExtruderPanel::_handle_callback, this)
   , extrude_btn(rightside_btns_cont, &extrude_img, "EXTRUDE", &ExtruderPanel::_handle_callback, this)
   , retract_btn(rightside_btns_cont, &retract_img, "RETRACT", &ExtruderPanel::_handle_callback, this)
@@ -68,6 +72,35 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   lv_obj_clear_flag(panel_cont, LV_OBJ_FLAG_SCROLLABLE);  
   lv_obj_set_size(panel_cont, LV_PCT(100), LV_PCT(100));
   lv_obj_set_style_pad_all(panel_cont, 0, 0);
+  lv_obj_set_style_pad_row(panel_cont, 1, 0);
+
+  lv_obj_add_flag(title_bar, LV_OBJ_FLAG_IGNORE_LAYOUT);
+  lv_obj_clear_flag(title_bar, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_size(title_bar, LV_PCT(100), 32);
+  lv_obj_set_pos(title_bar, 0, 0);
+  lv_obj_set_style_pad_all(title_bar, 0, 0);
+  lv_obj_set_style_bg_color(title_bar, lv_color_hex(0x555555), 0);
+  lv_obj_set_style_bg_opa(title_bar, LV_OPA_COVER, 0);
+  lv_obj_set_style_border_width(title_bar, 0, 0);
+
+  lv_label_set_text(title_label, "FILAMENT CONTROL");
+  lv_obj_set_width(title_label, LV_PCT(100));
+  lv_label_set_long_mode(title_label, LV_LABEL_LONG_DOT);
+  lv_obj_set_style_text_align(title_label, LV_TEXT_ALIGN_CENTER, 0);
+  lv_obj_set_style_text_color(title_label, lv_color_white(), 0);
+  lv_obj_set_style_text_font(title_label, &lv_font_montserrat_20, 0);
+  lv_obj_align(title_label, LV_ALIGN_CENTER, 0, 0);
+
+  lv_obj_set_width(time_label, LV_SIZE_CONTENT);
+  lv_obj_set_style_text_color(time_label, lv_color_white(), 0);
+  lv_obj_set_style_text_font(time_label, &lv_font_montserrat_20, 0);
+  lv_obj_align(time_label, LV_ALIGN_RIGHT_MID, -10, 0);
+  update_clock();
+  clock_timer = lv_timer_create(&ExtruderPanel::_update_clock_cb, 1000, this);
+
+  auto width_scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
+  lv_obj_set_width(extruder_temp.get_sensor(), 345 * width_scale);
+  lv_obj_set_width(extruder_temp.get_target(), 75 * width_scale);
 
   lv_obj_set_size(rightside_btns_cont, LV_PCT(20), LV_PCT(100));  
   lv_obj_set_flex_flow(rightside_btns_cont, LV_FLEX_FLOW_COLUMN);
@@ -82,7 +115,12 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   
   spoolman_btn.disable();  
 
-  static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(3), LV_GRID_FR(6), LV_GRID_FR(6), LV_GRID_FR(6),
+  lv_obj_set_style_bg_color(manual_change_btn.get_button(), lv_color_hex(0x4CAF50), LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_bg_opa(manual_change_btn.get_button(), LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_bg_color(manual_change_btn.get_button(), lv_color_hex(0x388E3C), LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_set_style_bg_opa(manual_change_btn.get_button(), LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
+
+  static lv_coord_t grid_main_row_dsc[] = {32, LV_GRID_FR(6), LV_GRID_FR(6), LV_GRID_FR(6),
     LV_GRID_TEMPLATE_LAST};
   static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(2), LV_GRID_FR(7), LV_GRID_FR(2), LV_GRID_TEMPLATE_LAST};
   
@@ -90,7 +128,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   
   lv_obj_set_grid_dsc_array(panel_cont, grid_main_col_dsc, grid_main_row_dsc);
   lv_obj_add_flag(extruder_temp.get_sensor(), LV_OBJ_FLAG_FLOATING);
-  lv_obj_align(extruder_temp.get_sensor(), LV_ALIGN_TOP_LEFT, 50, 0);
+  lv_obj_align(extruder_temp.get_sensor(), LV_ALIGN_TOP_LEFT, 0, 0);
 
   // lv_obj_set_size(extruder_temp.get_sensor(), 350, 60);
   // col 0
@@ -113,7 +151,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   // lv_obj_set_grid_cell(extrude_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 2);
   // lv_obj_set_grid_cell(back_btn.get_container(), LV_GRID_ALIGN_END, 2, 1, LV_GRID_ALIGN_END, 2, 2);
 
-  lv_obj_set_grid_cell(rightside_btns_cont, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 0, 4);
+  lv_obj_set_grid_cell(rightside_btns_cont, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 1, 3);
   // lv_obj_set_grid_cell(retract_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_END, 0, 2);
   // lv_obj_set_grid_cell(extrude_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 2);
   // lv_obj_set_grid_cell(back_btn.get_container(), LV_GRID_ALIGN_END, 2, 1, LV_GRID_ALIGN_END, 2, 2);
@@ -123,6 +161,11 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
 }
 
 ExtruderPanel::~ExtruderPanel() {
+  if (clock_timer != NULL) {
+    lv_timer_del(clock_timer);
+    clock_timer = NULL;
+  }
+
   if (panel_cont != NULL) {
     lv_obj_del(panel_cont);
     panel_cont = NULL;
@@ -131,6 +174,14 @@ ExtruderPanel::~ExtruderPanel() {
 
 void ExtruderPanel::foreground() {
   lv_obj_move_foreground(panel_cont);
+}
+
+void ExtruderPanel::update_clock() {
+  const std::time_t now = std::time(nullptr);
+  const std::tm local_time = *std::localtime(&now);
+  char time_text[6] = {};
+  std::strftime(time_text, sizeof(time_text), "%H:%M", &local_time);
+  lv_label_set_text(time_label, time_text);
 }
 
 void ExtruderPanel::show_manual_filament_change() {

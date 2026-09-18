@@ -117,6 +117,10 @@ lv_obj_t *SensorContainer::get_sensor() {
   return sensor_cont;
 }
 
+lv_obj_t *SensorContainer::get_target() {
+  return target_label;
+}
+
 void SensorContainer::update_target(int new_target) {
   if (new_target >= 0) {
     target = new_target;

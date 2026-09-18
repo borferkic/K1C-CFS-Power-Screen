@@ -21,7 +21,9 @@ ButtonContainer::ButtonContainer(lv_obj_t *parent,
 
   lv_obj_clear_flag(btn_cont, LV_OBJ_FLAG_SCROLLABLE);
   // lv_obj_add_style(btn_cont, &style, LV_PART_MAIN);
-  lv_imgbtn_set_src(btn, LV_IMGBTN_STATE_RELEASED, NULL, btn_img, NULL);
+  if (btn_img != NULL) {
+    lv_imgbtn_set_src(btn, LV_IMGBTN_STATE_RELEASED, NULL, btn_img, NULL);
+  }
   lv_obj_set_width(btn, LV_SIZE_CONTENT);
   // lv_obj_align(btn, LV_ALIGN_CENTER, 0, 0);
   lv_obj_align(btn, LV_ALIGN_TOP_MID, 0, 0);
@@ -60,7 +62,14 @@ ButtonContainer::ButtonContainer(lv_obj_t *parent,
   lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
   lv_obj_set_style_text_color(label, lv_palette_darken(LV_PALETTE_GREY, 1), LV_STATE_DISABLED);
 
-  lv_obj_align_to(label, btn, LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
+  if (btn_img == NULL) {
+    lv_obj_set_size(btn, 150 * width_scale, 60);
+    lv_obj_set_style_pad_all(btn, 0, LV_PART_MAIN);
+    lv_obj_set_style_radius(btn, 12, LV_PART_MAIN);
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+  } else {
+    lv_obj_align_to(label, btn, LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
+  }
   // lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, 5);
   // lv_obj_set_style_border_width(btn_cont, 2, 0);
 }
