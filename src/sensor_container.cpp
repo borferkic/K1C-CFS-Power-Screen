@@ -53,7 +53,7 @@ SensorContainer::SensorContainer(KWebSocketClient &c,
     lv_obj_align_to(sensor_label, sensor_img, LV_ALIGN_OUT_RIGHT_MID, -7 * width_scale, 0);
 
     lv_label_set_text(value_label, "0°C");
-    lv_obj_set_width(value_label, 50 * width_scale);
+    lv_obj_set_width(value_label, 70 * width_scale);
     lv_obj_align(value_label, LV_ALIGN_RIGHT_MID, -75 * width_scale, 0);
     lv_obj_set_style_pad_all(value_label, 8 * width_scale, 0);
 
