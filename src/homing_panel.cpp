@@ -59,15 +59,22 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   const auto height_scale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
   const lv_coord_t square_width = static_cast<lv_coord_t>(130 * width_scale);
   const lv_coord_t square_height = static_cast<lv_coord_t>(130 * height_scale);
-  const lv_coord_t button_gap = static_cast<lv_coord_t>(14 * width_scale);
-  const lv_coord_t content_top = static_cast<lv_coord_t>(48 * height_scale);
+  const lv_coord_t horizontal_gap = static_cast<lv_coord_t>(30 * width_scale);
+  const lv_coord_t vertical_gap = static_cast<lv_coord_t>(25 * height_scale);
+  const lv_coord_t selector_gap = static_cast<lv_coord_t>(50 * height_scale);
+  const lv_coord_t safety_gap = static_cast<lv_coord_t>(14 * width_scale);
+  const lv_coord_t safety_top = static_cast<lv_coord_t>(48 * height_scale);
   const lv_coord_t right_margin = static_cast<lv_coord_t>(14 * width_scale);
-  const lv_coord_t motion_width = square_width * 4 + button_gap * 3;
+  const lv_coord_t title_height = static_cast<lv_coord_t>(32 * height_scale);
+  const lv_coord_t motion_width = square_width * 4 + horizontal_gap * 3;
   const lv_coord_t safety_width = square_width;
   const lv_coord_t emergency_height = static_cast<lv_coord_t>(160 * height_scale);
   const lv_coord_t back_height = static_cast<lv_coord_t>(100 * height_scale);
-  const lv_coord_t safety_height = emergency_height + square_height + back_height + button_gap * 2;
-  const lv_coord_t selector_y = square_height * 2 + button_gap * 2;
+  const lv_coord_t safety_height = emergency_height + square_height + back_height + safety_gap * 2;
+  const lv_coord_t selector_y = square_height * 2 + vertical_gap + selector_gap;
+  const lv_coord_t motion_height = selector_y + static_cast<lv_coord_t>(96 * height_scale);
+  const lv_coord_t available_height = static_cast<lv_coord_t>(lv_disp_get_physical_ver_res(NULL)) - title_height;
+  const lv_coord_t motion_top = title_height + (available_height - motion_height) / 2;
 
   lv_obj_clear_flag(homing_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(homing_cont, LV_PCT(100), LV_PCT(100));
@@ -99,20 +106,20 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   update_clock();
   clock_timer = lv_timer_create(&HomingPanel::_update_clock_cb, 1000, this);
 
-  auto style_group = [button_gap](lv_obj_t *group) {
+  auto style_group = [horizontal_gap](lv_obj_t *group) {
     lv_obj_clear_flag(group, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_pad_all(group, 0, LV_PART_MAIN);
-    lv_obj_set_style_pad_column(group, button_gap, LV_PART_MAIN);
+    lv_obj_set_style_pad_column(group, horizontal_gap, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(group, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_set_style_border_width(group, 0, LV_PART_MAIN);
     lv_obj_set_flex_flow(group, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(group, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
   };
 
-  auto style_vertical_group = [button_gap](lv_obj_t *group) {
+  auto style_vertical_group = [safety_gap](lv_obj_t *group) {
     lv_obj_clear_flag(group, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_pad_all(group, 0, LV_PART_MAIN);
-    lv_obj_set_style_pad_row(group, button_gap, LV_PART_MAIN);
+    lv_obj_set_style_pad_row(group, safety_gap, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(group, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_set_style_border_width(group, 0, LV_PART_MAIN);
     lv_obj_set_flex_flow(group, LV_FLEX_FLOW_COLUMN);
@@ -140,7 +147,7 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   style_vertical_group(safety_cont);
   lv_obj_set_size(motion_top_cont, motion_width, square_height);
   lv_obj_set_size(motion_bottom_cont, motion_width, square_height);
-  lv_obj_set_size(motion_cont, motion_width, selector_y + static_cast<lv_coord_t>(105 * height_scale));
+  lv_obj_set_size(motion_cont, motion_width, motion_height);
   lv_obj_set_size(safety_cont, safety_width, safety_height);
 
   for (ButtonContainer *button : {&home_all_btn, &home_xy_btn, &x_up_btn, &x_down_btn,
@@ -167,12 +174,12 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   lv_obj_set_style_border_color(emergency_btn.get_container(), lv_color_hex(0xF44336), LV_PART_MAIN);
 
   lv_obj_align(motion_cont, LV_ALIGN_TOP_RIGHT,
-               -(safety_width + button_gap + right_margin), content_top);
+               -(safety_width + safety_gap + right_margin), motion_top);
   lv_obj_align(motion_top_cont, LV_ALIGN_TOP_MID, 0, 0);
-  lv_obj_align(motion_bottom_cont, LV_ALIGN_TOP_MID, 0, square_height + button_gap);
+  lv_obj_align(motion_bottom_cont, LV_ALIGN_TOP_MID, 0, square_height + vertical_gap);
   lv_obj_set_width(distance_selector.get_container(), motion_width);
   lv_obj_align(distance_selector.get_container(), LV_ALIGN_TOP_MID, 0, selector_y);
-  lv_obj_align(safety_cont, LV_ALIGN_TOP_RIGHT, -right_margin, content_top);
+  lv_obj_align(safety_cont, LV_ALIGN_TOP_RIGHT, -right_margin, safety_top);
 
   ws.register_notify_update(this);
 }
