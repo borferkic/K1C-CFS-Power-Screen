@@ -105,19 +105,36 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   extruder_temp.set_current_only(75 * width_scale, 5 * width_scale);
   extruder_temp.set_image_zoom(100);
 
-  lv_obj_set_size(rightside_btns_cont, LV_PCT(20), LV_PCT(100));  
+  lv_obj_set_size(rightside_btns_cont, LV_PCT(20), LV_SIZE_CONTENT);
+  lv_obj_set_style_pad_row(rightside_btns_cont, 15, 0);
   lv_obj_set_flex_flow(rightside_btns_cont, LV_FLEX_FLOW_COLUMN);
-  lv_obj_set_flex_align(rightside_btns_cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_flex_align(rightside_btns_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
   lv_obj_clear_flag(rightside_btns_cont, LV_OBJ_FLAG_SCROLLABLE);
 
   lv_obj_set_size(leftside_btns_cont, LV_PCT(20), LV_SIZE_CONTENT);
   lv_obj_set_style_pad_row(leftside_btns_cont, 15, 0);
   lv_obj_set_flex_flow(leftside_btns_cont, LV_FLEX_FLOW_COLUMN);
-  lv_obj_set_flex_align(leftside_btns_cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_flex_align(leftside_btns_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
   lv_obj_clear_flag(leftside_btns_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_move_to_index(manual_change_btn.get_container(), 0);
   
   spoolman_btn.disable();  
+
+  auto set_button_background = [](lv_obj_t *button, lv_color_t normal, lv_color_t pressed) {
+    lv_obj_set_style_bg_color(button, normal, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(button, pressed, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
+  };
+
+  const auto button_grey = lv_color_hex(0x555555);
+  const auto button_grey_pressed = lv_color_hex(0x3A3A3A);
+  set_button_background(load_btn.get_button(), button_grey, button_grey_pressed);
+  set_button_background(unload_btn.get_button(), button_grey, button_grey_pressed);
+  set_button_background(extrude_btn.get_button(), button_grey, button_grey_pressed);
+  set_button_background(retract_btn.get_button(), button_grey, button_grey_pressed);
+  set_button_background(back_btn.get_button(), button_grey, button_grey_pressed);
+  set_button_background(cooldown_btn.get_button(), lv_color_hex(0x4FC3F7), lv_color_hex(0x0288D1));
 
   lv_obj_set_style_bg_color(manual_change_btn.get_button(), lv_color_hex(0x4CAF50), LV_PART_MAIN | LV_STATE_DEFAULT);
   lv_obj_set_style_bg_opa(manual_change_btn.get_button(), LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -157,9 +174,9 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   
   // col 1
   // lv_obj_set_grid_cell(extruder_temp.get_sensor(), LV_GRID_ALIGN_CENTER, 0, 2, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(speed_selector.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
+  lv_obj_set_grid_cell(speed_selector.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_END, 1, 1);
   lv_obj_set_grid_cell(length_selector.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 2, 1);
-  lv_obj_set_grid_cell(temp_selector.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 3, 1);
+  lv_obj_set_grid_cell(temp_selector.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 3, 1);
   
   // col 2
   // lv_obj_set_grid_cell(spoolman_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 0, 2);
@@ -167,7 +184,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   // lv_obj_set_grid_cell(extrude_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 2);
   // lv_obj_set_grid_cell(back_btn.get_container(), LV_GRID_ALIGN_END, 2, 1, LV_GRID_ALIGN_END, 2, 2);
 
-  lv_obj_set_grid_cell(rightside_btns_cont, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 1, 3);
+  lv_obj_set_grid_cell(rightside_btns_cont, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 3);
   // lv_obj_set_grid_cell(retract_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_END, 0, 2);
   // lv_obj_set_grid_cell(extrude_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 2);
   // lv_obj_set_grid_cell(back_btn.get_container(), LV_GRID_ALIGN_END, 2, 1, LV_GRID_ALIGN_END, 2, 2);
