@@ -41,7 +41,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   , unload_btn(leftside_btns_cont, &unload_filament_img, "UNLOAD", &ExtruderPanel::_handle_callback, this)
   , cooldown_btn(leftside_btns_cont, &cooldown_img, "COOLDOWN", &ExtruderPanel::_handle_callback, this)
   , manual_change_btn(leftside_btns_cont, NULL, "MANUAL\nCOLOR", &ExtruderPanel::_handle_callback, this)
-  , spoolman_btn(rightside_btns_cont, &spoolman_img, "CFS", &ExtruderPanel::_handle_callback, this)
+  , spoolman_btn(rightside_btns_cont, NULL, "CFS", &ExtruderPanel::_handle_callback, this)
   , extrude_btn(rightside_btns_cont, &extrude_img, "EXTRUDE", &ExtruderPanel::_handle_callback, this)
   , retract_btn(rightside_btns_cont, &retract_img, "RETRACT", &ExtruderPanel::_handle_callback, this)
   , back_btn(rightside_btns_cont, &back, "BACK", &ExtruderPanel::_handle_callback, this)
@@ -99,8 +99,11 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   clock_timer = lv_timer_create(&ExtruderPanel::_update_clock_cb, 1000, this);
 
   auto width_scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
+  auto height_scale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
   lv_obj_set_width(extruder_temp.get_sensor(), 345 * width_scale);
-  lv_obj_set_width(extruder_temp.get_target(), 75 * width_scale);
+  lv_obj_set_height(extruder_temp.get_sensor(), 32 * height_scale);
+  extruder_temp.set_current_only(75 * width_scale, 5 * width_scale);
+  extruder_temp.set_image_zoom(100);
 
   lv_obj_set_size(rightside_btns_cont, LV_PCT(20), LV_PCT(100));  
   lv_obj_set_flex_flow(rightside_btns_cont, LV_FLEX_FLOW_COLUMN);
@@ -119,6 +122,18 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   lv_obj_set_style_bg_opa(manual_change_btn.get_button(), LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
   lv_obj_set_style_bg_color(manual_change_btn.get_button(), lv_color_hex(0x388E3C), LV_PART_MAIN | LV_STATE_PRESSED);
   lv_obj_set_style_bg_opa(manual_change_btn.get_button(), LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
+
+  lv_obj_set_style_bg_color(spoolman_btn.get_button(), lv_color_hex(0x4CAF50), LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_bg_opa(spoolman_btn.get_button(), LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_bg_color(spoolman_btn.get_button(), lv_color_hex(0x388E3C), LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_set_style_bg_opa(spoolman_btn.get_button(), LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_set_style_bg_color(spoolman_btn.get_button(), lv_color_hex(0x555555), LV_PART_MAIN | LV_STATE_DISABLED);
+  lv_obj_set_style_bg_opa(spoolman_btn.get_button(), LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DISABLED);
+
+  lv_obj_set_width(manual_change_btn.get_container(), 130 * width_scale);
+  lv_obj_set_size(manual_change_btn.get_button(), 130 * width_scale, 60);
+  lv_obj_set_width(spoolman_btn.get_container(), 130 * width_scale);
+  lv_obj_set_size(spoolman_btn.get_button(), 130 * width_scale, 60);
 
   static lv_coord_t grid_main_row_dsc[] = {32, LV_GRID_FR(6), LV_GRID_FR(6), LV_GRID_FR(6),
     LV_GRID_TEMPLATE_LAST};

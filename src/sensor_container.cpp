@@ -121,6 +121,19 @@ lv_obj_t *SensorContainer::get_target() {
   return target_label;
 }
 
+void SensorContainer::set_current_only(lv_coord_t value_width, lv_coord_t right_offset) {
+  lv_obj_add_flag(sensor_label, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_add_flag(divider_label, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_add_flag(target_label, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_set_width(value_label, value_width);
+  lv_obj_set_style_pad_all(value_label, 0, 0);
+  lv_obj_align(value_label, LV_ALIGN_RIGHT_MID, -right_offset, 0);
+}
+
+void SensorContainer::set_image_zoom(uint16_t zoom) {
+  lv_img_set_zoom(sensor_img, zoom);
+}
+
 void SensorContainer::update_target(int new_target) {
   if (new_target >= 0) {
     target = new_target;

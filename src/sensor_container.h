@@ -38,6 +38,8 @@ class SensorContainer {
 
   lv_obj_t *get_sensor();
   lv_obj_t *get_target();
+  void set_current_only(lv_coord_t value_width, lv_coord_t right_offset);
+  void set_image_zoom(uint16_t zoom);
   void update_target(int new_target);
   void update_value(int new_value);
   void update_series(int value);
