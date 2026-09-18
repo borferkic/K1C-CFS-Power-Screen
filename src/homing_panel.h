@@ -8,6 +8,7 @@
 #include "notify_consumer.h"
 
 #include <mutex>
+#include <ctime>
 
 class HomingPanel : public NotifyConsumer {
  public:
@@ -33,6 +34,13 @@ class HomingPanel : public NotifyConsumer {
  private:
   KWebSocketClient &ws;
   lv_obj_t *homing_cont;
+  lv_obj_t *title_bar;
+  lv_obj_t *title_label;
+  lv_obj_t *time_label;
+  lv_timer_t *clock_timer;
+  lv_obj_t *motion_top_cont;
+  lv_obj_t *motion_bottom_cont;
+  lv_obj_t *safety_cont;
   ButtonContainer home_all_btn;
   ButtonContainer home_xy_btn;
   ButtonContainer y_up_btn;
@@ -45,6 +53,13 @@ class HomingPanel : public NotifyConsumer {
   ButtonContainer motoroff_btn;
   ButtonContainer back_btn;
   Selector distance_selector;
+
+  void update_clock();
+
+  static void _update_clock_cb(lv_timer_t *timer) {
+    HomingPanel *panel = static_cast<HomingPanel *>(timer->user_data);
+    panel->update_clock();
+  }
 };
 
 #endif // __HOMING_PANEL_H__

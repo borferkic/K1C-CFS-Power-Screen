@@ -26,6 +26,7 @@ class ButtonContainer {
 
   void set_image(const void *img);
   void set_image_color(lv_color_t color);
+  void set_disabled_text_color(lv_color_t color);
   void set_active(bool active, lv_color_t active_color);
 
   void handle_callback(lv_event_t *event);

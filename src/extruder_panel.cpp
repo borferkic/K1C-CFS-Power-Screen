@@ -154,6 +154,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
                         lv_color_hex(0x4CAF50), lv_color_hex(0x388E3C));
   lv_obj_set_style_bg_color(spoolman_btn.get_container(), button_grey, LV_PART_MAIN | LV_STATE_DISABLED);
   lv_obj_set_style_bg_opa(spoolman_btn.get_container(), LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DISABLED);
+  spoolman_btn.set_disabled_text_color(lv_color_hex(0xF44336));
 
   lv_obj_set_width(manual_change_btn.get_container(), 130 * width_scale);
   lv_obj_set_size(manual_change_btn.get_button(), 130 * width_scale, 60);

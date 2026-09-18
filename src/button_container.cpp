@@ -129,6 +129,10 @@ void ButtonContainer::set_image_color(lv_color_t color) {
                                    LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
+void ButtonContainer::set_disabled_text_color(lv_color_t color) {
+  lv_obj_set_style_text_color(label, color, LV_PART_MAIN | LV_STATE_DISABLED);
+}
+
 void ButtonContainer::set_active(bool active, lv_color_t active_color) {
   lv_obj_set_style_img_recolor(btn, active_color,
                                LV_PART_MAIN | LV_STATE_CHECKED);

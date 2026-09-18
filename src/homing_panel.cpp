@@ -3,7 +3,15 @@
 #include "spdlog/spdlog.h"
 #include "config.h"
 
+#include <ctime>
+
 static const float distances[] = {0.1, 0.5, 1, 5, 10, 25, 50};
+
+namespace {
+constexpr uint32_t HOMING_PANEL_BACKGROUND = 0x282B30;
+constexpr uint32_t BUTTON_GREY = 0x555555;
+constexpr uint32_t BUTTON_GREY_PRESSED = 0x3A3A3A;
+}
 
 LV_IMG_DECLARE(arrow_left);
 LV_IMG_DECLARE(arrow_up);
@@ -20,58 +28,127 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   : NotifyConsumer(lock)
   , ws(websocket_client)
   , homing_cont(lv_obj_create(lv_scr_act()))
-  , home_all_btn(homing_cont, &home, "Home All", &HomingPanel::_handle_callback, this)
-  , home_xy_btn(homing_cont, &home, "Home XY", &HomingPanel::_handle_callback, this)
-  , y_up_btn(homing_cont, &arrow_up, "Y+", &HomingPanel::_handle_callback, this)
-  , y_down_btn(homing_cont, &arrow_down, "Y-", &HomingPanel::_handle_callback, this)    
-  , x_up_btn(homing_cont, &arrow_right, "X+", &HomingPanel::_handle_callback, this)
-  , x_down_btn(homing_cont, &arrow_left, "X-", &HomingPanel::_handle_callback, this)
-  , z_up_btn(homing_cont, &z_closer, "Z+", &HomingPanel::_handle_callback, this)
-  , z_down_btn(homing_cont, &z_farther, "Z-", &HomingPanel::_handle_callback, this)
-  , emergency_btn(homing_cont, &emergency, "Stop", &HomingPanel::_handle_callback, this,
+  , title_bar(lv_obj_create(homing_cont))
+  , title_label(lv_label_create(title_bar))
+  , time_label(lv_label_create(title_bar))
+  , clock_timer(NULL)
+  , motion_top_cont(lv_obj_create(homing_cont))
+  , motion_bottom_cont(lv_obj_create(homing_cont))
+  , safety_cont(lv_obj_create(homing_cont))
+  , home_all_btn(motion_top_cont, &home, "Home All", &HomingPanel::_handle_callback, this)
+  , home_xy_btn(motion_top_cont, &home, "Home XY", &HomingPanel::_handle_callback, this)
+  , x_up_btn(motion_top_cont, &arrow_right, "X+", &HomingPanel::_handle_callback, this)
+  , x_down_btn(motion_top_cont, &arrow_left, "X-", &HomingPanel::_handle_callback, this)
+  , y_up_btn(motion_bottom_cont, &arrow_up, "Y+", &HomingPanel::_handle_callback, this)
+  , y_down_btn(motion_bottom_cont, &arrow_down, "Y-", &HomingPanel::_handle_callback, this)
+  , z_up_btn(motion_bottom_cont, &z_closer, "Z+", &HomingPanel::_handle_callback, this)
+  , z_down_btn(motion_bottom_cont, &z_farther, "Z-", &HomingPanel::_handle_callback, this)
+  , emergency_btn(safety_cont, &emergency, "Emergency\nStop", &HomingPanel::_handle_callback, this,
 		  "Do you want to emergency stop?",
 		  [&websocket_client]() {
 		    spdlog::debug("emergency stop pressed");
 		    websocket_client.send_jsonrpc("printer.emergency_stop");
 		  })
-  , motoroff_btn(homing_cont, &motor_off_img, "Motor Off", &HomingPanel::_handle_callback, this)
-  , back_btn(homing_cont, &back, "Back", &HomingPanel::_handle_callback, this)
+  , motoroff_btn(safety_cont, &motor_off_img, "Motor Off", &HomingPanel::_handle_callback, this)
+  , back_btn(safety_cont, &back, "Back", &HomingPanel::_handle_callback, this)
   , distance_selector(homing_cont, "Move Distance (mm)",
 		     {".1", ".5", "1", "5", "10", "25", "50", ""}, 2, 70, 15, &HomingPanel::_handle_selector_cb, this)
 {
+  const auto width_scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
+  const auto height_scale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
+  const lv_coord_t button_width = static_cast<lv_coord_t>(150 * width_scale);
+  const lv_coord_t button_height = static_cast<lv_coord_t>(100 * height_scale);
+  const lv_coord_t button_gap = static_cast<lv_coord_t>(10 * width_scale);
+  const lv_coord_t motion_width = button_width * 4 + button_gap * 3;
+  const lv_coord_t safety_width = button_width * 3 + button_gap * 2;
+
   lv_obj_clear_flag(homing_cont, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_height(homing_cont, lv_pct(100));
-  lv_obj_set_width(homing_cont, lv_pct(100));
+  lv_obj_set_size(homing_cont, LV_PCT(100), LV_PCT(100));
+  lv_obj_set_style_pad_all(homing_cont, 0, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(homing_cont, lv_color_hex(HOMING_PANEL_BACKGROUND), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(homing_cont, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_border_width(homing_cont, 0, LV_PART_MAIN);
 
-  static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(4), LV_GRID_FR(4), LV_GRID_FR(2), LV_GRID_TEMPLATE_LAST};
-  static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1),
-    LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+  lv_obj_clear_flag(title_bar, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_size(title_bar, LV_PCT(100), 32);
+  lv_obj_set_pos(title_bar, 0, 0);
+  lv_obj_set_style_pad_all(title_bar, 0, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(title_bar, lv_color_hex(BUTTON_GREY), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(title_bar, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_border_width(title_bar, 0, LV_PART_MAIN);
 
-  lv_obj_set_grid_dsc_array(homing_cont, grid_main_col_dsc, grid_main_row_dsc);
+  lv_label_set_text(title_label, "HOMING CONTROL");
+  lv_obj_set_width(title_label, LV_PCT(100));
+  lv_label_set_long_mode(title_label, LV_LABEL_LONG_DOT);
+  lv_obj_set_style_text_align(title_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+  lv_obj_set_style_text_color(title_label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_font(title_label, &lv_font_montserrat_20, LV_PART_MAIN);
+  lv_obj_align(title_label, LV_ALIGN_CENTER, 0, 0);
 
-  // row 1
-  lv_obj_set_grid_cell(home_all_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(y_up_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(home_xy_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(z_up_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 0, 1); 
-  lv_obj_set_grid_cell(emergency_btn.get_container(), LV_GRID_ALIGN_CENTER, 4, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+  lv_obj_set_width(time_label, LV_SIZE_CONTENT);
+  lv_obj_set_style_text_color(time_label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_font(time_label, &lv_font_montserrat_20, LV_PART_MAIN);
+  lv_obj_align(time_label, LV_ALIGN_RIGHT_MID, -10, 0);
+  update_clock();
+  clock_timer = lv_timer_create(&HomingPanel::_update_clock_cb, 1000, this);
 
-  // row 2
-  lv_obj_set_grid_cell(x_down_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-  lv_obj_set_grid_cell(y_down_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-  lv_obj_set_grid_cell(x_up_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-  lv_obj_set_grid_cell(z_down_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-  lv_obj_set_grid_cell(motoroff_btn.get_container(), LV_GRID_ALIGN_CENTER, 4, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-    
-  lv_obj_set_grid_cell(distance_selector.get_container(), LV_GRID_ALIGN_CENTER, 0, 5, LV_GRID_ALIGN_CENTER, 2, 1);
+  auto style_group = [button_gap](lv_obj_t *group) {
+    lv_obj_clear_flag(group, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_pad_all(group, 0, LV_PART_MAIN);
+    lv_obj_set_style_pad_column(group, button_gap, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(group, LV_OPA_TRANSP, LV_PART_MAIN);
+    lv_obj_set_style_border_width(group, 0, LV_PART_MAIN);
+    lv_obj_set_flex_flow(group, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(group, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  };
 
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_FLOATING);  
-  lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, 10, 0);
+  auto style_button = [](ButtonContainer &button) {
+    lv_obj_t *container = button.get_container();
+    lv_obj_set_style_bg_color(container, lv_color_hex(BUTTON_GREY), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(container, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(container, lv_color_hex(BUTTON_GREY_PRESSED), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_opa(container, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_radius(container, 12, LV_PART_MAIN);
+    lv_obj_set_style_border_width(container, 0, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(button.get_button(), LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(button.get_button(), LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_PRESSED);
+  };
+
+  style_group(motion_top_cont);
+  style_group(motion_bottom_cont);
+  style_group(safety_cont);
+  lv_obj_set_size(motion_top_cont, motion_width, button_height);
+  lv_obj_set_size(motion_bottom_cont, motion_width, button_height);
+  lv_obj_set_size(safety_cont, safety_width, button_height);
+
+  for (ButtonContainer *button : {&home_all_btn, &home_xy_btn, &x_up_btn, &x_down_btn,
+                                  &y_up_btn, &y_down_btn, &z_up_btn, &z_down_btn,
+                                  &emergency_btn, &motoroff_btn, &back_btn}) {
+    button->set_fixed_size(button_width, button_height);
+    style_button(*button);
+  }
+
+  lv_obj_align(motion_top_cont, LV_ALIGN_TOP_MID, 0, static_cast<lv_coord_t>(42 * height_scale));
+  lv_obj_align(motion_bottom_cont, LV_ALIGN_TOP_MID, 0, static_cast<lv_coord_t>(157 * height_scale));
+  lv_obj_set_width(distance_selector.get_container(), motion_width);
+  lv_obj_align(distance_selector.get_container(), LV_ALIGN_TOP_MID, 0, static_cast<lv_coord_t>(272 * height_scale));
+  lv_obj_align(safety_cont, LV_ALIGN_TOP_MID, 0, static_cast<lv_coord_t>(375 * height_scale));
 
   ws.register_notify_update(this);
 }
 
 HomingPanel::~HomingPanel() {
+  if (clock_timer != NULL) {
+    lv_timer_del(clock_timer);
+    clock_timer = NULL;
+  }
+
+  if (homing_cont != NULL) {
+    lv_obj_del(homing_cont);
+    homing_cont = NULL;
+  }
+
+  ws.unregister_notify_update(this);
 }
 
 void HomingPanel::consume(json &j) {
@@ -158,6 +235,14 @@ void HomingPanel::foreground() {
   }
 
   lv_obj_move_foreground(homing_cont);
+}
+
+void HomingPanel::update_clock() {
+  const std::time_t now = std::time(nullptr);
+  const std::tm local_time = *std::localtime(&now);
+  char time_text[6] = {};
+  std::strftime(time_text, sizeof(time_text), "%H:%M", &local_time);
+  lv_label_set_text(time_label, time_text);
 }
 
 void HomingPanel::handle_callback(lv_event_t *event) {
