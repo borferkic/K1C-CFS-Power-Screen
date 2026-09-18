@@ -42,6 +42,7 @@ class SliderContainer {
 		  std::string u);
   ~SliderContainer();
   lv_obj_t *get_container();
+  lv_obj_t *get_label();
   lv_obj_t *get_slider();
   lv_obj_t *get_off();
   lv_obj_t *get_max();

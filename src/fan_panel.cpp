@@ -7,6 +7,10 @@ LV_IMG_DECLARE(cancel);
 LV_IMG_DECLARE(fan_on);
 LV_IMG_DECLARE(back);
 
+namespace {
+constexpr uint32_t FAN_PANEL_BACKGROUND = 0x282B30;
+}
+
 FanPanel::FanPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   : NotifyConsumer(lock)
   , ws(websocket_client)
@@ -21,7 +25,7 @@ FanPanel::FanPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   lv_obj_set_style_pad_all(fanpanel_cont, 0, 0);
   lv_obj_clear_flag(fanpanel_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(fanpanel_cont, LV_PCT(100), LV_PCT(100));
-  lv_obj_set_style_bg_color(fanpanel_cont, lv_palette_darken(LV_PALETTE_GREY, 4), 0);
+  lv_obj_set_style_bg_color(fanpanel_cont, lv_color_hex(FAN_PANEL_BACKGROUND), 0);
   lv_obj_set_style_bg_opa(fanpanel_cont, LV_OPA_COVER, 0);
   lv_obj_set_style_border_width(fanpanel_cont, 0, 0);
 
@@ -51,6 +55,8 @@ FanPanel::FanPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   lv_obj_clear_flag(fans_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(fans_cont, lv_pct(80), lv_pct(100));
   lv_obj_set_height(fans_cont, lv_obj_get_height(lv_scr_act()) - 32);
+  lv_obj_set_style_bg_color(fans_cont, lv_color_hex(FAN_PANEL_BACKGROUND), 0);
+  lv_obj_set_style_bg_opa(fans_cont, LV_OPA_COVER, 0);
   lv_obj_align(fans_cont, LV_ALIGN_TOP_MID, 0, 32);
   lv_obj_set_flex_flow(fans_cont, LV_FLEX_FLOW_COLUMN);
 
@@ -110,6 +116,7 @@ void FanPanel::create_fans(json &f) {
     }
     auto fptr = std::make_shared<SliderContainer>(fans_cont, display_name.c_str(), &cancel, "Off",
 						  &fan_on, "Max", fan_cb, this);
+    lv_obj_set_style_text_align(fptr->get_label(), LV_TEXT_ALIGN_CENTER, 0);
     fans.insert({key, fptr});
     // lv_obj_set_grid_cell(fptr->get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, rowidx++, 1);
   }

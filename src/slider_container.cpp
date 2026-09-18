@@ -122,6 +122,10 @@ lv_obj_t *SliderContainer::get_container() {
   return cont;
 }
 
+lv_obj_t *SliderContainer::get_label() {
+  return label;
+}
+
 lv_obj_t *SliderContainer::get_slider() {
   return slider;
 }
