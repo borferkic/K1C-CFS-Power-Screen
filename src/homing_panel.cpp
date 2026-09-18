@@ -32,17 +32,18 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   , title_label(lv_label_create(title_bar))
   , time_label(lv_label_create(title_bar))
   , clock_timer(NULL)
-  , motion_top_cont(lv_obj_create(homing_cont))
-  , motion_bottom_cont(lv_obj_create(homing_cont))
+  , motion_cont(lv_obj_create(homing_cont))
+  , motion_top_cont(lv_obj_create(motion_cont))
+  , motion_bottom_cont(lv_obj_create(motion_cont))
   , safety_cont(lv_obj_create(homing_cont))
   , home_all_btn(motion_top_cont, &home, "Home All", &HomingPanel::_handle_callback, this)
+  , y_up_btn(motion_top_cont, &arrow_up, "Y+", &HomingPanel::_handle_callback, this)
   , home_xy_btn(motion_top_cont, &home, "Home XY", &HomingPanel::_handle_callback, this)
-  , x_up_btn(motion_top_cont, &arrow_right, "X+", &HomingPanel::_handle_callback, this)
-  , x_down_btn(motion_top_cont, &arrow_left, "X-", &HomingPanel::_handle_callback, this)
-  , y_up_btn(motion_bottom_cont, &arrow_up, "Y+", &HomingPanel::_handle_callback, this)
+  , z_down_btn(motion_top_cont, &z_farther, "Z-", &HomingPanel::_handle_callback, this)
+  , x_down_btn(motion_bottom_cont, &arrow_left, "X-", &HomingPanel::_handle_callback, this)
   , y_down_btn(motion_bottom_cont, &arrow_down, "Y-", &HomingPanel::_handle_callback, this)
+  , x_up_btn(motion_bottom_cont, &arrow_right, "X+", &HomingPanel::_handle_callback, this)
   , z_up_btn(motion_bottom_cont, &z_closer, "Z+", &HomingPanel::_handle_callback, this)
-  , z_down_btn(motion_bottom_cont, &z_farther, "Z-", &HomingPanel::_handle_callback, this)
   , emergency_btn(safety_cont, &emergency, "Emergency\nStop", &HomingPanel::_handle_callback, this,
 		  "Do you want to emergency stop?",
 		  [&websocket_client]() {
@@ -51,7 +52,7 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
 		  })
   , motoroff_btn(safety_cont, &motor_off_img, "Motor Off", &HomingPanel::_handle_callback, this)
   , back_btn(safety_cont, &back, "Back", &HomingPanel::_handle_callback, this)
-  , distance_selector(homing_cont, "Move Distance (mm)",
+  , distance_selector(motion_cont, "Move Distance (mm)",
 		     {".1", ".5", "1", "5", "10", "25", "50", ""}, 2, 70, 15, &HomingPanel::_handle_selector_cb, this)
 {
   const auto width_scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
@@ -60,7 +61,9 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   const lv_coord_t button_height = static_cast<lv_coord_t>(100 * height_scale);
   const lv_coord_t button_gap = static_cast<lv_coord_t>(10 * width_scale);
   const lv_coord_t motion_width = button_width * 4 + button_gap * 3;
-  const lv_coord_t safety_width = button_width * 3 + button_gap * 2;
+  const lv_coord_t safety_width = button_width;
+  const lv_coord_t safety_height = button_height * 3 + button_gap * 2;
+  const lv_coord_t selector_y = button_height * 2 + button_gap * 2;
 
   lv_obj_clear_flag(homing_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(homing_cont, LV_PCT(100), LV_PCT(100));
@@ -102,6 +105,16 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
     lv_obj_set_flex_align(group, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
   };
 
+  auto style_vertical_group = [button_gap](lv_obj_t *group) {
+    lv_obj_clear_flag(group, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_pad_all(group, 0, LV_PART_MAIN);
+    lv_obj_set_style_pad_row(group, button_gap, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(group, LV_OPA_TRANSP, LV_PART_MAIN);
+    lv_obj_set_style_border_width(group, 0, LV_PART_MAIN);
+    lv_obj_set_flex_flow(group, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(group, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  };
+
   auto style_button = [](ButtonContainer &button) {
     lv_obj_t *container = button.get_container();
     lv_obj_set_style_bg_color(container, lv_color_hex(BUTTON_GREY), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -114,12 +127,17 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
     lv_obj_set_style_bg_opa(button.get_button(), LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_PRESSED);
   };
 
+  lv_obj_clear_flag(motion_cont, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_style_pad_all(motion_cont, 0, LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(motion_cont, LV_OPA_TRANSP, LV_PART_MAIN);
+  lv_obj_set_style_border_width(motion_cont, 0, LV_PART_MAIN);
   style_group(motion_top_cont);
   style_group(motion_bottom_cont);
-  style_group(safety_cont);
+  style_vertical_group(safety_cont);
   lv_obj_set_size(motion_top_cont, motion_width, button_height);
   lv_obj_set_size(motion_bottom_cont, motion_width, button_height);
-  lv_obj_set_size(safety_cont, safety_width, button_height);
+  lv_obj_set_size(motion_cont, motion_width, selector_y + static_cast<lv_coord_t>(105 * height_scale));
+  lv_obj_set_size(safety_cont, safety_width, safety_height);
 
   for (ButtonContainer *button : {&home_all_btn, &home_xy_btn, &x_up_btn, &x_down_btn,
                                   &y_up_btn, &y_down_btn, &z_up_btn, &z_down_btn,
@@ -128,11 +146,25 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
     style_button(*button);
   }
 
-  lv_obj_align(motion_top_cont, LV_ALIGN_TOP_MID, 0, static_cast<lv_coord_t>(42 * height_scale));
-  lv_obj_align(motion_bottom_cont, LV_ALIGN_TOP_MID, 0, static_cast<lv_coord_t>(157 * height_scale));
+  lv_obj_set_style_bg_color(home_all_btn.get_container(), lv_color_hex(0x4CAF50),
+                            LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_bg_color(home_all_btn.get_container(), lv_color_hex(0x388E3C),
+                            LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_set_style_bg_color(home_xy_btn.get_container(), lv_color_hex(0x4CAF50),
+                            LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_bg_color(home_xy_btn.get_container(), lv_color_hex(0x388E3C),
+                            LV_PART_MAIN | LV_STATE_PRESSED);
+
+  lv_obj_set_style_border_width(emergency_btn.get_container(), 2, LV_PART_MAIN);
+  lv_obj_set_style_border_color(emergency_btn.get_container(), lv_color_hex(0xF44336), LV_PART_MAIN);
+
+  lv_obj_align(motion_cont, LV_ALIGN_TOP_RIGHT,
+               -(safety_width + button_gap * 2), static_cast<lv_coord_t>(42 * height_scale));
+  lv_obj_align(motion_top_cont, LV_ALIGN_TOP_MID, 0, 0);
+  lv_obj_align(motion_bottom_cont, LV_ALIGN_TOP_MID, 0, button_height + button_gap);
   lv_obj_set_width(distance_selector.get_container(), motion_width);
-  lv_obj_align(distance_selector.get_container(), LV_ALIGN_TOP_MID, 0, static_cast<lv_coord_t>(272 * height_scale));
-  lv_obj_align(safety_cont, LV_ALIGN_TOP_MID, 0, static_cast<lv_coord_t>(375 * height_scale));
+  lv_obj_align(distance_selector.get_container(), LV_ALIGN_TOP_MID, 0, selector_y);
+  lv_obj_align(safety_cont, LV_ALIGN_TOP_RIGHT, -button_gap, static_cast<lv_coord_t>(42 * height_scale));
 
   ws.register_notify_update(this);
 }
