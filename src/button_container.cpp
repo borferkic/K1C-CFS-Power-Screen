@@ -133,8 +133,10 @@ void ButtonContainer::handle_callback(lv_event_t *e) {
   const lv_event_code_t code = lv_event_get_code(e);
   if (code == LV_EVENT_PRESSED) {
     lv_imgbtn_set_state(btn, LV_IMGBTN_STATE_PRESSED);
+    lv_obj_add_state(btn_cont, LV_STATE_PRESSED);
   } else if (code == LV_EVENT_RELEASED) {
     lv_imgbtn_set_state(btn, LV_IMGBTN_STATE_RELEASED);
+    lv_obj_clear_state(btn_cont, LV_STATE_PRESSED);
   }
 }
 

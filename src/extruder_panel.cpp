@@ -120,33 +120,34 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   
   spoolman_btn.disable();  
 
-  auto set_button_background = [](lv_obj_t *button, lv_color_t normal, lv_color_t pressed) {
-    lv_obj_set_style_bg_color(button, normal, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(button, pressed, LV_PART_MAIN | LV_STATE_PRESSED);
-    lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
+  auto set_button_background = [](lv_obj_t *container, lv_obj_t *button,
+                                  lv_color_t normal, lv_color_t pressed) {
+    lv_obj_set_style_bg_color(container, normal, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(container, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(container, pressed, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_opa(container, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_radius(container, 12, LV_PART_MAIN);
+    lv_obj_set_style_border_width(container, 0, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(button, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(button, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_opa(button, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DISABLED);
   };
 
   const auto button_grey = lv_color_hex(0x555555);
   const auto button_grey_pressed = lv_color_hex(0x3A3A3A);
-  set_button_background(load_btn.get_button(), button_grey, button_grey_pressed);
-  set_button_background(unload_btn.get_button(), button_grey, button_grey_pressed);
-  set_button_background(extrude_btn.get_button(), button_grey, button_grey_pressed);
-  set_button_background(retract_btn.get_button(), button_grey, button_grey_pressed);
-  set_button_background(back_btn.get_button(), button_grey, button_grey_pressed);
-  set_button_background(cooldown_btn.get_button(), lv_color_hex(0x4FC3F7), lv_color_hex(0x0288D1));
-
-  lv_obj_set_style_bg_color(manual_change_btn.get_button(), lv_color_hex(0x4CAF50), LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_bg_opa(manual_change_btn.get_button(), LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_bg_color(manual_change_btn.get_button(), lv_color_hex(0x388E3C), LV_PART_MAIN | LV_STATE_PRESSED);
-  lv_obj_set_style_bg_opa(manual_change_btn.get_button(), LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
-
-  lv_obj_set_style_bg_color(spoolman_btn.get_button(), lv_color_hex(0x4CAF50), LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_bg_opa(spoolman_btn.get_button(), LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_bg_color(spoolman_btn.get_button(), lv_color_hex(0x388E3C), LV_PART_MAIN | LV_STATE_PRESSED);
-  lv_obj_set_style_bg_opa(spoolman_btn.get_button(), LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
-  lv_obj_set_style_bg_color(spoolman_btn.get_button(), lv_color_hex(0x555555), LV_PART_MAIN | LV_STATE_DISABLED);
-  lv_obj_set_style_bg_opa(spoolman_btn.get_button(), LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DISABLED);
+  set_button_background(load_btn.get_container(), load_btn.get_button(), button_grey, button_grey_pressed);
+  set_button_background(unload_btn.get_container(), unload_btn.get_button(), button_grey, button_grey_pressed);
+  set_button_background(extrude_btn.get_container(), extrude_btn.get_button(), button_grey, button_grey_pressed);
+  set_button_background(retract_btn.get_container(), retract_btn.get_button(), button_grey, button_grey_pressed);
+  set_button_background(back_btn.get_container(), back_btn.get_button(), button_grey, button_grey_pressed);
+  set_button_background(cooldown_btn.get_container(), cooldown_btn.get_button(),
+                        lv_color_hex(0x4FC3F7), lv_color_hex(0x0288D1));
+  set_button_background(manual_change_btn.get_container(), manual_change_btn.get_button(),
+                        lv_color_hex(0x4CAF50), lv_color_hex(0x388E3C));
+  set_button_background(spoolman_btn.get_container(), spoolman_btn.get_button(),
+                        lv_color_hex(0x4CAF50), lv_color_hex(0x388E3C));
+  lv_obj_set_style_bg_color(spoolman_btn.get_container(), button_grey, LV_PART_MAIN | LV_STATE_DISABLED);
+  lv_obj_set_style_bg_opa(spoolman_btn.get_container(), LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DISABLED);
 
   lv_obj_set_width(manual_change_btn.get_container(), 130 * width_scale);
   lv_obj_set_size(manual_change_btn.get_button(), 130 * width_scale, 60);
