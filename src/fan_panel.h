@@ -10,6 +10,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <ctime>
 
 class FanPanel : public NotifyConsumer {
  public:
@@ -22,6 +23,7 @@ class FanPanel : public NotifyConsumer {
   void create_fans(json &f);
   void foreground();
   void handle_callback(lv_event_t *event);
+  void update_clock();
   void handle_fan_update(lv_event_t *event);
   void handle_fan_update_part_fan(lv_event_t *event);
   void handle_fan_update_generic(lv_event_t *event);
@@ -46,10 +48,19 @@ class FanPanel : public NotifyConsumer {
     panel->handle_fan_update_generic(event);
   };
 
+  static void _update_clock_cb(lv_timer_t *timer) {
+    FanPanel *panel = static_cast<FanPanel *>(timer->user_data);
+    panel->update_clock();
+  }
+
  private:
 
   KWebSocketClient &ws;
   lv_obj_t *fanpanel_cont;
+  lv_obj_t *title_bar;
+  lv_obj_t *title_label;
+  lv_obj_t *time_label;
+  lv_timer_t *clock_timer;
   lv_obj_t *fans_cont;
   std::map<std::string, std::shared_ptr<SliderContainer>> fans;
   /* SliderContainer fan0; */
