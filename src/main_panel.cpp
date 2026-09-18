@@ -14,6 +14,7 @@ LV_IMG_DECLARE(extruder);
 LV_IMG_DECLARE(bed);
 LV_IMG_DECLARE(fan);
 LV_IMG_DECLARE(heater);
+LV_IMG_DECLARE(chamber);
 
 LV_FONT_DECLARE(materialdesign_font_40);
 #define CREALITY_GREEN 0x4CAF50
@@ -430,16 +431,19 @@ void MainPanel::create_sensors(json &temp_sensors) {
     std::string display_name = sensor.value()["display_name"].template get<std::string>();
 
     const void* sensor_img = &heater;
+    uint16_t sensor_img_scale = 150;
     if (key == "extruder") {
       sensor_img = &extruder;
     } else if (key == "heater_bed") {
       sensor_img = &bed;
+    } else if (key == "chamber_temp" || key == "temperature_sensor chamber_temp") {
+      sensor_img = &chamber;
     }
 
     lv_chart_series_t *temp_series =
       lv_chart_add_series(temp_chart, color_code, LV_CHART_AXIS_PRIMARY_Y);
 
-    sensors.insert({key, std::make_shared<SensorContainer>(ws, temp_cont, sensor_img, 150,
+    sensors.insert({key, std::make_shared<SensorContainer>(ws, temp_cont, sensor_img, sensor_img_scale,
 			   display_name.c_str(), color_code, controllable, false, numpad, key,
         		   temp_chart, temp_series)});
   }
