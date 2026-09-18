@@ -52,7 +52,7 @@ SensorContainer::SensorContainer(KWebSocketClient &c,
     lv_label_set_text(sensor_label, text);
     lv_obj_align_to(sensor_label, sensor_img, LV_ALIGN_OUT_RIGHT_MID, -7 * width_scale, 0);
 
-    lv_label_set_text(value_label, "0");
+    lv_label_set_text(value_label, "0°C");
     lv_obj_set_width(value_label, 50 * width_scale);
     lv_obj_align(value_label, LV_ALIGN_RIGHT_MID, -75 * width_scale, 0);
     lv_obj_set_style_pad_all(value_label, 8 * width_scale, 0);
@@ -122,12 +122,14 @@ lv_obj_t *SensorContainer::get_target() {
 }
 
 void SensorContainer::set_current_only(lv_coord_t value_width, lv_coord_t right_offset) {
-  lv_obj_add_flag(sensor_label, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_del(sensor_label);
+  sensor_label = NULL;
   lv_obj_add_flag(divider_label, LV_OBJ_FLAG_HIDDEN);
   lv_obj_add_flag(target_label, LV_OBJ_FLAG_HIDDEN);
   lv_obj_set_width(value_label, value_width);
   lv_obj_set_style_pad_all(value_label, 0, 0);
-  lv_obj_align(value_label, LV_ALIGN_RIGHT_MID, -right_offset, 0);
+  lv_obj_set_style_text_align(value_label, LV_TEXT_ALIGN_LEFT, 0);
+  lv_obj_align_to(value_label, sensor_img, LV_ALIGN_OUT_RIGHT_MID, right_offset, 0);
 }
 
 void SensorContainer::set_image_zoom(uint16_t zoom) {
@@ -144,7 +146,7 @@ void SensorContainer::update_target(int new_target) {
 void SensorContainer::update_value(int new_value) {
   if (value != new_value) {
     value = new_value;
-    lv_label_set_text(value_label, fmt::format("{}", new_value).c_str());
+    lv_label_set_text(value_label, fmt::format("{}°C", new_value).c_str());
   }
 }
 

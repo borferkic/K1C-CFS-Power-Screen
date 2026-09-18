@@ -100,7 +100,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
 
   auto width_scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
   auto height_scale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
-  lv_obj_set_width(extruder_temp.get_sensor(), 345 * width_scale);
+  lv_obj_set_width(extruder_temp.get_sensor(), 130 * width_scale);
   lv_obj_set_height(extruder_temp.get_sensor(), 32 * height_scale);
   extruder_temp.set_current_only(75 * width_scale, 5 * width_scale);
   extruder_temp.set_image_zoom(100);
@@ -115,6 +115,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   lv_obj_set_flex_flow(leftside_btns_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_align(leftside_btns_cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
   lv_obj_clear_flag(leftside_btns_cont, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_move_to_index(manual_change_btn.get_container(), 0);
   
   spoolman_btn.disable();  
 
