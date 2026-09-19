@@ -94,7 +94,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   , progress_label(lv_label_create(pbar_cont))
   , status_label(lv_label_create(pbar_cont))
   , thumbnail_cont(lv_obj_create(status_cont))
-  , file_label(lv_label_create(thumbnail_cont))
+  , file_label(lv_label_create(status_cont))
   , thumbnail(lv_img_create(thumbnail_cont))
   , detail_cont(lv_obj_create(status_cont))
   , extruder_temp(detail_cont, &extruder, 100, "20")
@@ -250,8 +250,8 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_width(file_label, LV_PCT(100));
   lv_obj_set_height(file_label, LV_SIZE_CONTENT);
   lv_obj_add_flag(file_label, LV_OBJ_FLAG_HIDDEN);
-  lv_label_set_long_mode(file_label, LV_LABEL_LONG_DOT);
-  lv_obj_set_style_text_align(file_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+  lv_label_set_long_mode(file_label, LV_LABEL_LONG_SCROLL_CIRCULAR);
+  lv_obj_set_style_text_align(file_label, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
   lv_obj_set_style_text_color(file_label, lv_color_white(), LV_PART_MAIN);
   lv_obj_set_style_text_font(file_label, &lv_font_montserrat_14, LV_PART_MAIN);
 
@@ -305,6 +305,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 
   // row 2
   lv_obj_set_grid_cell(pbar_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 2, 1);
+  lv_obj_set_grid_cell(file_label, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_CENTER, 2, 1);
 
   // row 3
   lv_obj_set_grid_cell(buttons_cont, LV_GRID_ALIGN_STRETCH, 0, 2, LV_GRID_ALIGN_CENTER, 3, 1);
@@ -346,6 +347,7 @@ void PrintStatusPanel::reset() {
   time_left.update_label("...");
   estimated_time_s = 0;
   lv_label_set_text(file_label, "No active print");
+  lv_obj_add_flag(file_label, LV_OBJ_FLAG_HIDDEN);
   update_status_label("ready");
 
   auto v = State::get_instance()
@@ -415,7 +417,12 @@ void PrintStatusPanel::populate() {
       const std::string display_name = separator == std::string::npos
         ? fname
         : fname.substr(separator + 1);
-      lv_label_set_text(file_label, display_name.c_str());
+      const size_t extension = display_name.find_last_of('.');
+      const std::string name_without_extension = extension == std::string::npos || extension == 0
+        ? display_name
+        : display_name.substr(0, extension);
+      lv_label_set_text(file_label, fmt::format("FILE: {}", name_without_extension).c_str());
+      lv_obj_clear_flag(file_label, LV_OBJ_FLAG_HIDDEN);
 
       json fname_input = {{"filename", fname }};
       ws.send_jsonrpc("server.files.metadata", fname_input,
