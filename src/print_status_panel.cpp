@@ -251,7 +251,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   style_action_button(back_btn.get_container(), 0, false);
 
   lv_obj_clear_flag(file_cont, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_size(file_cont, LV_PCT(100), 40);
+  lv_obj_set_size(file_cont, 441, 37);
   lv_obj_set_style_border_width(file_cont, 2, LV_PART_MAIN);
   lv_obj_set_style_radius(file_cont, 4, LV_PART_MAIN);
   lv_obj_set_style_pad_all(file_cont, 0, LV_PART_MAIN);
@@ -324,7 +324,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 
   // row 2
   lv_obj_set_grid_cell(pbar_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 2, 1);
-  lv_obj_set_grid_cell(file_cont, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_CENTER, 2, 1);
+  lv_obj_set_grid_cell(file_cont, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 2, 1);
 
   // row 3
   lv_obj_set_grid_cell(buttons_cont, LV_GRID_ALIGN_STRETCH, 0, 2, LV_GRID_ALIGN_CENTER, 3, 1);
