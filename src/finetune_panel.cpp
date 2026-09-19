@@ -164,7 +164,7 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   // col 5
   lv_obj_set_grid_cell(values_cont, LV_GRID_ALIGN_START, 4, 1, LV_GRID_ALIGN_START, 1, 3);
   lv_obj_set_grid_cell(back_btn.get_container(), LV_GRID_ALIGN_CENTER, 4, 1, LV_GRID_ALIGN_CENTER, 4, 1);
-  lv_obj_set_style_translate_y(values_cont, 20, LV_PART_MAIN);
+  lv_obj_set_style_translate_y(values_cont, 15, LV_PART_MAIN);
 
   lv_obj_set_style_translate_x(zoffset_selector.get_container(), -15, LV_PART_MAIN);
   lv_obj_set_style_translate_x(multipler_selector.get_container(), -15, LV_PART_MAIN);
