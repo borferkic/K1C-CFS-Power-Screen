@@ -73,6 +73,8 @@ class PrintStatusPanel : public NotifyConsumer {
   lv_obj_t *progress_label;
   lv_obj_t *status_label;
   lv_obj_t *thumbnail_cont;
+  lv_obj_t *file_cont;
+  lv_obj_t *file_icon;
   lv_obj_t *file_label;
   lv_obj_t *thumbnail;
   lv_obj_t *detail_cont;

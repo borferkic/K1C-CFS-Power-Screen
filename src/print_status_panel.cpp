@@ -14,6 +14,7 @@ LV_IMG_DECLARE(bed);
 LV_IMG_DECLARE(home_z);
 LV_IMG_DECLARE(fan);
 LV_IMG_DECLARE(layers_img);
+LV_IMG_DECLARE(sd_img);
 
 LV_IMG_DECLARE(fine_tune_img);
 LV_IMG_DECLARE(pause_img);
@@ -94,7 +95,9 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   , progress_label(lv_label_create(pbar_cont))
   , status_label(lv_label_create(pbar_cont))
   , thumbnail_cont(lv_obj_create(status_cont))
-  , file_label(lv_label_create(status_cont))
+  , file_cont(lv_obj_create(status_cont))
+  , file_icon(lv_img_create(file_cont))
+  , file_label(lv_label_create(file_cont))
   , thumbnail(lv_img_create(thumbnail_cont))
   , detail_cont(lv_obj_create(status_cont))
   , extruder_temp(detail_cont, &extruder, 100, "20")
@@ -247,13 +250,29 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   style_action_button(emergency_btn.get_container(), 0xF44336, true);
   style_action_button(back_btn.get_container(), 0, false);
 
+  lv_obj_clear_flag(file_cont, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_size(file_cont, LV_PCT(100), 40);
+  lv_obj_set_style_border_width(file_cont, 2, LV_PART_MAIN);
+  lv_obj_set_style_radius(file_cont, 4, LV_PART_MAIN);
+  lv_obj_set_style_pad_all(file_cont, 0, LV_PART_MAIN);
+  lv_obj_set_style_pad_left(file_cont, 5, LV_PART_MAIN);
+  lv_obj_set_style_pad_right(file_cont, 5, LV_PART_MAIN);
+
+  lv_img_set_src(file_icon, &sd_img);
+  lv_img_set_size_mode(file_icon, LV_IMG_SIZE_MODE_REAL);
+  lv_img_set_zoom(file_icon, 100);
+  lv_obj_align(file_icon, LV_ALIGN_LEFT_MID, 5, 0);
+
   lv_obj_set_width(file_label, LV_PCT(100));
   lv_obj_set_height(file_label, LV_SIZE_CONTENT);
-  lv_obj_add_flag(file_label, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_add_flag(file_cont, LV_OBJ_FLAG_HIDDEN);
   lv_label_set_long_mode(file_label, LV_LABEL_LONG_SCROLL_CIRCULAR);
   lv_obj_set_style_text_align(file_label, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
+  lv_obj_set_style_pad_left(file_label, 34, LV_PART_MAIN);
+  lv_obj_set_style_pad_right(file_label, 5, LV_PART_MAIN);
   lv_obj_set_style_text_color(file_label, lv_color_white(), LV_PART_MAIN);
-  lv_obj_set_style_text_font(file_label, &lv_font_montserrat_14, LV_PART_MAIN);
+  lv_obj_set_style_text_font(file_label, &lv_font_montserrat_20, LV_PART_MAIN);
+  lv_obj_align(file_label, LV_ALIGN_LEFT_MID, 0, 0);
 
   lv_obj_set_width(status_label, PROGRESS_WIDTH);
   lv_obj_set_height(status_label, status_height);
@@ -305,7 +324,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 
   // row 2
   lv_obj_set_grid_cell(pbar_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 2, 1);
-  lv_obj_set_grid_cell(file_label, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_CENTER, 2, 1);
+  lv_obj_set_grid_cell(file_cont, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_CENTER, 2, 1);
 
   // row 3
   lv_obj_set_grid_cell(buttons_cont, LV_GRID_ALIGN_STRETCH, 0, 2, LV_GRID_ALIGN_CENTER, 3, 1);
@@ -347,7 +366,7 @@ void PrintStatusPanel::reset() {
   time_left.update_label("...");
   estimated_time_s = 0;
   lv_label_set_text(file_label, "No active print");
-  lv_obj_add_flag(file_label, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_add_flag(file_cont, LV_OBJ_FLAG_HIDDEN);
   update_status_label("ready");
 
   auto v = State::get_instance()
@@ -421,8 +440,8 @@ void PrintStatusPanel::populate() {
       const std::string name_without_extension = extension == std::string::npos || extension == 0
         ? display_name
         : display_name.substr(0, extension);
-      lv_label_set_text(file_label, fmt::format("FILE: {}", name_without_extension).c_str());
-      lv_obj_clear_flag(file_label, LV_OBJ_FLAG_HIDDEN);
+      lv_label_set_text(file_label, name_without_extension.c_str());
+      lv_obj_clear_flag(file_cont, LV_OBJ_FLAG_HIDDEN);
 
       json fname_input = {{"filename", fname }};
       ws.send_jsonrpc("server.files.metadata", fname_input,
