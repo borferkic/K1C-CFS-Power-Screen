@@ -112,6 +112,10 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
     led_panel.set_state_callback([this](bool active) {
       led_btn.set_active(active, lv_color_hex(CREALITY_GREEN));
     });
+  print_status_panel.set_back_home_callback([this]() {
+    print_panel.background();
+    lv_tabview_set_act(tabview, 0, LV_ANIM_OFF);
+  });
 }
 
 MainPanel::~MainPanel() {

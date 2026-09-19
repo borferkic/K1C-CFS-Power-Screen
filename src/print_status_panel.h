@@ -11,6 +11,7 @@
 
 #include <mutex>
 #include <ctime>
+#include <functional>
 #include <map>
 #include <string>
 
@@ -25,6 +26,7 @@ class PrintStatusPanel : public NotifyConsumer {
   void populate();
   void foreground();
   void background();
+  void set_back_home_callback(const std::function<void()> &callback);
 
   void handle_metadata(const std::string &gcode_file, json &j);
   void handle_callback(lv_event_t *event);
@@ -78,6 +80,7 @@ class PrintStatusPanel : public NotifyConsumer {
   lv_obj_t *file_label;
   lv_obj_t *thumbnail;
   lv_obj_t *detail_cont;
+  std::function<void()> back_home_callback;
 
   ImageLabel extruder_temp;
   ImageLabel bed_temp;

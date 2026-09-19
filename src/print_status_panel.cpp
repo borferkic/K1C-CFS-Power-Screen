@@ -359,6 +359,10 @@ void PrintStatusPanel::background() {
   lv_obj_move_background(status_cont);
 }
 
+void PrintStatusPanel::set_back_home_callback(const std::function<void()> &callback) {
+  back_home_callback = callback;
+}
+
 void PrintStatusPanel::reset() {
   lv_bar_set_value(progress_bar, 0, LV_ANIM_OFF);
   lv_label_set_text(progress_label, "0%");
@@ -648,6 +652,9 @@ void PrintStatusPanel::handle_callback(lv_event_t *event) {
   lv_obj_t *btn = lv_event_get_current_target(event);
   if (btn == back_btn.get_container()) {
     lv_obj_move_background(status_cont);
+    if (back_home_callback) {
+      back_home_callback();
+    }
 
   } else if (btn == emergency_btn.get_container()) {
     ws.send_jsonrpc("printer.emergency_stop");

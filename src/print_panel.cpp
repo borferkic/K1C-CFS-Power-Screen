@@ -242,6 +242,10 @@ void PrintPanel::foreground() {
   lv_obj_move_foreground(files_cont);
 }
 
+void PrintPanel::background() {
+  lv_obj_move_background(files_cont);
+}
+
 void PrintPanel::handle_callback(lv_event_t *e) {
   (void)e;
 }
