@@ -44,10 +44,10 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
 		     {"0.01", "0.05", "0.10", ""}, 0, 30, 15, &FineTunePanel::_handle_callback, this)
   , multipler_selector(panel_cont, "Multipler Step (%)",
 		       {"1", "5", "10", "25", ""}, 0, 40, 15, &FineTunePanel::_handle_callback, this)
-  , z_offset(values_cont, &home_z, 150, 100, 15, "0.0 mm")
-  , pa(values_cont, &pa_plus_img, 150, 100, 15, "0.0 mm/s")
-  , speed_factor(values_cont, &speed_up_img, 150, 100, 15 ,"100%")
-  , flow_factor(values_cont, &flow_up_img, 150, 100, 15, "100%")
+  , z_offset(values_cont, &home_z, 150, 100, 25, "0.0 mm")
+  , pa(values_cont, &pa_plus_img, 150, 100, 25, "0.0 mm/s")
+  , speed_factor(values_cont, &speed_up_img, 150, 100, 25 ,"100%")
+  , flow_factor(values_cont, &flow_up_img, 150, 100, 25, "100%")
 {
   lv_obj_move_background(panel_cont);
   
@@ -79,7 +79,7 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   update_clock();
   clock_timer = lv_timer_create(&FineTunePanel::_update_clock_cb, 1000, this);
 
-  lv_obj_set_size(values_cont, LV_PCT(20), LV_PCT(80));
+  lv_obj_set_size(values_cont, 150, 240);
   lv_obj_clear_flag(values_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_style_pad_all(values_cont, 0, 0);
   lv_obj_set_style_pad_row(values_cont, 0, 0);
@@ -106,7 +106,15 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
     style_button_background(*button);
   }
 
-  static lv_coord_t grid_main_row_dsc[] = {32, LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1),
+  for (ButtonContainer *button : {&zreset_btn, &zup_btn, &zdown_btn,
+                                  &pareset_btn, &paup_btn, &padown_btn,
+                                  &speed_reset_btn, &speed_up_btn, &speed_down_btn,
+                                  &flow_reset_btn, &flow_up_btn, &flow_down_btn}) {
+    button->set_fixed_size(130, 100);
+  }
+  back_btn.set_fixed_size(130, 120);
+
+  static lv_coord_t grid_main_row_dsc[] = {32, LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), 120,
     LV_GRID_TEMPLATE_LAST};
   static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1),
     LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
@@ -136,8 +144,11 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   lv_obj_set_grid_cell(flow_down_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 3, 1);
 
   // col 5
-  lv_obj_set_grid_cell(values_cont, LV_GRID_ALIGN_CENTER, 4, 1, LV_GRID_ALIGN_CENTER, 1, 3);
+  lv_obj_set_grid_cell(values_cont, LV_GRID_ALIGN_CENTER, 4, 1, LV_GRID_ALIGN_START, 1, 3);
   lv_obj_set_grid_cell(back_btn.get_container(), LV_GRID_ALIGN_CENTER, 4, 1, LV_GRID_ALIGN_CENTER, 4, 1);
+
+  lv_obj_set_style_translate_x(zoffset_selector.get_container(), -15, LV_PART_MAIN);
+  lv_obj_set_style_translate_x(multipler_selector.get_container(), -15, LV_PART_MAIN);
 
   ws.register_notify_update(this);
 }
