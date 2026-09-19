@@ -135,6 +135,7 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1),
     LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
 
+  lv_obj_set_style_pad_row(panel_cont, 5, LV_PART_MAIN);
   lv_obj_set_grid_dsc_array(panel_cont, grid_main_col_dsc, grid_main_row_dsc);
 
   // col 1
