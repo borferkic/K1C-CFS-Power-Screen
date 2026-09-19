@@ -18,6 +18,9 @@ LV_IMG_DECLARE(flow_up_img);
 LV_IMG_DECLARE(flow_down_img);
 LV_IMG_DECLARE(back);
 
+constexpr uint32_t CREALITY_GREEN = 0x4CAF50;
+constexpr uint32_t CREALITY_GREEN_PRESSED = 0x388E3C;
+
 FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   : NotifyConsumer(l)
   , ws(websocket_client)
@@ -86,6 +89,12 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   lv_obj_set_flex_flow(values_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_align(values_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
+  for (lv_obj_t *display : {z_offset.get_container(), pa.get_container(),
+                            speed_factor.get_container(), flow_factor.get_container()}) {
+    lv_obj_set_style_border_width(display, 2, LV_PART_MAIN);
+    lv_obj_set_style_border_color(display, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
+  }
+
   auto style_button_background = [](ButtonContainer &button) {
     lv_obj_t *container = button.get_container();
     lv_obj_set_style_bg_color(container, lv_color_hex(0x555555), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -104,6 +113,13 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
                                   &flow_reset_btn, &flow_up_btn, &flow_down_btn,
                                   &back_btn}) {
     style_button_background(*button);
+  }
+
+  for (ButtonContainer *button : {&zreset_btn, &pareset_btn, &speed_reset_btn, &flow_reset_btn}) {
+    lv_obj_set_style_bg_color(button->get_container(), lv_color_hex(CREALITY_GREEN),
+                              LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(button->get_container(), lv_color_hex(CREALITY_GREEN_PRESSED),
+                              LV_PART_MAIN | LV_STATE_PRESSED);
   }
 
   for (ButtonContainer *button : {&zreset_btn, &zup_btn, &zdown_btn,
@@ -144,7 +160,7 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   lv_obj_set_grid_cell(flow_down_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 3, 1);
 
   // col 5
-  lv_obj_set_grid_cell(values_cont, LV_GRID_ALIGN_CENTER, 4, 1, LV_GRID_ALIGN_START, 1, 3);
+  lv_obj_set_grid_cell(values_cont, LV_GRID_ALIGN_START, 4, 1, LV_GRID_ALIGN_START, 1, 3);
   lv_obj_set_grid_cell(back_btn.get_container(), LV_GRID_ALIGN_CENTER, 4, 1, LV_GRID_ALIGN_CENTER, 4, 1);
 
   lv_obj_set_style_translate_x(zoffset_selector.get_container(), -15, LV_PART_MAIN);
