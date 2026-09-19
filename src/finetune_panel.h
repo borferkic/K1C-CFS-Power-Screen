@@ -9,6 +9,7 @@
 #include "notify_consumer.h"
 
 #include <mutex>
+#include <ctime>
 
 class FineTunePanel : public NotifyConsumer {
  public:
@@ -51,6 +52,10 @@ class FineTunePanel : public NotifyConsumer {
  private:
   KWebSocketClient &ws;
   lv_obj_t *panel_cont;
+  lv_obj_t *title_bar;
+  lv_obj_t *title_label;
+  lv_obj_t *time_label;
+  lv_timer_t *clock_timer;
   lv_obj_t *values_cont;
   ButtonContainer zreset_btn;
   ButtonContainer zup_btn;
@@ -71,6 +76,13 @@ class FineTunePanel : public NotifyConsumer {
   ImageLabel pa;
   ImageLabel speed_factor;
   ImageLabel flow_factor;
+
+  void update_clock();
+
+  static void _update_clock_cb(lv_timer_t *timer) {
+    FineTunePanel *panel = static_cast<FineTunePanel *>(timer->user_data);
+    panel->update_clock();
+  }
 };
 
 #endif  // __FINETINE_PANEL_H__
