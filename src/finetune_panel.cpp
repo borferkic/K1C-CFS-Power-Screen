@@ -82,10 +82,10 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   update_clock();
   clock_timer = lv_timer_create(&FineTunePanel::_update_clock_cb, 1000, this);
 
-  lv_obj_set_size(values_cont, 150, 270);
+  lv_obj_set_size(values_cont, 150, 300);
   lv_obj_clear_flag(values_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_style_pad_all(values_cont, 0, 0);
-  lv_obj_set_style_pad_row(values_cont, 10, 0);
+  lv_obj_set_style_pad_row(values_cont, 20, 0);
   lv_obj_set_flex_flow(values_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_align(values_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
@@ -164,6 +164,7 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   // col 5
   lv_obj_set_grid_cell(values_cont, LV_GRID_ALIGN_START, 4, 1, LV_GRID_ALIGN_START, 1, 3);
   lv_obj_set_grid_cell(back_btn.get_container(), LV_GRID_ALIGN_CENTER, 4, 1, LV_GRID_ALIGN_CENTER, 4, 1);
+  lv_obj_set_style_translate_y(values_cont, 20, LV_PART_MAIN);
 
   lv_obj_set_style_translate_x(zoffset_selector.get_container(), -15, LV_PART_MAIN);
   lv_obj_set_style_translate_x(multipler_selector.get_container(), -15, LV_PART_MAIN);
