@@ -251,7 +251,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   style_action_button(back_btn.get_container(), 0, false);
 
   lv_obj_clear_flag(file_cont, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_size(file_cont, 441, 37);
+  lv_obj_set_size(file_cont, 417, 37);
   lv_obj_set_style_border_width(file_cont, 2, LV_PART_MAIN);
   lv_obj_set_style_radius(file_cont, 4, LV_PART_MAIN);
   lv_obj_set_style_pad_all(file_cont, 0, LV_PART_MAIN);
@@ -261,6 +261,8 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_img_set_src(file_icon, &sd_img);
   lv_img_set_size_mode(file_icon, LV_IMG_SIZE_MODE_REAL);
   lv_img_set_zoom(file_icon, 100);
+  lv_obj_set_style_img_recolor(file_icon, lv_color_hex(0x4CAF50), LV_PART_MAIN);
+  lv_obj_set_style_img_recolor_opa(file_icon, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_align(file_icon, LV_ALIGN_LEFT_MID, 5, 0);
 
   lv_obj_set_width(file_label, LV_PCT(100));
