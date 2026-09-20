@@ -681,7 +681,7 @@ void PrintPanel::handle_btns(lv_event_t *event) {
         return;
       }
 
-      const std::string path = delete_target->full_path;
+      const std::string path = "gcodes/" + delete_target->full_path;
       lv_obj_add_state(delete_accept_btn, LV_STATE_DISABLED);
       ws.send_jsonrpc("server.files.delete_file", json{{"path", path}},
                       [this](json &response) {
