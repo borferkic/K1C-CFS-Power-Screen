@@ -442,6 +442,7 @@ void MainPanel::create_sensors(json &temp_sensors) {
       sensor_img = &bed;
     } else if (key == "chamber_temp" || key == "temperature_sensor chamber_temp") {
       sensor_img = &chamber;
+      sensor_img_scale = 200;
     }
 
     lv_chart_series_t *temp_series =
