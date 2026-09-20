@@ -147,7 +147,10 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_t *file_action_buttons[] = {
     status_btn.get_container(), print_btn.get_container(), back_btn.get_container()
   };
+  const auto file_action_width = static_cast<lv_coord_t>(
+    125 * static_cast<double>(lv_disp_get_physical_hor_res(NULL)) / 800.0);
   for (lv_obj_t *button : file_action_buttons) {
+    lv_obj_set_width(button, file_action_width);
     lv_obj_set_style_bg_color(button, file_button_grey, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(button, lv_color_hex(0x444444), LV_PART_MAIN | LV_STATE_PRESSED);
