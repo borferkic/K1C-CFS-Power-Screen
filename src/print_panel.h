@@ -74,6 +74,10 @@ class PrintPanel : public NotifyConsumer {
   void request_file_metadata(Tree *file);
   void update_file_card(const std::string &path, json &metadata);
   void select_file_card(FileCard &card);
+  void show_delete_context(FileCard &card);
+  void show_delete_confirmation();
+  void hide_delete_context();
+  void hide_delete_confirmation();
   
   KWebSocketClient &ws;
   lv_obj_t *files_cont;
@@ -96,9 +100,17 @@ class PrintPanel : public NotifyConsumer {
   ButtonContainer status_btn;
   ButtonContainer print_btn;
   ButtonContainer back_btn;
+  lv_obj_t *delete_context_cont;
+  lv_obj_t *delete_context_menu;
+  lv_obj_t *delete_confirm_cont;
+  lv_obj_t *delete_confirm_box;
+  lv_obj_t *delete_confirm_label;
+  lv_obj_t *delete_accept_btn;
+  lv_obj_t *delete_cancel_btn;
   Tree root;
   Tree *cur_dir;
   Tree *cur_file;
+  Tree *delete_target;
   FilePanel file_panel;
   PrintStatusPanel &print_status;
   uint32_t sorted_by;

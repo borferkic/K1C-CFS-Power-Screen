@@ -34,9 +34,17 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   , status_btn(file_view, &info_img, "Status", &PrintPanel::_handle_status_btn, this)
   , print_btn(file_view, &print, "Print", &PrintPanel::_handle_print_callback, this)
   , back_btn(file_view, &back, "Back", &PrintPanel::_handle_back_btn, this)
+  , delete_context_cont(lv_obj_create(files_cont))
+  , delete_context_menu(lv_obj_create(delete_context_cont))
+  , delete_confirm_cont(lv_obj_create(files_cont))
+  , delete_confirm_box(lv_obj_create(delete_confirm_cont))
+  , delete_confirm_label(lv_label_create(delete_confirm_box))
+  , delete_accept_btn(lv_btn_create(delete_confirm_box))
+  , delete_cancel_btn(lv_btn_create(delete_confirm_box))
   , root("", "", 0)
   , cur_dir(&root)
   , cur_file(NULL)
+  , delete_target(NULL)
   , file_panel(file_view)
   , print_status(ps)
   , sorted_by(SORTED_BY_MODIFIED)
@@ -132,6 +140,119 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_move_foreground(back_btn.get_container());
   lv_obj_move_foreground(print_btn.get_container());
   lv_obj_move_foreground(status_btn.get_container());      
+
+  const lv_color_t file_button_grey = lv_color_hex(0x555555);
+  const lv_color_t file_button_green = lv_color_hex(CREALITY_GREEN);
+  const lv_color_t file_button_green_pressed = lv_color_hex(0x388E3C);
+  lv_obj_t *file_action_buttons[] = {
+    status_btn.get_container(), print_btn.get_container(), back_btn.get_container()
+  };
+  for (lv_obj_t *button : file_action_buttons) {
+    lv_obj_set_style_bg_color(button, file_button_grey, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(button, lv_color_hex(0x444444), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_border_width(button, 0, LV_PART_MAIN);
+    lv_obj_set_style_radius(button, 12, LV_PART_MAIN);
+    lv_obj_set_style_clip_corner(button, true, LV_PART_MAIN);
+  }
+  lv_obj_set_style_bg_color(print_btn.get_container(), file_button_green,
+                            LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_bg_color(print_btn.get_container(), file_button_green_pressed,
+                            LV_PART_MAIN | LV_STATE_PRESSED);
+
+  // Context menu shown beside a file after a long press.
+  lv_obj_add_flag(delete_context_cont, LV_OBJ_FLAG_IGNORE_LAYOUT);
+  lv_obj_set_size(delete_context_cont, LV_PCT(100), LV_PCT(100));
+  lv_obj_set_pos(delete_context_cont, 0, 0);
+  lv_obj_set_style_pad_all(delete_context_cont, 0, LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(delete_context_cont, LV_OPA_TRANSP, LV_PART_MAIN);
+  lv_obj_set_style_border_width(delete_context_cont, 0, LV_PART_MAIN);
+  lv_obj_add_flag(delete_context_cont, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_add_event_cb(delete_context_cont, &PrintPanel::_handle_btns,
+                      LV_EVENT_CLICKED, this);
+  lv_obj_set_size(delete_context_menu, 128, 52);
+  lv_obj_set_style_bg_color(delete_context_menu, file_button_grey, LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(delete_context_menu, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_border_width(delete_context_menu, 0, LV_PART_MAIN);
+  lv_obj_set_style_radius(delete_context_menu, 12, LV_PART_MAIN);
+  lv_obj_set_style_clip_corner(delete_context_menu, true, LV_PART_MAIN);
+  lv_obj_add_flag(delete_context_menu, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_add_event_cb(delete_context_menu, &PrintPanel::_handle_btns,
+                      LV_EVENT_CLICKED, this);
+  label = lv_label_create(delete_context_menu);
+  lv_label_set_text(label, "Delete");
+  lv_obj_set_style_text_color(label, lv_palette_main(LV_PALETTE_RED), LV_PART_MAIN);
+  lv_obj_set_style_text_font(label, &lv_font_montserrat_16, LV_PART_MAIN);
+  lv_obj_center(label);
+  lv_obj_add_flag(delete_context_cont, LV_OBJ_FLAG_HIDDEN);
+
+  // Confirmation dialog shown after selecting Delete.
+  lv_obj_add_flag(delete_confirm_cont, LV_OBJ_FLAG_IGNORE_LAYOUT);
+  lv_obj_set_size(delete_confirm_cont, LV_PCT(100), LV_PCT(100));
+  lv_obj_set_pos(delete_confirm_cont, 0, 0);
+  lv_obj_set_style_pad_all(delete_confirm_cont, 0, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(delete_confirm_cont, lv_color_black(), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(delete_confirm_cont, LV_OPA_70, LV_PART_MAIN);
+  lv_obj_set_style_border_width(delete_confirm_cont, 0, LV_PART_MAIN);
+  lv_obj_add_flag(delete_confirm_cont, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_add_event_cb(delete_confirm_cont, &PrintPanel::_handle_btns,
+                      LV_EVENT_CLICKED, this);
+
+  const auto width_scale = static_cast<double>(lv_disp_get_physical_hor_res(NULL)) / 800.0;
+  const auto height_scale = static_cast<double>(lv_disp_get_physical_ver_res(NULL)) / 480.0;
+  lv_obj_set_size(delete_confirm_box, static_cast<lv_coord_t>(440 * width_scale),
+                  static_cast<lv_coord_t>(190 * height_scale));
+  lv_obj_align(delete_confirm_box, LV_ALIGN_CENTER, 0, 0);
+  lv_obj_set_style_pad_all(delete_confirm_box, 12, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(delete_confirm_box, lv_palette_darken(LV_PALETTE_GREY, 1), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(delete_confirm_box, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_border_width(delete_confirm_box, 2, LV_PART_MAIN);
+  lv_obj_set_style_border_color(delete_confirm_box, file_button_grey, LV_PART_MAIN);
+  lv_obj_set_style_radius(delete_confirm_box, 12, LV_PART_MAIN);
+  lv_obj_clear_flag(delete_confirm_box, LV_OBJ_FLAG_SCROLLABLE);
+
+  lv_obj_set_width(delete_confirm_label, LV_PCT(100));
+  lv_obj_set_height(delete_confirm_label, static_cast<lv_coord_t>(88 * height_scale));
+  lv_label_set_long_mode(delete_confirm_label, LV_LABEL_LONG_WRAP);
+  lv_obj_set_style_text_align(delete_confirm_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+  lv_obj_set_style_text_color(delete_confirm_label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_font(delete_confirm_label, &lv_font_montserrat_20, LV_PART_MAIN);
+  lv_obj_align(delete_confirm_label, LV_ALIGN_TOP_MID, 0, 8);
+
+  lv_obj_set_size(delete_accept_btn, static_cast<lv_coord_t>(150 * width_scale),
+                  static_cast<lv_coord_t>(54 * height_scale));
+  lv_obj_align(delete_accept_btn, LV_ALIGN_BOTTOM_LEFT, 12, -12);
+  lv_obj_set_style_bg_color(delete_accept_btn, file_button_green,
+                            LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_bg_color(delete_accept_btn, file_button_green_pressed,
+                            LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_set_style_bg_opa(delete_accept_btn, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_radius(delete_accept_btn, 12, LV_PART_MAIN);
+  label = lv_label_create(delete_accept_btn);
+  lv_label_set_text(label, "Accept");
+  lv_obj_set_style_text_color(label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_center(label);
+
+  lv_obj_set_size(delete_cancel_btn, static_cast<lv_coord_t>(150 * width_scale),
+                  static_cast<lv_coord_t>(54 * height_scale));
+  lv_obj_align(delete_cancel_btn, LV_ALIGN_BOTTOM_RIGHT, -12, -12);
+  lv_obj_set_style_bg_color(delete_cancel_btn, lv_palette_main(LV_PALETTE_RED),
+                            LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_bg_color(delete_cancel_btn, lv_palette_darken(LV_PALETTE_RED, 2),
+                            LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_set_style_bg_opa(delete_cancel_btn, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_radius(delete_cancel_btn, 12, LV_PART_MAIN);
+  label = lv_label_create(delete_cancel_btn);
+  lv_label_set_text(label, "Cancel");
+  lv_obj_set_style_text_color(label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_center(label);
+
+  lv_obj_add_event_cb(delete_accept_btn, &PrintPanel::_handle_btns,
+                      LV_EVENT_CLICKED, this);
+  lv_obj_add_event_cb(delete_cancel_btn, &PrintPanel::_handle_btns,
+                      LV_EVENT_CLICKED, this);
+  lv_obj_add_flag(delete_confirm_cont, LV_OBJ_FLAG_HIDDEN);
 
   // prompt
   lv_obj_add_flag(prompt_cont, LV_OBJ_FLAG_HIDDEN);  
@@ -251,6 +372,9 @@ void PrintPanel::handle_callback(lv_event_t *e) {
 }
 
 void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
+  hide_delete_context();
+  hide_delete_confirmation();
+  delete_target = NULL;
   file_cards.clear();
   file_cards.reserve(dir->children.size());
   lv_obj_clean(file_grid);
@@ -262,6 +386,7 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_clear_flag(card, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_add_flag(card, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_event_cb(card, &PrintPanel::_handle_file_card, LV_EVENT_CLICKED, this);
+    lv_obj_add_event_cb(card, &PrintPanel::_handle_file_card, LV_EVENT_LONG_PRESSED, this);
     lv_obj_set_style_bg_color(card, lv_color_hex(0x555555), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(card, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(card, lv_color_hex(0x444444), LV_PART_MAIN | LV_STATE_PRESSED);
@@ -372,11 +497,24 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
 }
 
 void PrintPanel::handle_file_card(lv_event_t *event) {
-  if (lv_event_get_code(event) != LV_EVENT_CLICKED) {
+  lv_event_code_t code = lv_event_get_code(event);
+  lv_obj_t *target = lv_event_get_current_target(event);
+
+  if (code == LV_EVENT_LONG_PRESSED) {
+    for (auto &card : file_cards) {
+      if (card.card == target && card.node != NULL && card.node->is_leaf()) {
+        delete_target = card.node;
+        show_delete_context(card);
+        return;
+      }
+    }
     return;
   }
 
-  lv_obj_t *target = lv_event_get_current_target(event);
+  if (code != LV_EVENT_CLICKED) {
+    return;
+  }
+
   for (auto &card : file_cards) {
     if (card.card != target) {
       continue;
@@ -394,6 +532,64 @@ void PrintPanel::handle_file_card(lv_event_t *event) {
       select_file_card(card);
     }
     return;
+  }
+}
+
+void PrintPanel::show_delete_context(FileCard &card) {
+  hide_delete_confirmation();
+
+  lv_area_t card_area;
+  lv_area_t parent_area;
+  lv_obj_get_coords(card.card, &card_area);
+  lv_obj_get_coords(files_cont, &parent_area);
+
+  const lv_coord_t menu_width = lv_obj_get_width(delete_context_menu);
+  const lv_coord_t menu_height = lv_obj_get_height(delete_context_menu);
+  const lv_coord_t parent_width = lv_obj_get_width(files_cont);
+  const lv_coord_t parent_height = lv_obj_get_height(files_cont);
+  lv_coord_t menu_x = card_area.x2 - parent_area.x1 + 6;
+  lv_coord_t menu_y = card_area.y1 - parent_area.y1;
+
+  if (menu_x + menu_width > parent_width - 4) {
+    menu_x = card_area.x1 - parent_area.x1 - menu_width - 6;
+  }
+  if (menu_x < 4) {
+    menu_x = 4;
+  }
+  if (menu_y + menu_height > parent_height - 4) {
+    menu_y = parent_height - menu_height - 4;
+  }
+  if (menu_y < 4) {
+    menu_y = 4;
+  }
+
+  lv_obj_set_pos(delete_context_menu, menu_x, menu_y);
+  lv_obj_clear_flag(delete_context_cont, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_move_foreground(delete_context_cont);
+}
+
+void PrintPanel::show_delete_confirmation() {
+  if (delete_target == NULL) {
+    return;
+  }
+
+  std::string message = "¿Desea eliminar el archivo?\n" + delete_target->name;
+  lv_label_set_text(delete_confirm_label, message.c_str());
+  hide_delete_context();
+  lv_obj_clear_state(delete_accept_btn, LV_STATE_DISABLED);
+  lv_obj_clear_flag(delete_confirm_cont, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_move_foreground(delete_confirm_cont);
+}
+
+void PrintPanel::hide_delete_context() {
+  if (delete_context_cont != NULL) {
+    lv_obj_add_flag(delete_context_cont, LV_OBJ_FLAG_HIDDEN);
+  }
+}
+
+void PrintPanel::hide_delete_confirmation() {
+  if (delete_confirm_cont != NULL) {
+    lv_obj_add_flag(delete_confirm_cont, LV_OBJ_FLAG_HIDDEN);
   }
 }
 
@@ -534,6 +730,53 @@ void PrintPanel::handle_btns(lv_event_t *event) {
   lv_event_code_t code = lv_event_get_code(event);
   if (code == LV_EVENT_CLICKED) {
     lv_obj_t *btn = lv_event_get_current_target(event);
+
+    if (btn == delete_context_cont) {
+      hide_delete_context();
+      delete_target = NULL;
+      return;
+    }
+
+    if (btn == delete_context_menu) {
+      show_delete_confirmation();
+      return;
+    }
+
+    if (btn == delete_cancel_btn) {
+      hide_delete_confirmation();
+      delete_target = NULL;
+      return;
+    }
+
+    if (btn == delete_confirm_cont) {
+      return;
+    }
+
+    if (btn == delete_accept_btn) {
+      if (delete_target == NULL) {
+        hide_delete_confirmation();
+        return;
+      }
+
+      const std::string path = delete_target->full_path;
+      lv_obj_add_state(delete_accept_btn, LV_STATE_DISABLED);
+      ws.send_jsonrpc("server.files.delete_file", json{{"path", path}},
+                      [this](json &response) {
+                        std::lock_guard<std::mutex> lock(lv_lock);
+                        if (response.contains("error")) {
+                          spdlog::error("failed to delete file: {}", response.dump());
+                          lv_obj_clear_state(delete_accept_btn, LV_STATE_DISABLED);
+                          return;
+                        }
+
+                        delete_target = NULL;
+                        hide_delete_confirmation();
+                        lv_obj_clear_state(delete_accept_btn, LV_STATE_DISABLED);
+                        subscribe();
+                      });
+      return;
+    }
+
     if (cur_file != NULL) {
       spdlog::trace("status prompt clicked");
       if (btn == queue_btn) {
