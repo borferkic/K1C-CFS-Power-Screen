@@ -26,7 +26,6 @@ class PrintPanel : public NotifyConsumer {
   void handle_metadata(const std::string &path, json &data);
   void handle_back_btn(lv_event_t *event);
   void handle_print_callback(lv_event_t *event);
-  void handle_status_btn(lv_event_t *event);
   void handle_btns(lv_event_t *event);
   
   static void _handle_callback(lv_event_t *event) {
@@ -42,11 +41,6 @@ class PrintPanel : public NotifyConsumer {
   static void _handle_print_callback(lv_event_t *event) {
     PrintPanel *panel = (PrintPanel*)event->user_data;
     panel->handle_print_callback(event);
-  };
-
-  static void _handle_status_btn(lv_event_t *event) {
-    PrintPanel *panel = (PrintPanel*)event->user_data;
-    panel->handle_status_btn(event);
   };
 
   static void _handle_btns(lv_event_t *event) {
@@ -74,7 +68,9 @@ class PrintPanel : public NotifyConsumer {
   void request_file_metadata(Tree *file);
   void update_file_card(const std::string &path, json &metadata);
   void select_file_card(FileCard &card);
+  void show_delete_context(FileCard &card);
   void show_delete_confirmation();
+  void hide_delete_context();
   void hide_delete_confirmation();
   
   KWebSocketClient &ws;
@@ -95,9 +91,10 @@ class PrintPanel : public NotifyConsumer {
   
   lv_obj_t *file_grid;
   lv_obj_t *file_view;
-  ButtonContainer status_btn;
   ButtonContainer print_btn;
   ButtonContainer back_btn;
+  lv_obj_t *delete_context_cont;
+  lv_obj_t *delete_context_menu;
   lv_obj_t *delete_confirm_cont;
   lv_obj_t *delete_confirm_box;
   lv_obj_t *delete_confirm_label;
