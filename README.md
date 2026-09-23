@@ -30,7 +30,7 @@ There are no builds, instructions, or support for Android, Raspberry Pi, `PowerS
 
 ## Screenshots
 
-Coming soon... working on it.
+![PowerScreen interface overview](screenshots/GITSCREEN.png)
 
 ## Installation / Update on a K1C
 
@@ -201,7 +201,7 @@ No se incluyen builds, instrucciones ni soporte para Android, Raspberry Pi, `Pow
 
 ## Capturas de pantalla
 
-Próximamente... trabajando en ello.
+![Vista general de la interfaz de PowerScreen](screenshots/GITSCREEN.png)
 
 ## Instalación / actualización en una K1C
 
