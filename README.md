@@ -168,6 +168,7 @@ This repository is maintained as K1C CFS POWER SCREEN and contains project-speci
 
 The projects and resources used by the original foundation are also acknowledged:
 
+- [GuppyScreen](https://github.com/ballaswag/guppyscreen) — native touchscreen UI for Klipper/Moonraker, created by [ballaswag](https://github.com/ballaswag).
 - [LVGL](https://github.com/lvgl/lvgl)
 - [Z-Bolt Icons](https://github.com/Z-Bolt/OctoScreen)
 - [k1-discovery](https://github.com/ballaswag/k1-discovery) — MIPS toolchain and compatible `curl` helper used by the K1C workflow; thanks to `ballaswag`.
@@ -339,6 +340,7 @@ Este repositorio se mantiene como K1C CFS POWER SCREEN e incluye modificaciones 
 
 También se reconocen los proyectos y recursos utilizados por la base original:
 
+- [GuppyScreen](https://github.com/ballaswag/guppyscreen) — interfaz táctil nativa para Klipper/Moonraker, creada por [ballaswag](https://github.com/ballaswag).
 - [LVGL](https://github.com/lvgl/lvgl)
 - [Z-Bolt Icons](https://github.com/Z-Bolt/OctoScreen)
 - [k1-discovery](https://github.com/ballaswag/k1-discovery) — toolchain MIPS y helper `curl` compatible usados por el flujo de la K1C; agradecimiento a `ballaswag`.
