@@ -4,6 +4,7 @@
 #include "button_container.h"
 #include "lvgl/lvgl.h"
 
+#include <atomic>
 #include <vector>
 #include <string>
 
@@ -14,6 +15,8 @@ class SysInfoPanel {
 
   void foreground();
   void handle_callback(lv_event_t *event);
+  // Inicia la actualizacion en segundo plano mostrando la pantalla de espera.
+  void start_update();
 
  static void _handle_callback(lv_event_t *event) {
     SysInfoPanel *panel = (SysInfoPanel*)event->user_data;
@@ -56,16 +59,42 @@ class SysInfoPanel {
 
   ButtonContainer back_btn;
 
+  // Pantalla de espera de la actualizacion (sobre lv_layer_top).
+  lv_obj_t *update_overlay;
+  lv_obj_t *update_spinner;
+  lv_obj_t *update_title;
+  lv_obj_t *update_phase;
+  lv_obj_t *update_close_btn;
+  lv_timer_t *update_timer;
+
+  // Estado compartido con los hilos de trabajo. Los hilos nunca tocan LVGL:
+  // solo escriben aqui y el timer (hilo de LVGL) aplica los cambios.
+  std::atomic_bool check_running;
+  std::atomic_bool check_done;
+  std::atomic_bool check_available;
+  std::atomic_bool update_running;
+  std::atomic_bool update_finished;
+  std::atomic_int update_exit_code;
+
   static std::vector<std::string> log_levels;
 
   void update_clock();
   void refresh_network();
   void check_for_update();
-  void run_update();
+  void create_update_overlay();
+  void show_update_overlay(const std::string &title, const std::string &phase, bool busy);
+  void poll_update();
+  bool is_printing();
+  void show_updated_notice();
 
   static void _update_clock_cb(lv_timer_t *timer) {
     SysInfoPanel *panel = (SysInfoPanel *)timer->user_data;
     panel->update_clock();
+  }
+
+  static void _poll_update_cb(lv_timer_t *timer) {
+    SysInfoPanel *panel = (SysInfoPanel *)timer->user_data;
+    panel->poll_update();
   }
 };
 

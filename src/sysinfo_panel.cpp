@@ -1,11 +1,15 @@
 #include "sysinfo_panel.h"
 #include "utils.h"
 #include "config.h"
+#include "state.h"
 #include "spdlog/spdlog.h"
 #include "subprocess.hpp"
 
 #include <algorithm>
+#include <cstdio>
 #include <ctime>
+#include <fstream>
+#include <thread>
 #include <experimental/filesystem>
 #include <iterator>
 #include <map>
@@ -118,6 +122,18 @@ SysInfoPanel::SysInfoPanel()
   , update_button_label(lv_label_create(update_button))
   , update_status(lv_label_create(cont))
   , back_btn(cont, &back, "Back", &SysInfoPanel::_handle_callback, this)
+  , update_overlay(NULL)
+  , update_spinner(NULL)
+  , update_title(NULL)
+  , update_phase(NULL)
+  , update_close_btn(NULL)
+  , update_timer(NULL)
+  , check_running(false)
+  , check_done(false)
+  , check_available(false)
+  , update_running(false)
+  , update_finished(false)
+  , update_exit_code(0)
 {
   Config *conf = Config::get_instance();
 
@@ -318,12 +334,26 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_clear_flag(back_right_edge, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, -10, -14);
   lv_obj_move_background(cont);
+
+  create_update_overlay();
+  update_timer = lv_timer_create(&SysInfoPanel::_poll_update_cb, 500, this);
+  show_updated_notice();
 }
 
 SysInfoPanel::~SysInfoPanel() {
   if (clock_timer != NULL) {
     lv_timer_del(clock_timer);
     clock_timer = NULL;
+  }
+
+  if (update_timer != NULL) {
+    lv_timer_del(update_timer);
+    update_timer = NULL;
+  }
+
+  if (update_overlay != NULL) {
+    lv_obj_del(update_overlay);
+    update_overlay = NULL;
   }
 
   if (cont != NULL) {
@@ -352,41 +382,244 @@ void SysInfoPanel::refresh_network() {
                     wifi_ip.empty() ? "Unavailable" : wifi_ip.c_str());
 }
 
+namespace {
+const char *UPDATE_STATUS_FILE = "/tmp/powerscreen-update.status";
+const char *UPDATE_DONE_FILE = "/tmp/powerscreen-update.done";
+
+fs::path update_script_path() {
+  return fs::canonical("/proc/self/exe").parent_path() / "update.sh";
+}
+
+std::string read_first_line(const char *path) {
+  std::ifstream in(path);
+  std::string line;
+  std::getline(in, line);
+  return line;
+}
+
+// Convierte "FASE:detalle" escrito por update.sh en texto para la pantalla.
+std::string phase_text(const std::string &status) {
+  const auto sep = status.find(':');
+  const std::string phase = status.substr(0, sep);
+  const std::string detail = sep == std::string::npos ? "" : status.substr(sep + 1);
+
+  if (phase == "CHECKING") return "Checking for the latest version...";
+  if (phase == "DOWNLOADING") return "Downloading " + detail + "...";
+  if (phase == "EXTRACTING") return "Installing " + detail + "...";
+  if (phase == "RESTARTING") return "Restarting PowerScreen...";
+  if (phase == "UP_TO_DATE") return "PowerScreen is already up to date (" + detail + ").";
+  if (phase == "ERROR") return detail.empty() ? "Update failed." : detail;
+  return "Preparing update...";
+}
+}
+
 void SysInfoPanel::check_for_update() {
   lv_obj_add_flag(update_status, LV_OBJ_FLAG_HIDDEN);
   lv_obj_add_state(update_button, LV_STATE_DISABLED);
 
-  try {
-    const fs::path script = fs::canonical("/proc/self/exe").parent_path() / "update.sh";
-    if (!fs::exists(script)) {
-      spdlog::warn("Failed to check for updates. Did not find update script.");
-      return;
-    }
-
-    const std::vector<std::string> command = {script.string(), "--check"};
-    const auto output = sp::check_output(command);
-    const std::string result(output.buf.data(), output.length);
-    if (result.rfind("UPDATE_AVAILABLE:", 0) == 0) {
-      lv_obj_clear_flag(update_status, LV_OBJ_FLAG_HIDDEN);
-      lv_obj_clear_state(update_button, LV_STATE_DISABLED);
-    }
-  } catch (const std::exception &error) {
-    spdlog::warn("Failed to check for PowerScreen updates: {}", error.what());
+  // La consulta a GitHub tarda varios segundos: se hace en otro hilo para no
+  // congelar la pantalla. poll_update() aplica el resultado.
+  if (check_running.exchange(true)) {
+    return;
   }
+
+  std::thread([this]() {
+    bool available = false;
+    try {
+      const fs::path script = update_script_path();
+      if (fs::exists(script)) {
+        const std::vector<std::string> command = {script.string(), "--check"};
+        const auto output = sp::check_output(command);
+        const std::string result(output.buf.data(), output.length);
+        available = result.rfind("UPDATE_AVAILABLE:", 0) == 0;
+      } else {
+        spdlog::warn("Failed to check for updates. Did not find update script.");
+      }
+    } catch (const std::exception &error) {
+      spdlog::warn("Failed to check for PowerScreen updates: {}", error.what());
+    }
+    check_available = available;
+    check_done = true;
+    check_running = false;
+  }).detach();
 }
 
-void SysInfoPanel::run_update() {
+bool SysInfoPanel::is_printing() {
+  auto &pstate = State::get_instance()->get_data("/printer_state/print_stats/state"_json_pointer);
+  if (!pstate.is_string()) {
+    return false;
+  }
+  const std::string state = pstate.template get<std::string>();
+  return state == "printing" || state == "paused";
+}
+
+void SysInfoPanel::start_update() {
+  if (update_running) {
+    return;
+  }
+
+  if (is_printing()) {
+    show_update_overlay("Update not available",
+                        "PowerScreen cannot be updated while a print is in progress.", false);
+    return;
+  }
+
+  fs::path script;
   try {
-    auto update_script = fs::canonical("/proc/self/exe").parent_path() / "update.sh";
-    const fs::path script(update_script);
-    if (fs::exists(script)) {
-      sp::call(script);
-    } else {
-      spdlog::warn("Failed to update PowerScreen. Did not find update script.");
-    }
+    script = update_script_path();
   } catch (const std::exception &error) {
     spdlog::warn("Failed to update PowerScreen: {}", error.what());
   }
+  if (script.empty() || !fs::exists(script)) {
+    spdlog::warn("Failed to update PowerScreen. Did not find update script.");
+    show_update_overlay("Update failed", "Update script not found.", false);
+    return;
+  }
+
+  std::remove(UPDATE_STATUS_FILE);
+  update_finished = false;
+  update_running = true;
+  show_update_overlay("Updating PowerScreen", phase_text(""), true);
+
+  const std::string script_str = script.string();
+  std::thread([this, script_str]() {
+    int code = -1;
+    try {
+      code = sp::call(script_str);
+    } catch (const std::exception &error) {
+      spdlog::warn("Failed to update PowerScreen: {}", error.what());
+    }
+    update_exit_code = code;
+    update_finished = true;
+  }).detach();
+}
+
+void SysInfoPanel::poll_update() {
+  if (check_done.exchange(false) && check_available) {
+    lv_obj_clear_flag(update_status, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_state(update_button, LV_STATE_DISABLED);
+  }
+
+  if (!update_running) {
+    return;
+  }
+
+  const std::string status = read_first_line(UPDATE_STATUS_FILE);
+  if (!status.empty()) {
+    lv_label_set_text(update_phase, phase_text(status).c_str());
+  }
+
+  if (!update_finished) {
+    return;
+  }
+
+  // El script termino sin reiniciar PowerScreen: error o sin cambios.
+  update_running = false;
+  if (status.rfind("UP_TO_DATE", 0) == 0) {
+    show_update_overlay("No update needed", phase_text(status), false);
+  } else if (status.rfind("ERROR", 0) == 0) {
+    show_update_overlay("Update failed", phase_text(status), false);
+  } else if (update_exit_code != 0) {
+    show_update_overlay("Update failed", "The update script did not finish.", false);
+  } else {
+    show_update_overlay("Update installed", "Restart PowerScreen to apply the new version.", false);
+  }
+}
+
+void SysInfoPanel::create_update_overlay() {
+  update_overlay = lv_obj_create(lv_layer_top());
+  lv_obj_remove_style_all(update_overlay);
+  lv_obj_set_size(update_overlay, LV_PCT(100), LV_PCT(100));
+  lv_obj_set_style_bg_color(update_overlay, lv_color_black(), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(update_overlay, LV_OPA_80, LV_PART_MAIN);
+  // Captura todos los toques para bloquear la interfaz durante la actualizacion.
+  lv_obj_add_flag(update_overlay, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_clear_flag(update_overlay, LV_OBJ_FLAG_SCROLLABLE);
+
+  lv_obj_t *card = lv_obj_create(update_overlay);
+  lv_obj_set_size(card, 460, 260);
+  lv_obj_center(card);
+  lv_obj_clear_flag(card, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_style_bg_color(card, lv_color_hex(SCREEN_BACKGROUND), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(card, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_border_color(card, lv_color_hex(CARD_BORDER), LV_PART_MAIN);
+  lv_obj_set_style_border_width(card, 2, LV_PART_MAIN);
+  lv_obj_set_style_radius(card, 12, LV_PART_MAIN);
+
+  update_title = lv_label_create(card);
+  lv_obj_set_style_text_color(update_title, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
+  lv_obj_set_style_text_font(update_title, &lv_font_montserrat_20, LV_PART_MAIN);
+  lv_obj_align(update_title, LV_ALIGN_TOP_MID, 0, 4);
+
+  update_spinner = lv_spinner_create(card, 1000, 60);
+  lv_obj_set_size(update_spinner, 80, 80);
+  lv_obj_set_style_arc_color(update_spinner, lv_color_hex(CREALITY_GREEN), LV_PART_INDICATOR);
+  lv_obj_set_style_arc_color(update_spinner, lv_color_hex(BUTTON_GREY), LV_PART_MAIN);
+  lv_obj_align(update_spinner, LV_ALIGN_CENTER, 0, -10);
+
+  update_phase = lv_label_create(card);
+  lv_label_set_long_mode(update_phase, LV_LABEL_LONG_WRAP);
+  lv_obj_set_width(update_phase, LV_PCT(100));
+  lv_obj_set_style_text_align(update_phase, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+  lv_obj_set_style_text_color(update_phase, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_font(update_phase, &lv_font_montserrat_16, LV_PART_MAIN);
+  lv_obj_align(update_phase, LV_ALIGN_BOTTOM_MID, 0, -4);
+
+  update_close_btn = lv_btn_create(card);
+  lv_obj_set_size(update_close_btn, 160, 44);
+  lv_obj_align(update_close_btn, LV_ALIGN_CENTER, 0, -10);
+  lv_obj_set_style_bg_color(update_close_btn, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
+  lv_obj_set_style_radius(update_close_btn, 12, LV_PART_MAIN);
+  lv_obj_t *close_label = lv_label_create(update_close_btn);
+  lv_label_set_text(close_label, "Close");
+  lv_obj_set_style_text_font(close_label, &lv_font_montserrat_20, LV_PART_MAIN);
+  lv_obj_center(close_label);
+  lv_obj_add_event_cb(update_close_btn, &SysInfoPanel::_handle_callback, LV_EVENT_CLICKED, this);
+
+  lv_obj_add_flag(update_overlay, LV_OBJ_FLAG_HIDDEN);
+}
+
+void SysInfoPanel::show_update_overlay(const std::string &title, const std::string &phase, bool busy) {
+  lv_label_set_text(update_title, title.c_str());
+  lv_label_set_text(update_phase, phase.c_str());
+  if (busy) {
+    lv_obj_clear_flag(update_spinner, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(update_close_btn, LV_OBJ_FLAG_HIDDEN);
+  } else {
+    lv_obj_add_flag(update_spinner, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(update_close_btn, LV_OBJ_FLAG_HIDDEN);
+  }
+  lv_obj_clear_flag(update_overlay, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_move_foreground(update_overlay);
+}
+
+void SysInfoPanel::show_updated_notice() {
+  // update.sh deja este archivo antes de reiniciar; la version nueva lo
+  // muestra una sola vez al arrancar.
+  const std::string version = read_first_line(UPDATE_DONE_FILE);
+  if (version.empty()) {
+    return;
+  }
+  std::remove(UPDATE_DONE_FILE);
+  std::remove(UPDATE_STATUS_FILE);
+
+  lv_obj_t *notice = lv_obj_create(lv_layer_top());
+  lv_obj_set_size(notice, 520, LV_SIZE_CONTENT);
+  lv_obj_align(notice, LV_ALIGN_TOP_MID, 0, 50);
+  lv_obj_clear_flag(notice, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_clear_flag(notice, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_set_style_bg_color(notice, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(notice, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_border_width(notice, 0, LV_PART_MAIN);
+  lv_obj_set_style_radius(notice, 12, LV_PART_MAIN);
+
+  lv_obj_t *label = lv_label_create(notice);
+  lv_label_set_text(label, fmt::format(LV_SYMBOL_OK " PowerScreen updated to {}", version).c_str());
+  lv_obj_set_style_text_color(label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_font(label, &lv_font_montserrat_20, LV_PART_MAIN);
+  lv_obj_center(label);
+
+  lv_obj_del_delayed(notice, 6000);
 }
 
 void SysInfoPanel::update_clock() {
@@ -409,7 +642,9 @@ void SysInfoPanel::handle_callback(lv_event_t *e)
         return;
       }
       spdlog::trace("update powerscreen pressed from system info");
-      run_update();
+      start_update();
+    } else if (btn == update_close_btn) {
+      lv_obj_add_flag(update_overlay, LV_OBJ_FLAG_HIDDEN);
     }
   } else if (lv_event_get_code(e) == LV_EVENT_VALUE_CHANGED) {
     lv_obj_t *obj = lv_event_get_target(e);

@@ -107,14 +107,7 @@ void SettingPanel::handle_callback(lv_event_t *event) {
       }
     } else if (btn == powerscreen_update_btn.get_button()) {
       spdlog::trace("update powerscreen pressed");
-      // TODO: throw this inside the global threadpool to make it async
-      auto update_script = fs::canonical("/proc/self/exe").parent_path() / "update.sh";
-      const fs::path script(update_script);
-      if (fs::exists(script)) {
-	sp::call(script);
-      } else {
-	spdlog::warn("Failed to update PowerScreen. Did not find update script.");
-      }
+      sysinfo_panel.start_update();
     } else if (btn == printer_select_btn.get_button()) {
       spdlog::trace("setting printers pressed");
       printer_select_panel.foreground();
