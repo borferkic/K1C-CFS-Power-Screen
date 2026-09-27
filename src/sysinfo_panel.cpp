@@ -9,7 +9,9 @@
 #include <cstdio>
 #include <ctime>
 #include <fstream>
-#include <thread>
+#include <functional>
+#include <memory>
+#include <pthread.h>
 #include <experimental/filesystem>
 #include <iterator>
 #include <map>
@@ -390,6 +392,26 @@ fs::path update_script_path() {
   return fs::canonical("/proc/self/exe").parent_path() / "update.sh";
 }
 
+void *run_task(void *arg) {
+  std::unique_ptr<std::function<void()>> task(static_cast<std::function<void()> *>(arg));
+  (*task)();
+  return NULL;
+}
+
+// Hilo desacoplado con pthread_create directo. No usar std::thread: en el
+// binario estatico MIPS su pthread_create debil queda en NULL y el proceso
+// muere con SIGSEGV (epc = 0) al crear el hilo.
+void run_detached(std::function<void()> fn) {
+  auto *task = new std::function<void()>(std::move(fn));
+  pthread_t tid;
+  if (pthread_create(&tid, NULL, &run_task, task) != 0) {
+    spdlog::warn("Failed to start background task, running inline");
+    run_task(task);
+    return;
+  }
+  pthread_detach(tid);
+}
+
 std::string read_first_line(const char *path) {
   std::ifstream in(path);
   std::string line;
@@ -423,7 +445,7 @@ void SysInfoPanel::check_for_update() {
     return;
   }
 
-  std::thread([this]() {
+  run_detached([this]() {
     bool available = false;
     try {
       const fs::path script = update_script_path();
@@ -441,7 +463,7 @@ void SysInfoPanel::check_for_update() {
     check_available = available;
     check_done = true;
     check_running = false;
-  }).detach();
+  });
 }
 
 bool SysInfoPanel::is_printing() {
@@ -482,7 +504,7 @@ void SysInfoPanel::start_update() {
   show_update_overlay("Updating PowerScreen", phase_text(""), true);
 
   const std::string script_str = script.string();
-  std::thread([this, script_str]() {
+  run_detached([this, script_str]() {
     int code = -1;
     try {
       code = sp::call(script_str);
@@ -491,7 +513,7 @@ void SysInfoPanel::start_update() {
     }
     update_exit_code = code;
     update_finished = true;
-  }).detach();
+  });
 }
 
 void SysInfoPanel::poll_update() {
