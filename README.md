@@ -4,7 +4,7 @@ Nombre: `README.md`
 Fecha de creación: `2026-09-10`
 Descripción: Presentación pública, alcance e instrucciones de PowerScreen para la Creality K1C.
 Proyecto: `PowerScreen`
-Última modificación: `2026-09-12`
+Última modificación: `2026-09-28`
 -->
 
 [English](#english) | [Español](#espanol)
@@ -34,7 +34,10 @@ There are no builds, instructions, or support for Android, Raspberry Pi, `PowerS
 
 ## Installation / Update on a K1C
 
-PowerScreen is installed or updated from an SSH shell on the printer while logged in as `root`. This is the same interactive installation flow used by the original project. Do not install while printing, heating, homing, or running a calibration.
+PowerScreen is installed from an SSH shell on the printer while logged in as `root`, either with the [CFS Power Script](https://github.com/borferkic/K1C-CFS-Power-Script) (recommended) or directly with the PowerScreen installer. Do not install while printing, heating, homing, or running a calibration.
+
+> [!IMPORTANT]
+> PowerScreen replaces the Creality touch screen. Installing it **disables** the Creality screen (`Monitor`, `display-server`) and the Creality services: Creality Cloud, Creality Print LAN connection and OTA firmware updates. Everything is backed up and restored if PowerScreen is removed. The installer shows this warning and asks for confirmation before changing anything.
 
 ### Requirements
 
@@ -64,35 +67,41 @@ df -h /usr/data
 
 The K1C must report `mips`.
 
-### 2. Install or update PowerScreen
+### 2. Install PowerScreen
 
-Clone this repository directly on the printer and enter the cloned directory:
+#### Option A — with the CFS Power Script (recommended)
 
-```sh
-cd /usr/data
-git clone --recursive https://github.com/borferkic/K1C-CFS-POWER-SCREEN.git PowerScreen
-cd /usr/data/PowerScreen
+Install and open the [CFS Power Script](https://github.com/borferkic/K1C-CFS-Power-Script) as described in its README, then select:
+
+```text
+[Customize] Menu → 3) Install PowerScreen
 ```
 
-Execute the installer from the cloned repository:
+The script shows the warning above, asks for confirmation and asks which build to install (`stable` or `nightly`). It then runs the PowerScreen installer without further questions.
+
+#### Option B — with the PowerScreen installer
+
+Download only the installer (there is no need to clone this repository) and run it:
 
 ```sh
-sh ./installer.sh
+wget --no-check-certificate -O /tmp/powerscreen-installer.sh https://raw.githubusercontent.com/borferkic/K1C-CFS-POWER-SCREEN/main/installer.sh
+sh /tmp/powerscreen-installer.sh
 ```
 
-For a later update, enter the existing clone, update its submodules, and run the installer again:
+The installer shows the warning, asks for confirmation and asks which build to install. The build can also be passed as an argument:
 
 ```sh
-cd /usr/data/PowerScreen
-git pull --recurse-submodules
-sh ./installer.sh
+sh /tmp/powerscreen-installer.sh stable
+sh /tmp/powerscreen-installer.sh nightly
 ```
 
-The installer is configured exclusively for the K1C Z-Bolt package. It downloads the latest `powerscreen-zbolt.tar.gz` from this repository's GitHub Releases, extracts it under `/usr/data/powerscreen`, configures the service and helper files, and starts PowerScreen.
+#### What the installer does
 
-The installer also registers PowerScreen in Moonraker's Update Manager so it appears in Fluidd under the available software services. The registered repository is `borferkic/K1C-CFS-POWER-SCREEN`.
-
-The installer may ask whether to continue when Moonraker is not connected, whether to disable Creality services, and whether to restart Klipper. Read each prompt before answering. Answer `n` to preserve Creality Cloud and Creality Slicer services.
+- Downloads `powerscreen-zbolt.tar.gz` from this repository's GitHub Releases (the latest stable release, or the latest nightly pre-release) and extracts it under `/usr/data/powerscreen`.
+- Backs up the original Creality files in `/usr/data/powerscreen-backup` and disables the Creality screen and services.
+- Configures the service, the Klipper modules and the PowerScreen macros.
+- Registers PowerScreen in Moonraker's Update Manager so it appears in Fluidd. The registered repository is `borferkic/K1C-CFS-POWER-SCREEN`.
+- Saves the chosen build as the update channel, restarts Klipper and starts PowerScreen.
 
 ### 3. Validate the installation
 
@@ -110,6 +119,22 @@ grep -R "PowerScreen" /usr/data/printer_data/config/printer.cfg /usr/data/printe
 ```
 
 The process must remain active, the log must not show an immediate crash, and Moonraker must report `true` for `klippy_connected`. On the touchscreen, check the main tabs, open the extrusion panel, open the manual M600 dialog, and verify `LOAD`, `UNLOAD`, `RESUME`, `STOP`, and `CLOSE` individually. Test filament movement only with the correct temperature and a controlled filament path.
+
+### 4. Update PowerScreen
+
+Updates do not require running the installer again:
+
+- On the printer screen: **System → Updates**. The update channel (`Nightly` or `Stable`) can be changed there.
+- In Fluidd: **Settings → Software Updates**.
+
+### 5. Remove PowerScreen
+
+- With the CFS Power Script: `[Customize] Menu → 4) Remove PowerScreen`.
+- Manually, to restore the Creality screen and services:
+
+```sh
+sh /usr/data/powerscreen/reinstall-creality.sh
+```
 
 ## Inherited features
 
@@ -142,8 +167,8 @@ The process must remain active, the log must not show an immediate crash, and Mo
 Initialize the submodules when cloning the repository:
 
 ```bash
-git clone --recursive https://github.com/borferkic/K1C-CFS-POWER-SCREEN.git PowerScreen
-cd PowerScreen
+git clone --recursive https://github.com/borferkic/K1C-CFS-POWER-SCREEN.git powerscreen
+cd powerscreen
 ```
 
 Building for the K1C uses the MIPS toolchain and workflow maintained in private project documentation. The main configuration uses the `mipsel-buildroot-linux-musl-` compiler and generates:
@@ -206,7 +231,10 @@ No se incluyen builds, instrucciones ni soporte para Android, Raspberry Pi, `Pow
 
 ## Instalación / actualización en una K1C
 
-PowerScreen se instala o actualiza desde una consola SSH de la impresora iniciada como `root`. Este es el mismo flujo interactivo de instalación utilizado por el proyecto original. No instales mientras la impresora esté imprimiendo, calentando, haciendo homing o ejecutando una calibración.
+PowerScreen se instala desde una consola SSH de la impresora iniciada como `root`, con el [CFS Power Script](https://github.com/borferkic/K1C-CFS-Power-Script) (recomendado) o directamente con el instalador de PowerScreen. No instales mientras la impresora esté imprimiendo, calentando, haciendo homing o ejecutando una calibración.
+
+> [!IMPORTANT]
+> PowerScreen sustituye la pantalla táctil de Creality. Al instalarlo se **desactivan** la pantalla de Creality (`Monitor`, `display-server`) y los servicios de Creality: Creality Cloud, la conexión LAN de Creality Print y las actualizaciones de firmware OTA. Todo se respalda y se restaura si se quita PowerScreen. El instalador muestra este aviso y pide confirmación antes de cambiar nada.
 
 ### Requisitos
 
@@ -236,35 +264,41 @@ df -h /usr/data
 
 La K1C debe responder `mips`.
 
-### 2. Instalar o actualizar PowerScreen
+### 2. Instalar PowerScreen
 
-Clona este repositorio directamente en la impresora y entra en la carpeta clonada:
+#### Opción A — con el CFS Power Script (recomendada)
 
-```sh
-cd /usr/data
-git clone --recursive https://github.com/borferkic/K1C-CFS-POWER-SCREEN.git PowerScreen
-cd /usr/data/PowerScreen
+Instala y abre el [CFS Power Script](https://github.com/borferkic/K1C-CFS-Power-Script) como se indica en su README y selecciona:
+
+```text
+[Customize] Menu → 3) Install PowerScreen
 ```
 
-Ejecuta el instalador desde el repositorio clonado:
+El script muestra el aviso anterior, pide confirmación y pregunta qué versión instalar (`stable` o `nightly`). Después ejecuta el instalador de PowerScreen sin más preguntas.
+
+#### Opción B — con el instalador de PowerScreen
+
+Descarga solo el instalador (no hace falta clonar este repositorio) y ejecútalo:
 
 ```sh
-sh ./installer.sh
+wget --no-check-certificate -O /tmp/powerscreen-installer.sh https://raw.githubusercontent.com/borferkic/K1C-CFS-POWER-SCREEN/main/installer.sh
+sh /tmp/powerscreen-installer.sh
 ```
 
-Para una actualización posterior, entra en la copia existente, actualiza sus submódulos y vuelve a ejecutar el instalador:
+El instalador muestra el aviso, pide confirmación y pregunta qué versión instalar. La versión también se puede indicar como argumento:
 
 ```sh
-cd /usr/data/PowerScreen
-git pull --recurse-submodules
-sh ./installer.sh
+sh /tmp/powerscreen-installer.sh stable
+sh /tmp/powerscreen-installer.sh nightly
 ```
 
-El instalador está configurado exclusivamente para el paquete K1C Z-Bolt. Descarga el último `powerscreen-zbolt.tar.gz` desde las GitHub Releases de este repositorio, lo extrae en `/usr/data/powerscreen`, configura el servicio y los archivos auxiliares, y arranca PowerScreen.
+#### Qué hace el instalador
 
-El instalador también registra PowerScreen en el Update Manager de Moonraker para que aparezca en Fluidd entre los servicios de software disponibles. El repositorio registrado es `borferkic/K1C-CFS-POWER-SCREEN`.
-
-El instalador puede preguntar si debe continuar cuando Moonraker no está conectado, si debe deshabilitar servicios de Creality y si debe reiniciar Klipper. Lee cada pregunta antes de responder. Responde `n` si deseas conservar Creality Cloud y Creality Slicer.
+- Descarga `powerscreen-zbolt.tar.gz` desde las GitHub Releases de este repositorio (la última release estable o la última nightly) y lo extrae en `/usr/data/powerscreen`.
+- Respalda los archivos originales de Creality en `/usr/data/powerscreen-backup` y desactiva la pantalla y los servicios de Creality.
+- Configura el servicio, los módulos de Klipper y las macros de PowerScreen.
+- Registra PowerScreen en el Update Manager de Moonraker para que aparezca en Fluidd. El repositorio registrado es `borferkic/K1C-CFS-POWER-SCREEN`.
+- Guarda la versión elegida como canal de actualización, reinicia Klipper y arranca PowerScreen.
 
 ### 3. Validar la instalación
 
@@ -282,6 +316,22 @@ grep -R "PowerScreen" /usr/data/printer_data/config/printer.cfg /usr/data/printe
 ```
 
 El proceso debe mantenerse activo, el log no debe mostrar un cierre inmediato y Moonraker debe responder `true` en `klippy_connected`. En la pantalla táctil revisa las pestañas principales, abre el panel de extrusión, abre el diálogo M600 manual y verifica individualmente `LOAD`, `UNLOAD`, `RESUME`, `STOP` y `CLOSE`. Prueba el movimiento de filamento únicamente con la temperatura correcta y el recorrido preparado.
+
+### 4. Actualizar PowerScreen
+
+Las actualizaciones no requieren volver a ejecutar el instalador:
+
+- En la pantalla de la impresora: **System → Updates**. Ahí también se puede cambiar el canal (`Nightly` o `Stable`).
+- En Fluidd: **Settings → Software Updates**.
+
+### 5. Quitar PowerScreen
+
+- Con el CFS Power Script: `[Customize] Menu → 4) Remove PowerScreen`.
+- Manualmente, para restaurar la pantalla y los servicios de Creality:
+
+```sh
+sh /usr/data/powerscreen/reinstall-creality.sh
+```
 
 ## Características heredadas
 
@@ -314,8 +364,8 @@ El proceso debe mantenerse activo, el log no debe mostrar un cierre inmediato y 
 Los submódulos deben inicializarse al clonar el repositorio:
 
 ```bash
-git clone --recursive https://github.com/borferkic/K1C-CFS-POWER-SCREEN.git PowerScreen
-cd PowerScreen
+git clone --recursive https://github.com/borferkic/K1C-CFS-POWER-SCREEN.git powerscreen
+cd powerscreen
 ```
 
 La compilación para la K1C utiliza el toolchain MIPS y el flujo de trabajo conservados en la documentación privada del proyecto. La configuración principal usa el compilador `mipsel-buildroot-linux-musl-` y genera:
