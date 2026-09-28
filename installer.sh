@@ -10,6 +10,39 @@ K1_POWERSCREEN_DIR=/usr/data/powerscreen
 FT2FONT_PATH=/usr/lib/python3.8/site-packages/matplotlib/ft2font.cpython-38-mipsel-linux-gnu.so
 POWERSCREEN_REPOSITORY="borferkic/K1C-CFS-POWER-SCREEN"
 ASSET_NAME="powerscreen-zbolt"
+# Creality screen and web binaries that PowerScreen disables.
+CREALITY_BINARIES="Monitor display-server web-server"
+# Older installers (Guppy Screen, CFS Power Script) may hold the original S99start_app.
+LEGACY_BACKUP_DIRS="/usr/data/helper-script-backup/guppyscreen /usr/data/guppyscreen-backups /usr/data/guppyscreen.backup-k1c"
+
+# Usage: installer.sh [nightly] [--yes]
+#   nightly  install the latest nightly instead of the latest stable release
+#   --yes    non-interactive: accept the Creality warning and restart Klipper
+#            (used by the CFS Power Script after it shows its own warning)
+CHANNEL=stable
+ASSUME_YES=false
+for arg in "$@"; do
+    case "$arg" in
+        nightly) CHANNEL=nightly ;;
+        -y|--yes) ASSUME_YES=true ;;
+    esac
+done
+
+show_creality_warning() {
+    printf "${yellow}PowerScreen replaces the Creality touch screen.${white}\n\n"
+    printf "The following will be DISABLED:\n"
+    printf "  - Creality screen (Monitor, display-server)\n"
+    printf "  - Creality services: Creality Cloud, Creality Print LAN connection\n"
+    printf "    and OTA firmware updates\n\n"
+    printf "Everything is backed up and restored if PowerScreen is removed.\n\n"
+}
+
+# Copy a file into the backup folder once; never overwrite an existing backup.
+backup_file() {
+    [ -f "$1" ] || return 0
+    [ -f "$BACKUP_DIR/$(basename "$1")" ] && return 0
+    cp -p "$1" "$BACKUP_DIR/"
+}
 
 ARCH=`uname -m`
 if [ "$ARCH" != "mips" ]; then
@@ -18,6 +51,19 @@ if [ "$ARCH" != "mips" ]; then
 fi
 
 printf "${green}=== Installing PowerScreen === ${white}\n"
+
+show_creality_warning
+if [ "$ASSUME_YES" = true ]; then
+    echo "Continuing (--yes)."
+else
+    printf "Do you want to continue? (y/n): "
+    read confirm_install
+    echo
+    if [ "$confirm_install" != "y" -a "$confirm_install" != "Y" ]; then
+        echo "Installation canceled. Nothing was changed."
+        exit 1
+    fi
+fi
 
 # check ld.so version
 if [ ! -f /lib/ld-2.29.so ]; then
@@ -28,6 +74,10 @@ fi
 echo "Checking for a working Moonraker"
 MRK_KPY_OK=`curl localhost:7125/server/info 2> /dev/null | jq .result.klippy_connected`
 if [ "$MRK_KPY_OK" != "true" ]; then
+    if [ "$ASSUME_YES" = true ]; then
+        printf "${red}Moonraker is not properly setup at port 7125. Please fix Moonraker and try again. ${white}\n"
+        exit 1
+    fi
     printf "${yellow}Moonraker is not properly setup at port 7125. Continue anyways? (y/n) ${white}\n"
     read confirm
     echo
@@ -72,9 +122,15 @@ chmod +x /tmp/curl
 
 ASSET_URL="https://github.com/$POWERSCREEN_REPOSITORY/releases/latest/download/$ASSET_NAME.tar.gz"
 
-if [ "$1" = "nightly" ] || [ "$2" = "nightly" ]; then
+if [ "$CHANNEL" = "nightly" ]; then
+    # Nightlies are pre-releases named v<version>-nightly.<date>; pick the newest one.
     printf "${yellow}Installing nightly build ${white}\n"
-    ASSET_URL="https://github.com/$POWERSCREEN_REPOSITORY/releases/download/nightly/$ASSET_NAME.tar.gz"
+    ASSET_URL=`/tmp/curl -s https://api.github.com/repos/$POWERSCREEN_REPOSITORY/releases | \
+        jq -r --arg asset "$ASSET_NAME.tar.gz" '[.[] | select(.prerelease and (.tag_name | contains("-nightly")))][0].assets[] | select(.name == $asset) | .browser_download_url'`
+    if [ -z "$ASSET_URL" ] || [ "$ASSET_URL" = "null" ]; then
+        printf "${red}Could not find a nightly release. ${white}\n"
+        exit 1
+    fi
 fi
 
 printf "${green} Downloading asset: $ASSET_NAME.tar.gz ${white}\n"
@@ -151,14 +207,23 @@ fi
 K1_GCODE_DIR=$(dirname "$K1_CONFIG_DIR")/gcodes
 ln -sf /tmp/udisk $K1_GCODE_DIR/usb
 
-if [ ! -d "$BACKUP_DIR" ]; then
-    printf "${green} Backing up original K1 files ${white}\n"
-    mkdir -p $BACKUP_DIR
-
-    mv /etc/init.d/S12boot_display $BACKUP_DIR
-    cp /etc/init.d/S50dropbear $BACKUP_DIR
-    cp /etc/init.d/S99start_app $BACKUP_DIR
+printf "${green} Backing up original K1 files ${white}\n"
+mkdir -p $BACKUP_DIR
+backup_file /etc/init.d/S12boot_display
+backup_file /etc/init.d/S50dropbear
+backup_file /etc/init.d/S99start_app
+# If Creality services were already disabled by an older installer, recover
+# the original S99start_app from its backup so it can be restored later.
+if [ ! -f "$BACKUP_DIR/S99start_app" ]; then
+    for dir in $LEGACY_BACKUP_DIRS; do
+        if [ -f "$dir/S99start_app" ]; then
+            cp -p "$dir/S99start_app" "$BACKUP_DIR/"
+            echo "Recovered S99start_app from $dir"
+            break
+        fi
+    done
 fi
+rm -f /etc/init.d/S12boot_display
 
 if [ ! -f $BACKUP_DIR/ft2font.cpython-38-mipsel-linux-gnu.so ]; then
     # backup ft2font
@@ -168,22 +233,18 @@ fi
 ## dropbear early to ensure ssh is started with display-server
 cp $K1_POWERSCREEN_DIR/k1_mods/S50dropbear /etc/init.d/S50dropbear
 
-printf "${white}=== Do you want to disable all Creality services (revertable) with PowerScreen installation? ===\n"
-printf "${green}  Pros: Frees up system resources on your K1 for critical services such as Klipper (Recommended)\n"
-printf "${white}  Cons: Disabling all Creality services breaks Creality Cloud/Creality Slicer.\n\n"
-printf "Disable all Creality Services? (y/n): "
-
-read confirm_decreality
-echo
-
-if [ "$confirm_decreality" = "y" -o "$confirm_decreality" = "Y" ]; then
-    printf "${green}Disabling Creality services ${white}\n"
-    rm /etc/init.d/S99start_app
-else
-    # disables only display-server and Monitor
-    mv /usr/bin/Monitor /usr/bin/Monitor.disable
-    mv /usr/bin/display-server /usr/bin/display-server.disable
-fi
+## disable the Creality screen and services (accepted in the warning above)
+printf "${green}Disabling Creality screen and services ${white}\n"
+rm -f /etc/init.d/S99start_app
+for bin in $CREALITY_BINARIES; do
+    # Same ".disabled" suffix as Guppy Screen and the CFS Power Script.
+    if [ -f "/usr/bin/$bin.disable" ]; then
+        mv "/usr/bin/$bin.disable" "/usr/bin/$bin.disabled"
+    fi
+    if [ -f "/usr/bin/$bin" ]; then
+        mv "/usr/bin/$bin" "/usr/bin/$bin.disabled"
+    fi
+done
 
 printf "${green}Setting up PowerScreen ${white}\n"
 cp $K1_POWERSCREEN_DIR/k1_mods/S99powerscreen /etc/init.d/S99powerscreen
@@ -220,9 +281,13 @@ if ! diff $K1_POWERSCREEN_DIR/k1_mods/S50dropbear /etc/init.d/S50dropbear > /dev
 fi
 
 ## request to reboot
-printf "Restart Klipper now to pick up the new changes (y/n): "
-read confirm
-echo
+if [ "$ASSUME_YES" = true ]; then
+    confirm=y
+else
+    printf "Restart Klipper now to pick up the new changes (y/n): "
+    read confirm
+    echo
+fi
 
 if [ "$confirm" = "y" -o "$confirm" = "Y" ]; then
     echo "Restarting Klipper"
@@ -231,17 +296,15 @@ else
     printf "${red}Some PowerScreen functionality won't work until Klipper is restarted. ${white}\n"
 fi
 
+echo "Stopping Creality screen and services"
 killall -q Monitor
 killall -q display-server
-if [ "$confirm_decreality" = "y" -o "$confirm_decreality" = "Y" ]; then
-    echo "Killing Creality services"
-    killall -q master-server
-    killall -q audio-server
-    killall -q wifi-server
-    killall -q app-server
-    killall -q upgrade-server
-    killall -q web-server
-fi
+killall -q master-server
+killall -q audio-server
+killall -q wifi-server
+killall -q app-server
+killall -q upgrade-server
+killall -q web-server
 
 printf "${green}Starting PowerScreen ${white}\n"
 /etc/init.d/S99powerscreen restart &> /dev/null
@@ -254,9 +317,6 @@ if [ $? -eq 0 ]; then
     printf "${green} Successfully installed PowerScreen. Enjoy! ${white}\n"
 else
     printf "${red} PowerScreen FAILED to install. Rolling back... ${white}\n"
-    cp $BACKUP_DIR/S99start_app /etc/init.d/S99start_app
-    rm /etc/init.d/S99powerscreen
-
-    /etc/init.d/S99start_app restart &> /dev/null
+    sh $K1_POWERSCREEN_DIR/reinstall-creality.sh --yes
     exit 1
 fi
