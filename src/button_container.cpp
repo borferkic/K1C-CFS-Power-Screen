@@ -2,6 +2,13 @@
 #include "config.h"
 #include "spdlog/spdlog.h"
 
+LV_IMG_DECLARE(back);
+
+namespace {
+constexpr lv_coord_t BACK_PILL_WIDTH = 120;
+constexpr lv_coord_t BACK_PILL_HEIGHT = 44;
+}
+
 ButtonContainer::ButtonContainer(lv_obj_t *parent,
 				 const void *btn_img,
 				 const char *text,
@@ -15,6 +22,8 @@ ButtonContainer::ButtonContainer(lv_obj_t *parent,
   , has_image(btn_img != NULL)
   , prompt_text(prompt)
   , prompt_callback(pcb)
+  , compact(btn_img == &back)
+  , pill(NULL)
 {
   lv_obj_set_style_pad_all(btn_cont, 0, 0);
   auto width_scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
@@ -63,6 +72,33 @@ ButtonContainer::ButtonContainer(lv_obj_t *parent,
   lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
   lv_obj_set_style_text_color(label, lv_palette_darken(LV_PALETTE_GREY, 1), LV_STATE_DISABLED);
 
+  if (compact) {
+    // Pastilla gris con flecha y texto en una linea. La pastilla es un hijo
+    // no clicable para que los toques sigan llegando a btn_cont y los estilos
+    // que cada panel aplica al contenedor no la deformen.
+    lv_obj_add_flag(btn, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_set_size(btn_cont, BACK_PILL_WIDTH, BACK_PILL_HEIGHT);
+
+    pill = lv_obj_create(btn_cont);
+    lv_obj_remove_style_all(pill);
+    lv_obj_set_size(pill, BACK_PILL_WIDTH, BACK_PILL_HEIGHT);
+    lv_obj_center(pill);
+    lv_obj_clear_flag(pill, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_clear_flag(pill, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_radius(pill, 12, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(pill, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(pill, lv_color_hex(0x555555), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(pill, lv_color_hex(0x3A3A3A), LV_PART_MAIN | LV_STATE_PRESSED);
+
+    lv_obj_set_parent(label, pill);
+    lv_label_set_text(label, fmt::format(LV_SYMBOL_LEFT "  {}", text).c_str());
+    lv_obj_set_width(label, LV_SIZE_CONTENT);
+    lv_obj_set_style_text_color(label, lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_text_font(label, &lv_font_montserrat_20, LV_PART_MAIN);
+    lv_obj_center(label);
+    return;
+  }
+
   if (btn_img == NULL) {
     lv_obj_set_size(btn, 150 * width_scale, 60);
     lv_obj_set_style_pad_all(btn, 0, LV_PART_MAIN);
@@ -87,6 +123,12 @@ lv_obj_t *ButtonContainer::get_button() {
 }
 
 void ButtonContainer::set_fixed_size(lv_coord_t width, lv_coord_t height) {
+  if (compact) {
+    // El Back conserva su tamano compacto aunque el panel pida otro.
+    lv_obj_set_size(btn_cont, BACK_PILL_WIDTH, BACK_PILL_HEIGHT);
+    return;
+  }
+
   lv_obj_set_size(btn_cont, width, height);
 
   if (has_image) {
@@ -155,9 +197,15 @@ void ButtonContainer::handle_callback(lv_event_t *e) {
   if (code == LV_EVENT_PRESSED) {
     lv_imgbtn_set_state(btn, LV_IMGBTN_STATE_PRESSED);
     lv_obj_add_state(btn_cont, LV_STATE_PRESSED);
+    if (pill != NULL) {
+      lv_obj_add_state(pill, LV_STATE_PRESSED);
+    }
   } else if (code == LV_EVENT_RELEASED) {
     lv_imgbtn_set_state(btn, LV_IMGBTN_STATE_RELEASED);
     lv_obj_clear_state(btn_cont, LV_STATE_PRESSED);
+    if (pill != NULL) {
+      lv_obj_clear_state(pill, LV_STATE_PRESSED);
+    }
   }
 }
 
