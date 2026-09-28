@@ -30,6 +30,34 @@ LV_IMG_DECLARE(device);
 #endif
 
 namespace {
+// Version del paquete instalado (.version junto al ejecutable). Una release
+// oficial promovida reutiliza el binario de la nightly, asi que la version
+// compilada solo sirve de respaldo.
+std::string installed_version() {
+  try {
+    const fs::path file = fs::canonical("/proc/self/exe").parent_path() / ".version";
+    std::ifstream in(file.string());
+    if (in) {
+      const json data = json::parse(in);
+      if (data.contains("version") && data["version"].is_string()) {
+        return data["version"].get<std::string>();
+      }
+    }
+  } catch (const std::exception &error) {
+    spdlog::debug("could not read package version: {}", error.what());
+  }
+  return GS_VERSION;
+}
+
+// Canal de actualizacion elegido en System: "nightly" (por defecto) o "stable".
+std::string update_channel() {
+  auto &v = Config::get_instance()->get_json("/update_channel");
+  if (v.is_string() && v.get<std::string>() == "stable") {
+    return "stable";
+  }
+  return "nightly";
+}
+
 constexpr uint32_t CARD_BORDER = 0x4CAF50;
 constexpr uint32_t CREALITY_GREEN = 0x4CAF50;
 constexpr uint32_t BUTTON_GREY = 0x555555;
@@ -118,6 +146,8 @@ SysInfoPanel::SysInfoPanel()
   , ll_cont(lv_obj_create(controls_card))
   , loglevel_dd(lv_dropdown_create(ll_cont))
   , loglevel(1)
+  , channel_cont(lv_obj_create(controls_card))
+  , channel_dd(lv_dropdown_create(channel_cont))
   , brand_label(lv_label_create(cont))
   , version_label(lv_label_create(cont))
   , update_button(lv_btn_create(cont))
@@ -193,7 +223,7 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_set_pos(printer_img, 0, 130);
 
   style_card(controls_card);
-  lv_obj_set_size(controls_card, 410, 220);
+  lv_obj_set_size(controls_card, 410, 265);
   lv_obj_set_pos(controls_card, 360, 47);
 
   style_row(disp_sleep_cont, 13);
@@ -268,21 +298,30 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_add_event_cb(loglevel_dd, &SysInfoPanel::_handle_callback,
                       LV_EVENT_VALUE_CHANGED, this);
 
+  style_row(channel_cont, 193);
+  create_row_label(channel_cont, "Update Channel");
+  lv_obj_set_size(channel_dd, 130, 46);
+  lv_obj_align(channel_dd, LV_ALIGN_RIGHT_MID, -22, 0);
+  lv_dropdown_set_options(channel_dd, "Nightly\nStable");
+  lv_dropdown_set_selected(channel_dd, update_channel() == "stable" ? 1 : 0);
+  lv_obj_add_event_cb(channel_dd, &SysInfoPanel::_handle_callback,
+                      LV_EVENT_VALUE_CHANGED, this);
+
   lv_label_set_text(brand_label, "PowerScreen by Boris SdK");
   lv_obj_set_style_text_color(brand_label, lv_color_white(), LV_PART_MAIN);
   lv_obj_set_style_text_font(brand_label, &lv_font_montserrat_20, LV_PART_MAIN);
-  lv_obj_set_pos(brand_label, 376, 292);
+  lv_obj_set_pos(brand_label, 376, 337);
 
-  lv_label_set_text(version_label, fmt::format("Version: {}", GS_VERSION).c_str());
+  lv_label_set_text(version_label, fmt::format("Version: {}", installed_version()).c_str());
   lv_obj_set_width(version_label, 410);
   lv_obj_set_style_text_color(version_label, lv_color_white(), LV_PART_MAIN);
   lv_obj_set_style_text_font(version_label, &lv_font_montserrat_16, LV_PART_MAIN);
   lv_label_set_long_mode(version_label, LV_LABEL_LONG_CLIP);
-  lv_obj_set_pos(version_label, 376, 318);
+  lv_obj_set_pos(version_label, 376, 363);
 
   lv_obj_clear_flag(update_button, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(update_button, 243, 38);
-  lv_obj_set_pos(update_button, 376, 367);
+  lv_obj_set_pos(update_button, 376, 412);
   lv_obj_set_style_bg_color(update_button, lv_color_hex(BUTTON_GREY),
                             LV_PART_MAIN | LV_STATE_DEFAULT);
   lv_obj_set_style_bg_opa(update_button, LV_OPA_COVER,
@@ -311,7 +350,7 @@ SysInfoPanel::SysInfoPanel()
   lv_label_set_text(update_status, "NEW UPDATE AVALIABLE!");
   lv_obj_set_style_text_color(update_status, lv_color_hex(CARD_BORDER), LV_PART_MAIN);
   lv_obj_set_style_text_font(update_status, &lv_font_montserrat_20, LV_PART_MAIN);
-  lv_obj_set_pos(update_status, 376, 344);
+  lv_obj_set_pos(update_status, 376, 389);
   lv_obj_add_flag(update_status, LV_OBJ_FLAG_HIDDEN);
 
   lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_FLOATING);
@@ -683,6 +722,22 @@ void SysInfoPanel::handle_callback(lv_event_t *e)
         spdlog::debug("setting log_level to {}", log_levels[loglevel]);
         conf->set<std::string>(conf->df() + "log_level", log_levels[loglevel]);
         conf->save();
+      }
+    } else if (obj == channel_dd) {
+      const std::string channel = lv_dropdown_get_selected(channel_dd) == 1 ? "stable" : "nightly";
+      if (channel != update_channel()) {
+        spdlog::debug("setting update_channel to {}", channel);
+        conf->set<std::string>("/update_channel", channel);
+        conf->save();
+        // Alinea el canal del Update Manager de Moonraker/Fluidd.
+        run_detached([channel]() {
+          try {
+            sp::call(std::vector<std::string>{update_script_path().string(), "--set-channel", channel});
+          } catch (const std::exception &error) {
+            spdlog::warn("Failed to set update channel: {}", error.what());
+          }
+        });
+        check_for_update();
       }
     } else if (obj == prompt_estop_toggle) {
       bool should_prompt = lv_obj_has_state(prompt_estop_toggle, LV_STATE_CHECKED);

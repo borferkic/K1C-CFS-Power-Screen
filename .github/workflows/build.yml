@@ -1,10 +1,10 @@
 name: powerscreen zbolt build
 
 on:
+  # Las releases oficiales no se compilan aqui: se promueven desde una nightly
+  # probada con .github/workflows/promote.yml.
   push:
     branches: [ "develop", "main" ]
-    tags:
-      - "*"
 
 permissions:
   contents: read
@@ -43,12 +43,11 @@ jobs:
 
     - name: set powerscreen version
       run: |
-        if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-          echo "POWERSCREEN_VERSION=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
-        else
-          NIGHTLY_VERSION="v0.33.3-nightly.$(date -u +'%Y%m%d.%H%M%SZ')"
-          echo "POWERSCREEN_VERSION=$NIGHTLY_VERSION" >> "$GITHUB_ENV"
-        fi
+        # VERSION contiene la proxima version oficial; las nightlies cuelgan de ella.
+        BASE_VERSION="$(tr -d '[:space:]' < VERSION)"
+        test -n "$BASE_VERSION"
+        NIGHTLY_VERSION="v${BASE_VERSION}-nightly.$(date -u +'%Y%m%d.%H%M%SZ')"
+        echo "POWERSCREEN_VERSION=$NIGHTLY_VERSION" >> "$GITHUB_ENV"
 
     - name: patch lv_drivers
       run: git apply ../patches/0001-lv_driver_fb_ioctls.patch
@@ -90,7 +89,7 @@ jobs:
           ./powerscreen-zbolt.zip
 
   release:
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+    if: github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-22.04
     permissions:
@@ -117,11 +116,3 @@ jobs:
           --title "$VERSION" \
           --prerelease \
           --target "$GITHUB_SHA"
-
-    - name: Publish stable release
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v2
-      with:
-        files: artifacts/*
-        generate_release_notes: true
-        fail_on_unmatched_files: true

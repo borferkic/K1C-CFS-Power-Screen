@@ -51,6 +51,9 @@ class SysInfoPanel {
   lv_obj_t *loglevel_dd;
   uint32_t loglevel;
 
+  lv_obj_t *channel_cont;
+  lv_obj_t *channel_dd;
+
   lv_obj_t *brand_label;
   lv_obj_t *version_label;
   lv_obj_t *update_button;

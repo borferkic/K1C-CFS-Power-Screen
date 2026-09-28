@@ -1,0 +1,83 @@
+name: promote nightly to stable
+
+# Publica como release oficial una nightly ya probada en la K1C, sin
+# recompilar: el binario es exactamente el de la nightly. Solo se reescribe la
+# version en .version y release_info.json.
+
+on:
+  workflow_dispatch:
+    inputs:
+      nightly_tag:
+        description: "Nightly a promover (vacio = la nightly mas reciente)"
+        required: false
+        default: ""
+      stable_version:
+        description: "Version oficial (ej. v0.34.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-22.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+    - name: Validate inputs
+      run: |
+        STABLE="${{ inputs.stable_version }}"
+        if ! echo "$STABLE" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+          echo "stable_version debe tener el formato vX.Y.Z (recibido: $STABLE)"; exit 1
+        fi
+        if gh release view "$STABLE" --repo "$REPO" > /dev/null 2>&1; then
+          echo "La release $STABLE ya existe"; exit 1
+        fi
+        NIGHTLY="${{ inputs.nightly_tag }}"
+        if [ -z "$NIGHTLY" ]; then
+          NIGHTLY="$(gh api "repos/$REPO/releases" --jq '[.[] | select(.prerelease and (.tag_name | contains("-nightly")))][0].tag_name')"
+        fi
+        test -n "$NIGHTLY" && test "$NIGHTLY" != "null"
+        gh release view "$NIGHTLY" --repo "$REPO" --json isPrerelease --jq '.isPrerelease' | grep -q true
+        echo "NIGHTLY=$NIGHTLY" >> "$GITHUB_ENV"
+        echo "STABLE=$STABLE" >> "$GITHUB_ENV"
+        echo "Promoviendo $NIGHTLY -> $STABLE"
+
+    - name: Download nightly packages
+      run: |
+        gh release download "$NIGHTLY" --repo "$REPO" --dir nightly \
+          --pattern powerscreen-zbolt.tar.gz --pattern powerscreen-zbolt.zip
+
+    - name: Rewrite version and repackage
+      run: |
+        mkdir -p pkg
+        tar xzf nightly/powerscreen-zbolt.tar.gz -C pkg
+        BIN_BEFORE="$(sha256sum pkg/powerscreen/powerscreen | cut -d' ' -f1)"
+        jq --arg v "$STABLE" '.version = $v' pkg/powerscreen/.version > tmp && mv tmp pkg/powerscreen/.version
+        jq --arg v "$STABLE" '.version = $v' pkg/powerscreen/release_info.json > tmp && mv tmp pkg/powerscreen/release_info.json
+        BIN_AFTER="$(sha256sum pkg/powerscreen/powerscreen | cut -d' ' -f1)"
+        test "$BIN_BEFORE" = "$BIN_AFTER"
+        echo "Binario sin cambios: $BIN_AFTER"
+        mkdir -p out
+        tar czf out/powerscreen-zbolt.tar.gz -C pkg .
+        python3 - pkg/powerscreen out/powerscreen-zbolt.zip <<'PY'
+        from pathlib import Path
+        from zipfile import ZIP_DEFLATED, ZipFile
+        import sys
+        source = Path(sys.argv[1])
+        with ZipFile(sys.argv[2], "w", ZIP_DEFLATED) as package:
+            for item in source.rglob("*"):
+                package.write(item, item.relative_to(source))
+        PY
+        unzip -p out/powerscreen-zbolt.zip release_info.json | jq -e --arg v "$STABLE" '.version == $v'
+
+    - name: Publish stable release
+      run: |
+        TARGET="$(gh release view "$NIGHTLY" --repo "$REPO" --json targetCommitish --jq .targetCommitish)"
+        gh release create "$STABLE" out/powerscreen-zbolt.tar.gz out/powerscreen-zbolt.zip \
+          --repo "$REPO" \
+          --title "$STABLE" \
+          --target "$TARGET" \
+          --latest \
+          --notes "Release oficial promovida desde la nightly \`$NIGHTLY\` (mismo binario, probado en la K1C)."
