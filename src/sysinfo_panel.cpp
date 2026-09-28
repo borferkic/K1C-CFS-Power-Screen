@@ -154,6 +154,11 @@ SysInfoPanel::SysInfoPanel()
   , update_button_label(lv_label_create(update_button))
   , update_status(lv_label_create(cont))
   , back_btn(cont, &back, "Back", &SysInfoPanel::_handle_callback, this)
+  , tab_general_btn(NULL)
+  , tab_updates_btn(NULL)
+  , general_page(NULL)
+  , updates_page(NULL)
+  , updates_version_label(NULL)
   , update_overlay(NULL)
   , update_spinner(NULL)
   , update_title(NULL)
@@ -162,7 +167,7 @@ SysInfoPanel::SysInfoPanel()
   , update_timer(NULL)
   , check_running(false)
   , check_done(false)
-  , check_available(false)
+  , check_result(0)
   , update_running(false)
   , update_finished(false)
   , update_exit_code(0)
@@ -223,7 +228,7 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_set_pos(printer_img, 0, 130);
 
   style_card(controls_card);
-  lv_obj_set_size(controls_card, 410, 265);
+  lv_obj_set_size(controls_card, 410, 220);
   lv_obj_set_pos(controls_card, 360, 47);
 
   style_row(disp_sleep_cont, 13);
@@ -298,7 +303,8 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_add_event_cb(loglevel_dd, &SysInfoPanel::_handle_callback,
                       LV_EVENT_VALUE_CHANGED, this);
 
-  style_row(channel_cont, 193);
+  // Fila de canal: se coloca en la pestana Updates (create_tabs).
+  style_row(channel_cont, 0);
   create_row_label(channel_cont, "Update Channel");
   lv_obj_set_size(channel_dd, 130, 46);
   lv_obj_align(channel_dd, LV_ALIGN_RIGHT_MID, -22, 0);
@@ -310,18 +316,17 @@ SysInfoPanel::SysInfoPanel()
   lv_label_set_text(brand_label, "PowerScreen by Boris SdK");
   lv_obj_set_style_text_color(brand_label, lv_color_white(), LV_PART_MAIN);
   lv_obj_set_style_text_font(brand_label, &lv_font_montserrat_20, LV_PART_MAIN);
-  lv_obj_set_pos(brand_label, 376, 337);
+  lv_obj_set_pos(brand_label, 376, 292);
 
   lv_label_set_text(version_label, fmt::format("Version: {}", installed_version()).c_str());
   lv_obj_set_width(version_label, 410);
   lv_obj_set_style_text_color(version_label, lv_color_white(), LV_PART_MAIN);
   lv_obj_set_style_text_font(version_label, &lv_font_montserrat_16, LV_PART_MAIN);
   lv_label_set_long_mode(version_label, LV_LABEL_LONG_CLIP);
-  lv_obj_set_pos(version_label, 376, 363);
+  lv_obj_set_pos(version_label, 376, 318);
 
   lv_obj_clear_flag(update_button, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_size(update_button, 243, 38);
-  lv_obj_set_pos(update_button, 376, 412);
+  lv_obj_set_size(update_button, 300, 50);
   lv_obj_set_style_bg_color(update_button, lv_color_hex(BUTTON_GREY),
                             LV_PART_MAIN | LV_STATE_DEFAULT);
   lv_obj_set_style_bg_opa(update_button, LV_OPA_COVER,
@@ -347,11 +352,11 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_add_event_cb(update_button, &SysInfoPanel::_handle_callback,
                       LV_EVENT_CLICKED, this);
 
-  lv_label_set_text(update_status, "NEW UPDATE AVALIABLE!");
-  lv_obj_set_style_text_color(update_status, lv_color_hex(CARD_BORDER), LV_PART_MAIN);
+  lv_label_set_text(update_status, "");
+  lv_obj_set_style_text_color(update_status, lv_color_white(), LV_PART_MAIN);
   lv_obj_set_style_text_font(update_status, &lv_font_montserrat_20, LV_PART_MAIN);
-  lv_obj_set_pos(update_status, 376, 389);
-  lv_obj_add_flag(update_status, LV_OBJ_FLAG_HIDDEN);
+
+  create_tabs();
 
   lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_FLOATING);
   lv_obj_t *back_container = back_btn.get_container();
@@ -374,6 +379,7 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_set_style_bg_opa(back_right_edge, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_clear_flag(back_right_edge, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, -10, -14);
+  lv_obj_move_foreground(back_btn.get_container());
   lv_obj_move_background(cont);
 
   create_update_overlay();
@@ -407,7 +413,99 @@ void SysInfoPanel::foreground() {
   lv_obj_move_foreground(cont);
   update_clock();
   refresh_network();
-  check_for_update();
+  show_tab(false);
+}
+
+void SysInfoPanel::create_tabs() {
+  // Paginas a pantalla completa, transparentes y no clicables: las
+  // posiciones absolutas de sus hijos se conservan y los toques llegan a los
+  // botones de la barra de titulo.
+  auto create_page = [this]() {
+    lv_obj_t *page = lv_obj_create(cont);
+    style_screen_object(page);
+    lv_obj_set_size(page, LV_PCT(100), LV_PCT(100));
+    lv_obj_set_pos(page, 0, 0);
+    lv_obj_clear_flag(page, LV_OBJ_FLAG_CLICKABLE);
+    return page;
+  };
+  general_page = create_page();
+  updates_page = create_page();
+
+  lv_obj_set_parent(network_card, general_page);
+  lv_obj_set_parent(printer_img, general_page);
+  lv_obj_set_parent(controls_card, general_page);
+  lv_obj_set_parent(brand_label, general_page);
+  lv_obj_set_parent(version_label, general_page);
+
+  // Pestana Updates.
+  lv_obj_t *card = lv_obj_create(updates_page);
+  style_card(card);
+  lv_obj_set_size(card, 730, 330);
+  lv_obj_set_pos(card, 35, 47);
+
+  lv_obj_t *installed_title = lv_label_create(card);
+  lv_label_set_text(installed_title, "Installed version:");
+  lv_obj_set_style_text_color(installed_title, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_font(installed_title, &lv_font_montserrat_20, LV_PART_MAIN);
+  lv_obj_set_pos(installed_title, 22, 18);
+
+  updates_version_label = lv_label_create(card);
+  lv_label_set_text(updates_version_label, installed_version().c_str());
+  lv_label_set_long_mode(updates_version_label, LV_LABEL_LONG_WRAP);
+  lv_obj_set_width(updates_version_label, 680);
+  lv_obj_set_style_text_color(updates_version_label, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
+  lv_obj_set_style_text_font(updates_version_label, &lv_font_montserrat_20, LV_PART_MAIN);
+  lv_obj_set_pos(updates_version_label, 22, 46);
+
+  lv_obj_set_parent(channel_cont, card);
+  lv_obj_set_pos(channel_cont, 0, 88);
+
+  lv_obj_set_parent(update_status, card);
+  lv_label_set_long_mode(update_status, LV_LABEL_LONG_WRAP);
+  lv_obj_set_width(update_status, 680);
+  lv_obj_set_pos(update_status, 22, 160);
+
+  lv_obj_set_parent(update_button, card);
+  lv_obj_set_pos(update_button, 22, 210);
+
+  // Botones de pestana en la barra de titulo (izquierda).
+  auto create_tab_btn = [this](const char *text, lv_coord_t x) {
+    lv_obj_t *btn = lv_btn_create(title_bar);
+    lv_obj_set_size(btn, 120, 28);
+    lv_obj_set_pos(btn, x, 2);
+    lv_obj_set_style_radius(btn, 8, LV_PART_MAIN);
+    lv_obj_set_style_shadow_width(btn, 0, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(btn, lv_color_hex(0x3A3A3A), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(btn, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_t *label = lv_label_create(btn);
+    lv_label_set_text(label, text);
+    lv_obj_set_style_text_color(label, lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_text_font(label, &lv_font_montserrat_16, LV_PART_MAIN);
+    lv_obj_center(label);
+    lv_obj_add_event_cb(btn, &SysInfoPanel::_handle_callback, LV_EVENT_CLICKED, this);
+    return btn;
+  };
+  tab_general_btn = create_tab_btn("General", 8);
+  tab_updates_btn = create_tab_btn("Updates", 134);
+
+  lv_obj_move_foreground(title_bar);
+  show_tab(false);
+}
+
+void SysInfoPanel::show_tab(bool updates) {
+  if (updates) {
+    lv_obj_add_flag(general_page, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(updates_page, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_state(tab_general_btn, LV_STATE_CHECKED);
+    lv_obj_add_state(tab_updates_btn, LV_STATE_CHECKED);
+    lv_label_set_text(updates_version_label, installed_version().c_str());
+    check_for_update();
+  } else {
+    lv_obj_clear_flag(general_page, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(updates_page, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_state(tab_general_btn, LV_STATE_CHECKED);
+    lv_obj_clear_state(tab_updates_btn, LV_STATE_CHECKED);
+  }
 }
 
 void SysInfoPanel::refresh_network() {
@@ -475,7 +573,8 @@ std::string phase_text(const std::string &status) {
 }
 
 void SysInfoPanel::check_for_update() {
-  lv_obj_add_flag(update_status, LV_OBJ_FLAG_HIDDEN);
+  lv_label_set_text(update_status, "Checking for updates...");
+  lv_obj_set_style_text_color(update_status, lv_color_white(), LV_PART_MAIN);
   lv_obj_add_state(update_button, LV_STATE_DISABLED);
 
   // La consulta a GitHub tarda varios segundos: se hace en otro hilo para no
@@ -485,21 +584,25 @@ void SysInfoPanel::check_for_update() {
   }
 
   run_detached([this]() {
-    bool available = false;
+    int result_code = 3;
     try {
       const fs::path script = update_script_path();
       if (fs::exists(script)) {
         const std::vector<std::string> command = {script.string(), "--check"};
         const auto output = sp::check_output(command);
         const std::string result(output.buf.data(), output.length);
-        available = result.rfind("UPDATE_AVAILABLE:", 0) == 0;
+        if (result.rfind("UPDATE_AVAILABLE:", 0) == 0) {
+          result_code = 1;
+        } else if (result.rfind("UP_TO_DATE:", 0) == 0) {
+          result_code = 2;
+        }
       } else {
         spdlog::warn("Failed to check for updates. Did not find update script.");
       }
     } catch (const std::exception &error) {
       spdlog::warn("Failed to check for PowerScreen updates: {}", error.what());
     }
-    check_available = available;
+    check_result = result_code;
     check_done = true;
     check_running = false;
   });
@@ -556,9 +659,22 @@ void SysInfoPanel::start_update() {
 }
 
 void SysInfoPanel::poll_update() {
-  if (check_done.exchange(false) && check_available) {
-    lv_obj_clear_flag(update_status, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_clear_state(update_button, LV_STATE_DISABLED);
+  if (check_done.exchange(false)) {
+    switch (check_result.load()) {
+    case 1:
+      lv_label_set_text(update_status, "NEW UPDATE AVAILABLE!");
+      lv_obj_set_style_text_color(update_status, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
+      lv_obj_clear_state(update_button, LV_STATE_DISABLED);
+      break;
+    case 2:
+      lv_label_set_text(update_status, "PowerScreen is up to date.");
+      lv_obj_set_style_text_color(update_status, lv_color_white(), LV_PART_MAIN);
+      break;
+    default:
+      lv_label_set_text(update_status, "Could not check for updates.");
+      lv_obj_set_style_text_color(update_status, lv_color_hex(0xF44336), LV_PART_MAIN);
+      break;
+    }
   }
 
   if (!update_running) {
@@ -696,7 +812,11 @@ void SysInfoPanel::handle_callback(lv_event_t *e)
   if (lv_event_get_code(e) == LV_EVENT_CLICKED) {
     lv_obj_t *btn = lv_event_get_current_target(e);
 
-    if (btn == back_btn.get_container()) {
+    if (btn == tab_general_btn) {
+      show_tab(false);
+    } else if (btn == tab_updates_btn) {
+      show_tab(true);
+    } else if (btn == back_btn.get_container()) {
       lv_obj_move_background(cont);
     } else if (btn == update_button) {
       if (lv_obj_has_state(update_button, LV_STATE_DISABLED)) {

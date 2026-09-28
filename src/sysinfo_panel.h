@@ -62,6 +62,13 @@ class SysInfoPanel {
 
   ButtonContainer back_btn;
 
+  // Pestanas General / Updates (creadas en el cuerpo del constructor).
+  lv_obj_t *tab_general_btn;
+  lv_obj_t *tab_updates_btn;
+  lv_obj_t *general_page;
+  lv_obj_t *updates_page;
+  lv_obj_t *updates_version_label;
+
   // Pantalla de espera de la actualizacion (sobre lv_layer_top).
   lv_obj_t *update_overlay;
   lv_obj_t *update_spinner;
@@ -74,7 +81,9 @@ class SysInfoPanel {
   // solo escriben aqui y el timer (hilo de LVGL) aplica los cambios.
   std::atomic_bool check_running;
   std::atomic_bool check_done;
-  std::atomic_bool check_available;
+  // Resultado de la ultima consulta: 0 sin datos, 1 hay version nueva,
+  // 2 al dia, 3 error.
+  std::atomic_int check_result;
   std::atomic_bool update_running;
   std::atomic_bool update_finished;
   std::atomic_int update_exit_code;
@@ -85,6 +94,8 @@ class SysInfoPanel {
   void refresh_network();
   void check_for_update();
   void create_update_overlay();
+  void create_tabs();
+  void show_tab(bool updates);
   void show_update_overlay(const std::string &title, const std::string &phase, bool busy);
   void poll_update();
   bool is_printing();
