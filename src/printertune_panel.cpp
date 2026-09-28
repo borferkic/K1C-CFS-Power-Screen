@@ -2,7 +2,11 @@
 #include "state.h"
 #include "spdlog/spdlog.h"
 
+#include <algorithm>
+#include <cctype>
 #include <experimental/filesystem>
+#include <utility>
+#include <vector>
 
 namespace fs = std::experimental::filesystem;
 
@@ -17,6 +21,10 @@ LV_IMG_DECLARE(print);
 
 PrinterTunePanel::PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent, FineTunePanel &finetune)
   : cont(lv_obj_create(parent))
+  , lv_lock(l)
+  , tmc_tune_available(false)
+  , tmc_status_available(false)
+  , power_devices_available(false)
   , bedmesh_panel(c, l)
   , finetune_panel(finetune)
   , limits_panel(c, l)
@@ -48,18 +56,47 @@ PrinterTunePanel::PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t 
   lv_obj_set_grid_dsc_array(cont, grid_main_col_dsc, grid_main_row_dsc);
   lv_obj_set_style_pad_row(cont, 20, LV_PART_MAIN);
 
-  // row 1
-  lv_obj_set_grid_cell(bedmesh_btn.get_button(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 1, 1);
-  lv_obj_set_grid_cell(finetune_btn.get_button(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 1, 1);
-  lv_obj_set_grid_cell(inputshaper_btn.get_button(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 1, 1);
-  lv_obj_set_grid_cell(belts_calibration_btn.get_button(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 1, 1);
+  relayout();
+}
 
-  // row 2
-  lv_obj_set_grid_cell(limits_btn.get_button(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(tmc_tune_btn.get_button(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(tmc_status_btn.get_button(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(power_devices_btn.get_button(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
-  // lv_obj_set_grid_cell(restart_firmware_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
+void PrinterTunePanel::relayout() {
+  const std::vector<std::pair<SquareButton *, bool>> buttons = {
+    {&bedmesh_btn, true},
+    {&finetune_btn, true},
+    {&inputshaper_btn, true},
+    {&belts_calibration_btn, true},
+    {&limits_btn, true},
+    {&tmc_tune_btn, tmc_tune_available},
+    {&tmc_status_btn, tmc_status_available},
+    {&power_devices_btn, power_devices_available},
+  };
+
+  int slot = 0;
+  for (const auto &entry : buttons) {
+    lv_obj_t *btn = entry.first->get_button();
+    if (!entry.second) {
+      lv_obj_add_flag(btn, LV_OBJ_FLAG_HIDDEN);
+      continue;
+    }
+    lv_obj_clear_flag(btn, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_CENTER, slot % 4, 1,
+                         LV_GRID_ALIGN_START, 1 + slot / 4, 1);
+    slot++;
+  }
+  spdlog::debug("calibrations: {} buttons (tmc_tune={}, tmc_status={}, power={})",
+                slot, tmc_tune_available, tmc_status_available, power_devices_available);
+}
+
+void PrinterTunePanel::set_power_devices(json &j) {
+  power_panel.create_devices(j);
+
+  auto &devices = j["/result/devices"_json_pointer];
+  const bool available = devices.is_array() && !devices.empty();
+  std::lock_guard<std::mutex> lock(lv_lock);
+  if (available != power_devices_available) {
+    power_devices_available = available;
+    relayout();
+  }
 }
 
 PrinterTunePanel::~PrinterTunePanel() {
@@ -88,16 +125,36 @@ void PrinterTunePanel::init(json &j) {
 
   // TODO: handle remote powerscreen instance
   State *s = State::get_instance();
+  tmc_tune_available = false;
   auto kp = s->get_data("/printer_info/klipper_path"_json_pointer);
   if (!kp.is_null()) {
     auto p = fs::path(kp.template get<std::string>()) / "klippy/extras/motor_database.cfg";
     if (fs::exists(p)) {
+      tmc_tune_available = true;
       tmc_tune_btn.enable();
       tmc_tune_panel.init(j, p);
-    } else {
-      tmc_tune_btn.disable();
     }
   }
+
+  // TMC Metrics necesita la macro que carga el modulo tmcstatus, o que el
+  // modulo ya este cargado.
+  tmc_status_available = false;
+  auto &objects = s->get_data("/printer_objs/objects"_json_pointer);
+  if (objects.is_array()) {
+    for (auto &o : objects) {
+      if (!o.is_string()) {
+        continue;
+      }
+      std::string name = o.template get<std::string>();
+      std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+      if (name == "gcode_macro _powerscreen_load_module" || name == "tmcstatus") {
+        tmc_status_available = true;
+        break;
+      }
+    }
+  }
+
+  relayout();
 }
 
 void PrinterTunePanel::handle_callback(lv_event_t *event) {
