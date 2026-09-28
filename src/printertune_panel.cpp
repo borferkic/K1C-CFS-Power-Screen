@@ -136,8 +136,8 @@ void PrinterTunePanel::init(json &j) {
     }
   }
 
-  // TMC Metrics necesita la macro que carga el modulo tmcstatus, o que el
-  // modulo ya este cargado.
+  // TMC Metrics needs the command that loads the tmcstatus module, or the
+  // module to be loaded already.
   tmc_status_available = false;
   auto &objects = s->get_data("/printer_objs/objects"_json_pointer);
   if (objects.is_array()) {

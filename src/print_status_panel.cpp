@@ -154,7 +154,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 
   lv_obj_clear_flag(detail_cont, LV_OBJ_FLAG_SCROLLABLE);  
   lv_obj_set_size(detail_cont, LV_PCT(100), LV_PCT(100));
-  // Mantener 5 px extra en la fila compartida de miniatura e informacion.
+  // Keep 5 px extra in the row shared by the thumbnail and the info.
   lv_obj_set_style_min_height(detail_cont,
                               THUMBNAIL_CONTAINER_SIZE + PREVIEW_AREA_EXTRA_HEIGHT,
                               LV_PART_MAIN);

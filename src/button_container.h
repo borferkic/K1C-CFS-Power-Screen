@@ -46,7 +46,7 @@ class ButtonContainer {
   bool has_image;
   std::string prompt_text;
   std::function<void()> prompt_callback;
-  // Boton Back compacto: pastilla horizontal "<- Back" en lugar de icono grande.
+  // Compact Back button: horizontal "<- Back" pill instead of a large icon.
   bool compact;
   lv_obj_t *pill;
 };

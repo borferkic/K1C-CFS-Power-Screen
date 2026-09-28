@@ -22,7 +22,7 @@ class PrinterTunePanel {
   BedMeshPanel &get_bedmesh_panel();
   PowerPanel &get_power_panel();
   void init(json &j);
-  // Recibe la respuesta de machine.device_power.devices (hilo del websocket).
+  // Receives the machine.device_power.devices response (websocket thread).
   void set_power_devices(json &j);
   void handle_callback(lv_event_t *event);
 
@@ -54,7 +54,7 @@ class PrinterTunePanel {
   SquareButton tmc_status_btn;
   SquareButton power_devices_btn;
 
-  // Coloca en la rejilla solo los botones con soporte en la impresora.
+  // Place in the grid only the buttons the printer supports.
   void relayout();
   
 };

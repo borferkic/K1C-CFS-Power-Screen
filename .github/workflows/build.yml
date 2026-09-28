@@ -1,8 +1,8 @@
 name: powerscreen zbolt build
 
 on:
-  # Las releases oficiales no se compilan aqui: se promueven desde una nightly
-  # probada con .github/workflows/promote.yml.
+  # Official releases are not built here: they are promoted from a tested
+  # nightly with .github/workflows/promote.yml.
   push:
     branches: [ "develop", "main" ]
 
@@ -43,7 +43,7 @@ jobs:
 
     - name: set powerscreen version
       run: |
-        # VERSION contiene la proxima version oficial; las nightlies cuelgan de ella.
+        # VERSION holds the next official version; nightlies are based on it.
         BASE_VERSION="$(tr -d '[:space:]' < VERSION)"
         test -n "$BASE_VERSION"
         NIGHTLY_VERSION="v${BASE_VERSION}-nightly.$(date -u +'%Y%m%d.%H%M%SZ')"

@@ -30,9 +30,9 @@ LV_IMG_DECLARE(device);
 #endif
 
 namespace {
-// Version del paquete instalado (.version junto al ejecutable). Una release
-// oficial promovida reutiliza el binario de la nightly, asi que la version
-// compilada solo sirve de respaldo.
+// Installed package version (.version next to the executable). A promoted
+// official release reuses the nightly binary, so the compiled-in version
+// is only a fallback.
 std::string installed_version() {
   try {
     const fs::path file = fs::canonical("/proc/self/exe").parent_path() / ".version";
@@ -49,7 +49,7 @@ std::string installed_version() {
   return GS_VERSION;
 }
 
-// Canal de actualizacion elegido en System: "nightly" (por defecto) o "stable".
+// Update channel selected in System: "nightly" (default) or "stable".
 std::string update_channel() {
   auto &v = Config::get_instance()->get_json("/update_channel");
   if (v.is_string() && v.get<std::string>() == "stable") {
@@ -303,7 +303,7 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_add_event_cb(loglevel_dd, &SysInfoPanel::_handle_callback,
                       LV_EVENT_VALUE_CHANGED, this);
 
-  // Fila de canal: se coloca en la pestana Updates (create_tabs).
+  // Channel row: placed in the Updates tab (create_tabs).
   style_row(channel_cont, 0);
   create_row_label(channel_cont, "Update Channel");
   lv_obj_set_size(channel_dd, 130, 46);
@@ -417,9 +417,8 @@ void SysInfoPanel::foreground() {
 }
 
 void SysInfoPanel::create_tabs() {
-  // Paginas a pantalla completa, transparentes y no clicables: las
-  // posiciones absolutas de sus hijos se conservan y los toques llegan a los
-  // botones de la barra de titulo.
+  // Full-screen, transparent, non-clickable pages: children keep their
+  // absolute positions and touches still reach the title bar buttons.
   auto create_page = [this]() {
     lv_obj_t *page = lv_obj_create(cont);
     style_screen_object(page);
@@ -437,7 +436,7 @@ void SysInfoPanel::create_tabs() {
   lv_obj_set_parent(brand_label, general_page);
   lv_obj_set_parent(version_label, general_page);
 
-  // Pestana Updates.
+  // Updates tab.
   lv_obj_t *card = lv_obj_create(updates_page);
   style_card(card);
   lv_obj_set_size(card, 730, 330);
@@ -468,7 +467,7 @@ void SysInfoPanel::create_tabs() {
   lv_obj_set_parent(update_button, card);
   lv_obj_set_pos(update_button, 22, 210);
 
-  // Botones de pestana en la barra de titulo (izquierda).
+  // Tab buttons on the left of the title bar.
   auto create_tab_btn = [this](const char *text, lv_coord_t x) {
     lv_obj_t *btn = lv_btn_create(title_bar);
     lv_obj_set_size(btn, 120, 28);
@@ -535,9 +534,9 @@ void *run_task(void *arg) {
   return NULL;
 }
 
-// Hilo desacoplado con pthread_create directo. No usar std::thread: en el
-// binario estatico MIPS su pthread_create debil queda en NULL y el proceso
-// muere con SIGSEGV (epc = 0) al crear el hilo.
+// Detached thread created with pthread_create. Do not use std::thread: in the
+// static MIPS binary its weak pthread_create resolves to NULL and the process
+// dies with SIGSEGV (epc = 0) when the thread is created.
 void run_detached(std::function<void()> fn) {
   auto *task = new std::function<void()>(std::move(fn));
   pthread_t tid;
@@ -556,7 +555,7 @@ std::string read_first_line(const char *path) {
   return line;
 }
 
-// Convierte "FASE:detalle" escrito por update.sh en texto para la pantalla.
+// Turn the "PHASE:detail" written by update.sh into on-screen text.
 std::string phase_text(const std::string &status) {
   const auto sep = status.find(':');
   const std::string phase = status.substr(0, sep);
@@ -577,8 +576,8 @@ void SysInfoPanel::check_for_update() {
   lv_obj_set_style_text_color(update_status, lv_color_white(), LV_PART_MAIN);
   lv_obj_add_state(update_button, LV_STATE_DISABLED);
 
-  // La consulta a GitHub tarda varios segundos: se hace en otro hilo para no
-  // congelar la pantalla. poll_update() aplica el resultado.
+  // The GitHub query takes several seconds: run it on another thread so the
+  // screen does not freeze. poll_update() applies the result.
   if (check_running.exchange(true)) {
     return;
   }
@@ -690,7 +689,7 @@ void SysInfoPanel::poll_update() {
     return;
   }
 
-  // El script termino sin reiniciar PowerScreen: error o sin cambios.
+  // The script ended without restarting PowerScreen: error or no changes.
   update_running = false;
   if (status.rfind("UP_TO_DATE", 0) == 0) {
     show_update_overlay("No update needed", phase_text(status), false);
@@ -709,7 +708,7 @@ void SysInfoPanel::create_update_overlay() {
   lv_obj_set_size(update_overlay, LV_PCT(100), LV_PCT(100));
   lv_obj_set_style_bg_color(update_overlay, lv_color_black(), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(update_overlay, LV_OPA_80, LV_PART_MAIN);
-  // Captura todos los toques para bloquear la interfaz durante la actualizacion.
+  // Swallow all touches to lock the UI while updating.
   lv_obj_add_flag(update_overlay, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_clear_flag(update_overlay, LV_OBJ_FLAG_SCROLLABLE);
 
@@ -771,8 +770,8 @@ void SysInfoPanel::show_update_overlay(const std::string &title, const std::stri
 }
 
 void SysInfoPanel::show_updated_notice() {
-  // update.sh deja este archivo antes de reiniciar; la version nueva lo
-  // muestra una sola vez al arrancar.
+  // update.sh leaves this file before restarting; the new version shows
+  // it once on startup.
   const std::string version = read_first_line(UPDATE_DONE_FILE);
   if (version.empty()) {
     return;
@@ -849,7 +848,7 @@ void SysInfoPanel::handle_callback(lv_event_t *e)
         spdlog::debug("setting update_channel to {}", channel);
         conf->set<std::string>("/update_channel", channel);
         conf->save();
-        // Alinea el canal del Update Manager de Moonraker/Fluidd.
+        // Align the Moonraker/Fluidd Update Manager channel.
         run_detached([channel]() {
           try {
             sp::call(std::vector<std::string>{update_script_path().string(), "--set-channel", channel});

@@ -52,7 +52,7 @@ class SettingPanel {
   SquareButton powerscreen_update_btn;
   SquareButton printer_select_btn;
 
-  // Confirmacion antes de reiniciar Klipper o el firmware.
+  // Confirmation before restarting Klipper or the firmware.
   lv_obj_t *confirm_overlay;
   lv_obj_t *confirm_label;
   lv_obj_t *confirm_cancel_btn;

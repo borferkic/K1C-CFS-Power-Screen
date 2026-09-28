@@ -15,7 +15,7 @@ class SysInfoPanel {
 
   void foreground();
   void handle_callback(lv_event_t *event);
-  // Inicia la actualizacion en segundo plano mostrando la pantalla de espera.
+  // Start the update in the background and show the waiting screen.
   void start_update();
 
  static void _handle_callback(lv_event_t *event) {
@@ -62,14 +62,14 @@ class SysInfoPanel {
 
   ButtonContainer back_btn;
 
-  // Pestanas General / Updates (creadas en el cuerpo del constructor).
+  // General / Updates tabs (created in the constructor body).
   lv_obj_t *tab_general_btn;
   lv_obj_t *tab_updates_btn;
   lv_obj_t *general_page;
   lv_obj_t *updates_page;
   lv_obj_t *updates_version_label;
 
-  // Pantalla de espera de la actualizacion (sobre lv_layer_top).
+  // Update waiting screen (on lv_layer_top).
   lv_obj_t *update_overlay;
   lv_obj_t *update_spinner;
   lv_obj_t *update_title;
@@ -77,12 +77,12 @@ class SysInfoPanel {
   lv_obj_t *update_close_btn;
   lv_timer_t *update_timer;
 
-  // Estado compartido con los hilos de trabajo. Los hilos nunca tocan LVGL:
-  // solo escriben aqui y el timer (hilo de LVGL) aplica los cambios.
+  // State shared with worker threads. Workers never touch LVGL: they only
+  // write here and the timer (LVGL thread) applies the changes.
   std::atomic_bool check_running;
   std::atomic_bool check_done;
-  // Resultado de la ultima consulta: 0 sin datos, 1 hay version nueva,
-  // 2 al dia, 3 error.
+  // Last check result: 0 no data, 1 update available,
+  // 2 up to date, 3 error.
   std::atomic_int check_result;
   std::atomic_bool update_running;
   std::atomic_bool update_finished;

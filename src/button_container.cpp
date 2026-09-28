@@ -73,9 +73,9 @@ ButtonContainer::ButtonContainer(lv_obj_t *parent,
   lv_obj_set_style_text_color(label, lv_palette_darken(LV_PALETTE_GREY, 1), LV_STATE_DISABLED);
 
   if (compact) {
-    // Pastilla gris con flecha y texto en una linea. La pastilla es un hijo
-    // no clicable para que los toques sigan llegando a btn_cont y los estilos
-    // que cada panel aplica al contenedor no la deformen.
+    // Grey pill with arrow and text on one line. The pill is a non-clickable
+    // child so touches still reach btn_cont and the styles each panel applies
+    // to the container do not distort it.
     lv_obj_add_flag(btn, LV_OBJ_FLAG_HIDDEN);
     lv_obj_set_size(btn_cont, BACK_PILL_WIDTH, BACK_PILL_HEIGHT);
 
@@ -124,7 +124,7 @@ lv_obj_t *ButtonContainer::get_button() {
 
 void ButtonContainer::set_fixed_size(lv_coord_t width, lv_coord_t height) {
   if (compact) {
-    // El Back conserva su tamano compacto aunque el panel pida otro.
+    // Back keeps its compact size even if the panel asks for another one.
     lv_obj_set_size(btn_cont, BACK_PILL_WIDTH, BACK_PILL_HEIGHT);
     return;
   }

@@ -1,18 +1,18 @@
 name: promote nightly to stable
 
-# Publica como release oficial una nightly ya probada en la K1C, sin
-# recompilar: el binario es exactamente el de la nightly. Solo se reescribe la
-# version en .version y release_info.json.
+# Publish a nightly already tested on the K1C as an official release without
+# rebuilding: the binary is exactly the nightly one. Only the version in
+# .version and release_info.json is rewritten.
 
 on:
   workflow_dispatch:
     inputs:
       nightly_tag:
-        description: "Nightly a promover (vacio = la nightly mas reciente)"
+        description: "Nightly to promote (empty = latest nightly)"
         required: false
         default: ""
       stable_version:
-        description: "Version oficial (ej. v0.34.0)"
+        description: "Official version (e.g. v0.34.0)"
         required: true
 
 permissions:
@@ -29,10 +29,10 @@ jobs:
       run: |
         STABLE="${{ inputs.stable_version }}"
         if ! echo "$STABLE" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
-          echo "stable_version debe tener el formato vX.Y.Z (recibido: $STABLE)"; exit 1
+          echo "stable_version must use the vX.Y.Z format (got: $STABLE)"; exit 1
         fi
         if gh release view "$STABLE" --repo "$REPO" > /dev/null 2>&1; then
-          echo "La release $STABLE ya existe"; exit 1
+          echo "Release $STABLE already exists"; exit 1
         fi
         NIGHTLY="${{ inputs.nightly_tag }}"
         if [ -z "$NIGHTLY" ]; then
@@ -42,7 +42,7 @@ jobs:
         gh release view "$NIGHTLY" --repo "$REPO" --json isPrerelease --jq '.isPrerelease' | grep -q true
         echo "NIGHTLY=$NIGHTLY" >> "$GITHUB_ENV"
         echo "STABLE=$STABLE" >> "$GITHUB_ENV"
-        echo "Promoviendo $NIGHTLY -> $STABLE"
+        echo "Promoting $NIGHTLY -> $STABLE"
 
     - name: Download nightly packages
       run: |
@@ -58,7 +58,7 @@ jobs:
         jq --arg v "$STABLE" '.version = $v' pkg/powerscreen/release_info.json > tmp && mv tmp pkg/powerscreen/release_info.json
         BIN_AFTER="$(sha256sum pkg/powerscreen/powerscreen | cut -d' ' -f1)"
         test "$BIN_BEFORE" = "$BIN_AFTER"
-        echo "Binario sin cambios: $BIN_AFTER"
+        echo "Binary unchanged: $BIN_AFTER"
         mkdir -p out
         tar czf out/powerscreen-zbolt.tar.gz -C pkg .
         python3 - pkg/powerscreen out/powerscreen-zbolt.zip <<'PY'
@@ -80,4 +80,4 @@ jobs:
           --title "$STABLE" \
           --target "$TARGET" \
           --latest \
-          --notes "Release oficial promovida desde la nightly \`$NIGHTLY\` (mismo binario, probado en la K1C)."
+          --notes "Official release promoted from nightly \`$NIGHTLY\` (same binary, tested on the K1C)."

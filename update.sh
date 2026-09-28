@@ -1,12 +1,12 @@
 #!/bin/sh
 #
-# Uso:
-#   update.sh                       actualiza segun el canal configurado
-#   update.sh --check               solo consulta (UPDATE_AVAILABLE/UP_TO_DATE)
-#   update.sh --set-channel <c>     alinea el Update Manager de Moonraker (nightly|stable)
+# Usage:
+#   update.sh                       update using the configured channel
+#   update.sh --check               check only (UPDATE_AVAILABLE/UP_TO_DATE)
+#   update.sh --set-channel <c>     align the Moonraker Update Manager (nightly|stable)
 #
-# Canal: "update_channel" en powerscreenconfig.json. nightly = release mas
-# reciente (incluye pre-releases); stable = release oficial mas reciente.
+# Channel: "update_channel" in powerscreenconfig.json. nightly = latest
+# release (pre-releases included); stable = latest official release.
 
 POWERSCREEN_DIR=$(dirname "$0")
 VERSION_FILE=$POWERSCREEN_DIR/.version
@@ -19,13 +19,13 @@ CHECK_ONLY=false
 STATUS_FILE=/tmp/powerscreen-update.status
 DONE_FILE=/tmp/powerscreen-update.done
 
-# Fases que lee la pantalla de espera: CHECKING, DOWNLOADING:<ver>,
-# EXTRACTING:<ver>, RESTARTING:<ver>, UP_TO_DATE:<ver>, ERROR:<motivo>
+# Phases read by the update screen: CHECKING, DOWNLOADING:<ver>,
+# EXTRACTING:<ver>, RESTARTING:<ver>, UP_TO_DATE:<ver>, ERROR:<reason>
 set_status() {
     [ "$CHECK_ONLY" = "true" ] || echo "$1" > "$STATUS_FILE"
 }
 
-# Moonraker usa "beta" para incluir pre-releases y "stable" para las oficiales.
+# Moonraker uses "beta" to include pre-releases and "stable" for official ones.
 set_moonraker_channel() {
     [ -f "$MOONRAKER_UPDATE_CONF" ] || return 0
     if [ "$1" = "stable" ]; then target=stable; else target=beta; fi
@@ -87,8 +87,8 @@ case "$CURRENT_VERSION" in
     nightly-*) legacy_version=true ;;
 esac
 
-# Al pasar de una nightly al canal stable se ofrece la oficial aunque su
-# numero ordene por debajo (v0.34.0 < v0.34.0-nightly.* para sort -V).
+# When moving from a nightly to the stable channel, offer the official release
+# even if it sorts lower (v0.34.0 < v0.34.0-nightly.* for sort -V).
 switching_to_stable=false
 case "$CURRENT_VERSION" in
     *-nightly*) [ "$CHANNEL" = "stable" ] && switching_to_stable=true ;;
