@@ -198,7 +198,7 @@ SysInfoPanel::SysInfoPanel()
   clock_timer = lv_timer_create(&SysInfoPanel::_update_clock_cb, 1000, this);
 
   style_card(network_card);
-  lv_obj_set_size(network_card, 300, 104);
+  lv_obj_set_size(network_card, 264, 104);
   lv_obj_set_pos(network_card, 35, 47);
 
   lv_label_set_text(network_title_label, "Network:");
@@ -206,14 +206,14 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_set_style_text_font(network_title_label, &lv_font_montserrat_20, LV_PART_MAIN);
   lv_obj_set_pos(network_title_label, 32, 18);
 
-  lv_obj_set_width(network_name_label, 250);
+  lv_obj_set_width(network_name_label, 225);
   lv_obj_set_height(network_name_label, 24);
   lv_obj_set_style_text_color(network_name_label, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
   lv_obj_set_style_text_font(network_name_label, &lv_font_montserrat_20, LV_PART_MAIN);
   lv_label_set_long_mode(network_name_label, LV_LABEL_LONG_DOT);
   lv_obj_set_pos(network_name_label, 32, 42);
 
-  lv_obj_set_width(network_ip_label, 250);
+  lv_obj_set_width(network_ip_label, 225);
   lv_obj_set_height(network_ip_label, 24);
   lv_obj_set_style_text_color(network_ip_label, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
   lv_obj_set_style_text_font(network_ip_label, &lv_font_montserrat_20, LV_PART_MAIN);
@@ -221,8 +221,6 @@ SysInfoPanel::SysInfoPanel()
 
   lv_img_set_src(printer_img, &device);
   lv_obj_set_pos(printer_img, 0, 130);
-  // La columna izquierda la ocupa ahora la tarjeta PowerScreen.
-  lv_obj_add_flag(printer_img, LV_OBJ_FLAG_HIDDEN);
 
   style_card(controls_card);
   lv_obj_set_size(controls_card, 410, 265);
@@ -309,34 +307,21 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_add_event_cb(channel_dd, &SysInfoPanel::_handle_callback,
                       LV_EVENT_VALUE_CHANGED, this);
 
-  // Columna izquierda: tarjeta PowerScreen (marca, version y actualizacion)
-  // debajo de Network; la columna derecha queda solo para ajustes.
-  lv_obj_t *about_card = lv_obj_create(cont);
-  style_card(about_card);
-  lv_obj_set_size(about_card, 300, 222);
-  lv_obj_set_pos(about_card, 35, 165);
-  lv_obj_set_parent(brand_label, about_card);
-  lv_obj_set_parent(version_label, about_card);
-  lv_obj_set_parent(update_status, about_card);
-  lv_obj_set_parent(update_button, about_card);
-
   lv_label_set_text(brand_label, "PowerScreen by Boris SdK");
   lv_obj_set_style_text_color(brand_label, lv_color_white(), LV_PART_MAIN);
   lv_obj_set_style_text_font(brand_label, &lv_font_montserrat_20, LV_PART_MAIN);
-  lv_obj_set_width(brand_label, 268);
-  lv_label_set_long_mode(brand_label, LV_LABEL_LONG_WRAP);
-  lv_obj_set_pos(brand_label, 16, 12);
+  lv_obj_set_pos(brand_label, 376, 337);
 
-  lv_label_set_text(version_label, fmt::format("Version:\n{}", installed_version()).c_str());
-  lv_obj_set_width(version_label, 268);
+  lv_label_set_text(version_label, fmt::format("Version: {}", installed_version()).c_str());
+  lv_obj_set_width(version_label, 410);
   lv_obj_set_style_text_color(version_label, lv_color_white(), LV_PART_MAIN);
-  lv_obj_set_style_text_font(version_label, &lv_font_montserrat_14, LV_PART_MAIN);
-  lv_label_set_long_mode(version_label, LV_LABEL_LONG_WRAP);
-  lv_obj_set_pos(version_label, 16, 48);
+  lv_obj_set_style_text_font(version_label, &lv_font_montserrat_16, LV_PART_MAIN);
+  lv_label_set_long_mode(version_label, LV_LABEL_LONG_CLIP);
+  lv_obj_set_pos(version_label, 376, 363);
 
   lv_obj_clear_flag(update_button, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_size(update_button, 268, 46);
-  lv_obj_set_pos(update_button, 16, 160);
+  lv_obj_set_size(update_button, 243, 38);
+  lv_obj_set_pos(update_button, 376, 412);
   lv_obj_set_style_bg_color(update_button, lv_color_hex(BUTTON_GREY),
                             LV_PART_MAIN | LV_STATE_DEFAULT);
   lv_obj_set_style_bg_opa(update_button, LV_OPA_COVER,
@@ -362,10 +347,10 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_add_event_cb(update_button, &SysInfoPanel::_handle_callback,
                       LV_EVENT_CLICKED, this);
 
-  lv_label_set_text(update_status, "NEW UPDATE AVAILABLE!");
+  lv_label_set_text(update_status, "NEW UPDATE AVALIABLE!");
   lv_obj_set_style_text_color(update_status, lv_color_hex(CARD_BORDER), LV_PART_MAIN);
-  lv_obj_set_style_text_font(update_status, &lv_font_montserrat_16, LV_PART_MAIN);
-  lv_obj_set_pos(update_status, 16, 128);
+  lv_obj_set_style_text_font(update_status, &lv_font_montserrat_20, LV_PART_MAIN);
+  lv_obj_set_pos(update_status, 376, 389);
   lv_obj_add_flag(update_status, LV_OBJ_FLAG_HIDDEN);
 
   lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_FLOATING);
