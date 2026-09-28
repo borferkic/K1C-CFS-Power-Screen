@@ -149,7 +149,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
     lv_obj_set_width(button, file_action_width);
     lv_obj_set_style_bg_color(button, file_button_grey, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(button, lv_color_hex(0x444444), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(button, lv_color_hex(0x3A3A3A), LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_border_width(button, 0, LV_PART_MAIN);
     lv_obj_set_style_radius(button, 12, LV_PART_MAIN);
@@ -370,7 +370,7 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_add_event_cb(card, &PrintPanel::_handle_file_card, LV_EVENT_LONG_PRESSED, this);
     lv_obj_set_style_bg_color(card, lv_color_hex(0x555555), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(card, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(card, lv_color_hex(0x444444), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(card, lv_color_hex(0x3A3A3A), LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_bg_opa(card, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_border_width(card, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_width(card, 2, LV_PART_MAIN | LV_STATE_CHECKED);
@@ -386,7 +386,7 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_set_size(thumbnail_frame, 112, 112);
     lv_obj_clear_flag(thumbnail_frame, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_clear_flag(thumbnail_frame, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_style_bg_color(thumbnail_frame, lv_color_hex(0x404040), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(thumbnail_frame, lv_color_hex(0x555555), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(thumbnail_frame, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_set_style_border_width(thumbnail_frame, 0, LV_PART_MAIN);
     lv_obj_set_style_radius(thumbnail_frame, 6, LV_PART_MAIN);
@@ -399,7 +399,7 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_set_size(thumbnail, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
     lv_obj_set_style_text_font(thumbnail, &lv_font_montserrat_20, LV_PART_MAIN);
     lv_obj_set_style_img_recolor(thumbnail,
-                                 directory ? lv_color_hex(CREALITY_GREEN) : lv_color_hex(0xAAAAAA),
+                                 directory ? lv_color_hex(CREALITY_GREEN) : lv_color_white(),
                                  LV_PART_MAIN);
     lv_obj_set_style_img_recolor_opa(thumbnail, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_center(thumbnail);

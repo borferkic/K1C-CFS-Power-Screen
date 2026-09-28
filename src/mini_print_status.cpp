@@ -60,7 +60,7 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
     lv_obj_set_size(label, 40 * scale, 40 * scale);
     lv_obj_set_style_pad_top(label, progress_label_pad_top, 0);
     lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
-    lv_obj_set_style_text_color(label, lv_color_hex(0x76FF03), 0);
+    lv_obj_set_style_text_color(label, lv_color_white(), 0);
     lv_obj_set_style_text_font(label, &lv_font_montserrat_16, 0);
   }
   lv_obj_align(progress_label, LV_ALIGN_CENTER, 0, 0);

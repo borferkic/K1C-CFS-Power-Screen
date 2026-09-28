@@ -147,7 +147,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   set_button_background(retract_btn.get_container(), retract_btn.get_button(), button_grey, button_grey_pressed);
   set_button_background(back_btn.get_container(), back_btn.get_button(), button_grey, button_grey_pressed);
   set_button_background(cooldown_btn.get_container(), cooldown_btn.get_button(),
-                        lv_color_hex(0x4FC3F7), lv_color_hex(0x0288D1));
+                        button_grey, button_grey_pressed);
   set_button_background(manual_change_btn.get_container(), manual_change_btn.get_button(),
                         lv_color_hex(0x4CAF50), lv_color_hex(0x388E3C));
   set_button_background(spoolman_btn.get_container(), spoolman_btn.get_button(),
