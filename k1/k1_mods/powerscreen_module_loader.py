@@ -8,10 +8,10 @@ class PowerScreenModuleLoader:
 
         # Register commands
         gcode = config.get_printer().lookup_object('gcode')
-        gcode.register_command("_POWERSCREEN_LOAD_MODULE", self.cmd_powerscreen_load_module)
-        gcode.register_command("_POWERSCREEN_UNLOAD_MODULE", self.cmd_powerscreen_unload_module)
+        gcode.register_command("_PS_LOAD_MODULE", self.cmd_ps_load_module)
+        gcode.register_command("_PS_UNLOAD_MODULE", self.cmd_powerscreen_unload_module)
 
-    def cmd_powerscreen_load_module(self, gcmd):
+    def cmd_ps_load_module(self, gcmd):
         self.section = gcmd.get('SECTION', None)
 
         if self.section and self.section not in self.printer.objects:

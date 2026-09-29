@@ -4,8 +4,8 @@ class PowerScreenConfigHelper:
         
         # Register commands
         gcode = config.get_printer().lookup_object('gcode')
-        gcode.register_command("_POWERSCREEN_SAVE_CONFIG", self.cmd_powerscreen_save_config)
-        gcode.register_command("_POWERSCREEN_DELETE_CONFIG", self.cmd_powerscreen_delete_config)
+        gcode.register_command("_PS_SAVE_CONFIG", self.cmd_powerscreen_save_config)
+        gcode.register_command("_PS_DELETE_CONFIG", self.cmd_powerscreen_delete_config)
 
     def cmd_powerscreen_save_config(self, gcmd):
         self.section = gcmd.get('SECTION', None)

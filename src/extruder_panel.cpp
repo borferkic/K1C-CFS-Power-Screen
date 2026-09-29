@@ -226,16 +226,9 @@ void ExtruderPanel::update_clock() {
 }
 
 void ExtruderPanel::show_manual_filament_change() {
-  // Use PowerScreen's native prompt protocol so the dialog is rendered by the
-  // printer UI and remains compatible with the existing prompt handling.
-  ws.gcode_script(
-    "RESPOND TYPE=command MSG=\"action:prompt_begin MANUAL FILAMENT CHANGE\"\n"
-    "RESPOND TYPE=command MSG=\"action:prompt_footer_button UNLOAD|SDK_UNLOAD_FILAMENT|warning\"\n"
-    "RESPOND TYPE=command MSG=\"action:prompt_footer_button LOAD|SDK_LOAD_FILAMENT|primary\"\n"
-    "RESPOND TYPE=command MSG=\"action:prompt_footer_button RESUME|RESUME|success\"\n"
-    "RESPOND TYPE=command MSG=\"action:prompt_footer_button STOP|CANCEL_PRINT|error\"\n"
-    "RESPOND TYPE=command MSG=\"action:prompt_footer_button CLOSE|RESPOND TYPE=command MSG='action:prompt_end'|secondary\"\n"
-    "RESPOND TYPE=command MSG=\"action:prompt_show\"");
+  // The menu is defined once in powerscreen_cmd.cfg, so this button and the
+  // M600 macro always show the same prompt.
+  ws.gcode_script("_PS_MANUAL_CHANGE_PROMPT");
 }
 
 void ExtruderPanel::enable_spoolman() {
@@ -309,7 +302,7 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
     }
 
     if (btn == unload_btn.get_container()) {
-      if (unload_filament_macro == "_POWERSCREEN_QUIT_MATERIAL") {
+      if (unload_filament_macro == "_PS_QUIT_MATERIAL") {
         const char *temp = lv_btnmatrix_get_btn_text(temp_selector.get_selector(),
                                                      temp_selector.get_selected_idx());
         ws.gcode_script(fmt::format("{} EXTRUDER_TEMP={}", unload_filament_macro, temp));
@@ -323,7 +316,7 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
     }
 
     if (btn == load_btn.get_container()) {
-      if (load_filament_macro == "_POWERSCREEN_LOAD_MATERIAL") {
+      if (load_filament_macro == "_PS_LOAD_MATERIAL") {
         const char *temp = lv_btnmatrix_get_btn_text(temp_selector.get_selector(),
                                                      temp_selector.get_selected_idx());
         const char *len = lv_btnmatrix_get_btn_text(length_selector.get_selector(),

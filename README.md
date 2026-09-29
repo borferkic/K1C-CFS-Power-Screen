@@ -145,7 +145,7 @@ sh /usr/data/powerscreen/reinstall-creality.sh
 
 - `MANUAL M600` button in the extrusion panel.
 - Manual filament change dialog adapted to the K1C screen.
-- `SDK_UNLOAD_FILAMENT` and `SDK_LOAD_FILAMENT` actions.
+- `PS_UNLOAD_FILAMENT` and `PS_LOAD_FILAMENT` actions.
 - Green `RESUME` action.
 - Red `STOP` action using `CANCEL_PRINT`.
 - `CLOSE` action to close the dialog.
@@ -308,7 +308,7 @@ sh /usr/data/powerscreen/reinstall-creality.sh
 
 - Botón `MANUAL M600` en el panel de extrusión.
 - Diálogo de cambio manual de filamento adaptado a la pantalla de la K1C.
-- Acciones `SDK_UNLOAD_FILAMENT` y `SDK_LOAD_FILAMENT`.
+- Acciones `PS_UNLOAD_FILAMENT` y `PS_LOAD_FILAMENT`.
 - Acción `RESUME` en color verde.
 - Acción `STOP` en color rojo mediante `CANCEL_PRINT`.
 - Acción `CLOSE` para cerrar el diálogo.

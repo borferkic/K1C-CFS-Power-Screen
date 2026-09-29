@@ -37,6 +37,7 @@ class PromptPanel : public NotifyConsumer {
     private:
 
         void check_height();
+        void refresh_filament_buttons();
 
         KWebSocketClient &ws;
         lv_obj_t *promptpanel_cont;
@@ -49,6 +50,8 @@ class PromptPanel : public NotifyConsumer {
         bool prompt_has_text = false;
         bool manual_filament_prompt = false;
         int manual_button_count = 0;
+        lv_obj_t *load_btn = NULL;
+        lv_obj_t *unload_btn = NULL;
 
 };
 

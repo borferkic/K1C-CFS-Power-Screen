@@ -144,7 +144,32 @@ PromptPanel::PromptPanel(KWebSocketClient &websocket_client, std::mutex &lock, l
 }
 
 
+// LOAD/UNLOAD move and heat the extruder, so they stay disabled while a print
+// is running. They are enabled while paused (M600 or PAUSE) or idle.
+void PromptPanel::refresh_filament_buttons() {
+    auto &pstate = State::get_instance()->get_data("/printer_state/print_stats/state"_json_pointer);
+    const bool printing = pstate.is_string() && pstate.template get<std::string>() == "printing";
+    for (lv_obj_t *btn : {load_btn, unload_btn}) {
+        if (btn == NULL) {
+            continue;
+        }
+        if (printing) {
+            lv_obj_add_state(btn, LV_STATE_DISABLED);
+            lv_obj_set_style_opa(btn, LV_OPA_40, 0);
+        } else {
+            lv_obj_clear_state(btn, LV_STATE_DISABLED);
+            lv_obj_set_style_opa(btn, LV_OPA_COVER, 0);
+        }
+    }
+}
+
 void PromptPanel::consume(json &j) {
+    auto &pstate = j["/params/0/print_stats/state"_json_pointer];
+    if (pstate.is_null()) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(lv_lock);
+    refresh_filament_buttons();
 }
 
 PromptPanel::~PromptPanel() {
@@ -247,6 +272,8 @@ void PromptPanel::handle_macro_response(json &j) {
 
                 manual_filament_prompt = prompt_header == "MANUAL FILAMENT CHANGE";
                 manual_button_count = 0;
+                load_btn = NULL;
+                unload_btn = NULL;
 
                 // remove buttons
                 lv_obj_clean(footer_cont);
@@ -439,6 +466,12 @@ void PromptPanel::handle_macro_response(json &j) {
                         lv_obj_center(label);
                     }
 
+                    if (manual_filament_prompt && prompt_footer_button == "LOAD") {
+                        load_btn = btn;
+                    } else if (manual_filament_prompt && prompt_footer_button == "UNLOAD") {
+                        unload_btn = btn;
+                    }
+
                     if (!prompt_button_type.compare("secondary")) {
                         spdlog::debug("type secondary");
                         lv_obj_add_style(btn, &style_btn_grey, 0);
@@ -465,6 +498,7 @@ void PromptPanel::handle_macro_response(json &j) {
                 }
             } else if (command.find("prompt_show") == 0) {
                 spdlog::debug("PROMPT_SHOW");
+                refresh_filament_buttons();
                 check_height();
                 foreground();
             } else if (command.find("prompt_end") == 0) {
@@ -477,6 +511,8 @@ void PromptPanel::handle_macro_response(json &j) {
                 prompt_has_text = false;
                 manual_filament_prompt = false;
                 manual_button_count = 0;
+                load_btn = NULL;
+                unload_btn = NULL;
                 lv_obj_clear_flag(flex, LV_OBJ_FLAG_HIDDEN);
                 lv_obj_set_grid_cell(footer_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_END, 2, 1);
                 lv_obj_set_size(footer_cont, lv_pct(100), lv_pct(15));

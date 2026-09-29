@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <fstream>
 #include <iomanip>
+#include <utility>
 #include <experimental/filesystem>
 
 namespace fs = std::experimental::filesystem;
@@ -61,8 +62,8 @@ void Config::init(std::string config_path, const std::string thumbdir) {
 
   json cooldown_conf = {{ "cooldown", "SET_HEATER_TEMPERATURE HEATER=extruder TARGET=0\nSET_HEATER_TEMPERATURE HEATER=heater_bed TARGET=0"}};
   json default_macros_conf = {
-    {"load_filament", "_POWERSCREEN_LOAD_MATERIAL"},
-    {"unload_filament", "_POWERSCREEN_QUIT_MATERIAL"}
+    {"load_filament", "_PS_LOAD_MATERIAL"},
+    {"unload_filament", "_PS_QUIT_MATERIAL"}
   };
 
   if (stat(config_path.c_str(), &buffer) == 0) {
@@ -118,6 +119,21 @@ void Config::init(std::string config_path, const std::string thumbdir) {
     } else {
       if (!default_macros.contains("cooldown")) {
         default_macros.merge_patch(cooldown_conf);
+      }
+
+      // Macro names saved by versions that still used the POWERSCREEN_ prefix.
+      static const std::pair<const char *, const char *> renamed_macros[] = {
+        {"_POWERSCREEN_LOAD_MATERIAL", "_PS_LOAD_MATERIAL"},
+        {"_POWERSCREEN_QUIT_MATERIAL", "_PS_QUIT_MATERIAL"},
+      };
+      for (const char *key : {"load_filament", "unload_filament"}) {
+        if (default_macros.contains(key) && default_macros[key].is_string()) {
+          for (const auto &renamed : renamed_macros) {
+            if (default_macros[key] == renamed.first) {
+              default_macros[key] = renamed.second;
+            }
+          }
+        }
       }
     }
 

@@ -147,7 +147,7 @@ void PrinterTunePanel::init(json &j) {
       }
       std::string name = o.template get<std::string>();
       std::transform(name.begin(), name.end(), name.begin(), ::tolower);
-      if (name == "gcode_macro _powerscreen_load_module" || name == "tmcstatus") {
+      if (name == "gcode_macro _ps_load_module" || name == "tmcstatus") {
         tmc_status_available = true;
         break;
       }

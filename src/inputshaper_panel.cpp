@@ -342,7 +342,7 @@ void InputShaperPanel::handle_callback(lv_event_t *event) {
     char ybuf[10];
     lv_dropdown_get_selected_str(yshaper_dd, ybuf, sizeof(ybuf));
     
-    ws.gcode_script(fmt::format("SAVE_INPUT_SHAPER SHAPER_FREQ_X={} SHAPER_TYPE_X={} SHAPER_FREQ_Y={} SHAPER_TYPE_Y={}\nSAVE_CONFIG",
+    ws.gcode_script(fmt::format("PS_SAVE_INPUT_SHAPER SHAPER_FREQ_X={} SHAPER_TYPE_X={} SHAPER_FREQ_Y={} SHAPER_TYPE_Y={}\nSAVE_CONFIG",
 				xhz, xbuf, yhz, ybuf));
 
   } else if (btn == back_btn.get_container()) {
@@ -429,7 +429,7 @@ void InputShaperPanel::handle_macro_response(json &j) {
 	? fmt::format("{} -o {} -w {} -l {}", Y_DATA, png_path, screen_width, screen_height)
 	: Y_DATA;
 
-      ws.gcode_script(fmt::format("RUN_SHELL_COMMAND CMD=powerscreen_input_shaper PARAMS={:?}", arg));
+      ws.gcode_script(fmt::format("RUN_SHELL_COMMAND CMD=ps_input_shaper PARAMS={:?}", arg));
 
     } else if ("// Resonances data written to " X_DATA " file" == resp) {
       auto config_root = KUtils::get_root_path("config");
@@ -440,7 +440,7 @@ void InputShaperPanel::handle_macro_response(json &j) {
 	? fmt::format("{} -o {} -w {} -l {}", X_DATA, png_path, screen_width, screen_height)
 	: X_DATA;
 
-      ws.gcode_script(fmt::format("RUN_SHELL_COMMAND CMD=powerscreen_input_shaper PARAMS={:?}", arg));
+      ws.gcode_script(fmt::format("RUN_SHELL_COMMAND CMD=ps_input_shaper PARAMS={:?}", arg));
     }
   }
 }

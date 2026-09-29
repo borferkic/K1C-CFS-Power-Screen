@@ -11,7 +11,7 @@ class CalibrateShaperConfig:
 
         # Register commands
         gcode = config.get_printer().lookup_object('gcode')
-        gcode.register_command("SAVE_INPUT_SHAPER", self.cmd_save_input_shaper)
+        gcode.register_command("PS_SAVE_INPUT_SHAPER", self.cmd_save_input_shaper)
 
     def get_status(self, eventtime):
         return {}
