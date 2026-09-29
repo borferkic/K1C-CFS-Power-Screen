@@ -15,6 +15,10 @@ start_server(){
     sync && echo 3 > /proc/sys/vm/drop_caches
     mkdir -p $RC_DIR
 
+    # Stop the boot animation that the Creality S12boot_display service plays,
+    # so it does not stay drawn over the PowerScreen UI.
+    killall -q boot_display
+
     # need to check for now if installers skips the symlink
     [ ! -f $LIBEINFO ] && ln -sf $LIBEINFO /lib/libeinfo.so.1
     [ ! -f $LIBRC ] && ln -sf $LIBRC /lib/librc.so.1

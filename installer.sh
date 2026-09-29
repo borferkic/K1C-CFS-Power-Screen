@@ -10,19 +10,22 @@ K1_POWERSCREEN_DIR=/usr/data/powerscreen
 FT2FONT_PATH=/usr/lib/python3.8/site-packages/matplotlib/ft2font.cpython-38-mipsel-linux-gnu.so
 POWERSCREEN_REPOSITORY="borferkic/K1C-CFS-POWER-SCREEN"
 ASSET_NAME="powerscreen-zbolt"
-# Creality screen and web binaries that PowerScreen disables.
+# Creality screen and web binaries that PowerScreen disables (renamed to "<name>.disabled").
+# The installer assumes a clean printer: no previous touch screen replacement installed.
 CREALITY_BINARIES="Monitor display-server web-server"
-# Older installers (Guppy Screen, CFS Power Script) may hold the original S99start_app.
-LEGACY_BACKUP_DIRS="/usr/data/helper-script-backup/guppyscreen /usr/data/guppyscreen-backups /usr/data/guppyscreen.backup-k1c"
 
-# Usage: installer.sh [nightly] [--yes]
-#   nightly  install the latest nightly instead of the latest stable release
+# Usage: installer.sh [stable|nightly] [--yes]
+#   stable   install the latest stable release (default with --yes)
+#   nightly  install the latest nightly pre-release
 #   --yes    non-interactive: accept the Creality warning and restart Klipper
 #            (used by the CFS Power Script after it shows its own warning)
-CHANNEL=stable
+# Without a channel and without --yes, the installer asks which build to install.
+# The chosen channel is also saved as the PowerScreen update channel.
+CHANNEL=""
 ASSUME_YES=false
 for arg in "$@"; do
     case "$arg" in
+        stable) CHANNEL=stable ;;
         nightly) CHANNEL=nightly ;;
         -y|--yes) ASSUME_YES=true ;;
     esac
@@ -64,6 +67,23 @@ else
         exit 1
     fi
 fi
+
+if [ -z "$CHANNEL" ]; then
+    if [ "$ASSUME_YES" = true ]; then
+        CHANNEL=stable
+    else
+        while [ -z "$CHANNEL" ]; do
+            printf "Which build do you want to install? (stable/nightly): "
+            read channel_choice
+            case "$channel_choice" in
+                stable|STABLE) CHANNEL=stable ;;
+                nightly|NIGHTLY) CHANNEL=nightly ;;
+                *) echo "Please type stable or nightly." ;;
+            esac
+        done
+    fi
+fi
+printf "${green} Update channel: $CHANNEL ${white}\n"
 
 # check ld.so version
 if [ ! -f /lib/ld-2.29.so ]; then
@@ -209,21 +229,8 @@ ln -sf /tmp/udisk $K1_GCODE_DIR/usb
 
 printf "${green} Backing up original K1 files ${white}\n"
 mkdir -p $BACKUP_DIR
-backup_file /etc/init.d/S12boot_display
 backup_file /etc/init.d/S50dropbear
 backup_file /etc/init.d/S99start_app
-# If Creality services were already disabled by an older installer, recover
-# the original S99start_app from its backup so it can be restored later.
-if [ ! -f "$BACKUP_DIR/S99start_app" ]; then
-    for dir in $LEGACY_BACKUP_DIRS; do
-        if [ -f "$dir/S99start_app" ]; then
-            cp -p "$dir/S99start_app" "$BACKUP_DIR/"
-            echo "Recovered S99start_app from $dir"
-            break
-        fi
-    done
-fi
-rm -f /etc/init.d/S12boot_display
 
 if [ ! -f $BACKUP_DIR/ft2font.cpython-38-mipsel-linux-gnu.so ]; then
     # backup ft2font
@@ -237,10 +244,6 @@ cp $K1_POWERSCREEN_DIR/k1_mods/S50dropbear /etc/init.d/S50dropbear
 printf "${green}Disabling Creality screen and services ${white}\n"
 rm -f /etc/init.d/S99start_app
 for bin in $CREALITY_BINARIES; do
-    # Same ".disabled" suffix as Guppy Screen and the CFS Power Script.
-    if [ -f "/usr/bin/$bin.disable" ]; then
-        mv "/usr/bin/$bin.disable" "/usr/bin/$bin.disabled"
-    fi
     if [ -f "/usr/bin/$bin" ]; then
         mv "/usr/bin/$bin" "/usr/bin/$bin.disabled"
     fi
@@ -306,6 +309,14 @@ killall -q app-server
 killall -q upgrade-server
 killall -q web-server
 
+## keep the in-app update channel and the Moonraker Update Manager on the installed channel
+POWERSCREEN_CONFIG=$K1_POWERSCREEN_DIR/powerscreenconfig.json
+if [ -f "$POWERSCREEN_CONFIG" ]; then
+    jq --arg channel "$CHANNEL" '.update_channel = $channel' "$POWERSCREEN_CONFIG" > /tmp/powerscreenconfig.json && \
+        cp /tmp/powerscreenconfig.json "$POWERSCREEN_CONFIG"
+    rm -f /tmp/powerscreenconfig.json
+fi
+sh $K1_POWERSCREEN_DIR/update.sh --set-channel "$CHANNEL"
 printf "${green}Starting PowerScreen ${white}\n"
 /etc/init.d/S99powerscreen restart &> /dev/null
 
@@ -314,7 +325,7 @@ sleep 1
 ps auxw | grep powerscreen | grep -v sh | grep -v grep
 
 if [ $? -eq 0 ]; then
-    printf "${green} Successfully installed PowerScreen. Enjoy! ${white}\n"
+    printf "${green} Successfully installed PowerScreen ($CHANNEL). Enjoy! ${white}\n"
 else
     printf "${red} PowerScreen FAILED to install. Rolling back... ${white}\n"
     sh $K1_POWERSCREEN_DIR/reinstall-creality.sh --yes

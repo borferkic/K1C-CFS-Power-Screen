@@ -6,9 +6,8 @@
 #          and by the installer rollback)
 
 BACKUP_DIR=/usr/data/powerscreen-backup
+# Creality binaries disabled by the installer as "<name>.disabled".
 CREALITY_BINARIES="Monitor display-server web-server"
-# Older installers (Guppy Screen, CFS Power Script) may hold the original S99start_app.
-LEGACY_BACKUP_DIRS="/usr/data/helper-script-backup/guppyscreen /usr/data/guppyscreen-backups /usr/data/guppyscreen.backup-k1c"
 
 ASSUME_YES=false
 for arg in "$@"; do
@@ -23,29 +22,17 @@ killall -q powerscreen
 rm -f /etc/init.d/S99powerscreen
 
 echo "Restoring Creality init scripts"
-for file in S12boot_display S50dropbear S99start_app; do
+for file in S50dropbear S99start_app; do
     if [ -f "$BACKUP_DIR/$file" ]; then
         cp -p "$BACKUP_DIR/$file" /etc/init.d/$file
     fi
 done
-if [ ! -f /etc/init.d/S99start_app ]; then
-    for dir in $LEGACY_BACKUP_DIRS; do
-        if [ -f "$dir/S99start_app" ]; then
-            cp -p "$dir/S99start_app" /etc/init.d/S99start_app
-            echo "Restored S99start_app from $dir"
-            break
-        fi
-    done
-fi
 
 echo "Restoring Creality screen and services"
 for bin in $CREALITY_BINARIES; do
-    # ".disabled" is the current suffix; ".disable" was used by older PowerScreen installers.
-    for suffix in disabled disable; do
-        if [ -f "/usr/bin/$bin.$suffix" ] && [ ! -f "/usr/bin/$bin" ]; then
-            mv "/usr/bin/$bin.$suffix" "/usr/bin/$bin"
-        fi
-    done
+    if [ -f "/usr/bin/$bin.disabled" ] && [ ! -f "/usr/bin/$bin" ]; then
+        mv "/usr/bin/$bin.disabled" "/usr/bin/$bin"
+    fi
 done
 
 if [ "$ASSUME_YES" = false ]; then
