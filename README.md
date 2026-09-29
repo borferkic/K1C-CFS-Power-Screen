@@ -53,7 +53,7 @@ The only supported package is `powerscreen-zbolt.tar.gz`, the MIPS Z-Bolt packag
 Connect to the printer through SSH as `root`:
 
 ```sh
-ssh -p 22 root@IP_DE_TU_K1C
+ssh -p 22 root@YOUR_K1C_IP
 ```
 
 All remaining commands in this section must be executed inside the printer shell.
