@@ -103,31 +103,14 @@ sh /tmp/powerscreen-installer.sh nightly
 - Registers PowerScreen in Moonraker's Update Manager so it appears in Fluidd. The registered repository is `borferkic/K1C-CFS-POWER-SCREEN`.
 - Saves the chosen build as the update channel, restarts Klipper and starts PowerScreen.
 
-### 3. Validate the installation
-
-Run these checks on the printer:
-
-```sh
-test -x /usr/data/powerscreen/powerscreen
-test -x /etc/init.d/S99powerscreen
-/etc/init.d/S99powerscreen restart
-sleep 2
-ps | grep '[p]owerscreen'
-tail -n 40 /usr/data/printer_data/logs/powerscreen.log
-curl -s localhost:7125/server/info | jq .result.klippy_connected
-grep -R "PowerScreen" /usr/data/printer_data/config/printer.cfg /usr/data/printer_data/config/PowerScreen 2>/dev/null
-```
-
-The process must remain active, the log must not show an immediate crash, and Moonraker must report `true` for `klippy_connected`. On the touchscreen, check the main tabs, open the extrusion panel, open the manual M600 dialog, and verify `LOAD`, `UNLOAD`, `RESUME`, `STOP`, and `CLOSE` individually. Test filament movement only with the correct temperature and a controlled filament path.
-
-### 4. Update PowerScreen
+### 3. Update PowerScreen
 
 Updates do not require running the installer again:
 
 - On the printer screen: **System → Updates**. The update channel (`Nightly` or `Stable`) can be changed there.
 - In Fluidd: **Settings → Software Updates**.
 
-### 5. Remove PowerScreen
+### 4. Remove PowerScreen
 
 - With the CFS Power Script: `[Customize] Menu → 4) Remove PowerScreen`.
 - Manually, to restore the Creality screen and services:
@@ -161,23 +144,6 @@ sh /usr/data/powerscreen/reinstall-creality.sh
 - `CLOSE` action to close the dialog.
 - Icons for load, unload, resume, and stop actions.
 - Button layout reorganized for comfortable touchscreen use on the K1C.
-
-## Development and build
-
-Initialize the submodules when cloning the repository:
-
-```bash
-git clone --recursive https://github.com/borferkic/K1C-CFS-POWER-SCREEN.git powerscreen
-cd powerscreen
-```
-
-Building for the K1C uses the MIPS toolchain and workflow maintained in private project documentation. The main configuration uses the `mipsel-buildroot-linux-musl-` compiler and generates:
-
-```text
-build/bin/powerscreen
-```
-
-Interface and CFS workflow testing must be performed on a real K1C. A successful build does not replace validation of the dialog, macros, or the extruder's physical behavior.
 
 ## Pending work
 
@@ -300,31 +266,14 @@ sh /tmp/powerscreen-installer.sh nightly
 - Registra PowerScreen en el Update Manager de Moonraker para que aparezca en Fluidd. El repositorio registrado es `borferkic/K1C-CFS-POWER-SCREEN`.
 - Guarda la versión elegida como canal de actualización, reinicia Klipper y arranca PowerScreen.
 
-### 3. Validar la instalación
-
-Ejecuta estas comprobaciones en la impresora:
-
-```sh
-test -x /usr/data/powerscreen/powerscreen
-test -x /etc/init.d/S99powerscreen
-/etc/init.d/S99powerscreen restart
-sleep 2
-ps | grep '[p]owerscreen'
-tail -n 40 /usr/data/printer_data/logs/powerscreen.log
-curl -s localhost:7125/server/info | jq .result.klippy_connected
-grep -R "PowerScreen" /usr/data/printer_data/config/printer.cfg /usr/data/printer_data/config/PowerScreen 2>/dev/null
-```
-
-El proceso debe mantenerse activo, el log no debe mostrar un cierre inmediato y Moonraker debe responder `true` en `klippy_connected`. En la pantalla táctil revisa las pestañas principales, abre el panel de extrusión, abre el diálogo M600 manual y verifica individualmente `LOAD`, `UNLOAD`, `RESUME`, `STOP` y `CLOSE`. Prueba el movimiento de filamento únicamente con la temperatura correcta y el recorrido preparado.
-
-### 4. Actualizar PowerScreen
+### 3. Actualizar PowerScreen
 
 Las actualizaciones no requieren volver a ejecutar el instalador:
 
 - En la pantalla de la impresora: **System → Updates**. Ahí también se puede cambiar el canal (`Nightly` o `Stable`).
 - En Fluidd: **Settings → Software Updates**.
 
-### 5. Quitar PowerScreen
+### 4. Quitar PowerScreen
 
 - Con el CFS Power Script: `[Customize] Menu → 4) Remove PowerScreen`.
 - Manualmente, para restaurar la pantalla y los servicios de Creality:
@@ -358,23 +307,6 @@ sh /usr/data/powerscreen/reinstall-creality.sh
 - Acción `CLOSE` para cerrar el diálogo.
 - Iconos para las acciones de carga, descarga, reanudación y detención.
 - Botones reorganizados para facilitar el uso táctil en la K1C.
-
-## Desarrollo y compilación
-
-Los submódulos deben inicializarse al clonar el repositorio:
-
-```bash
-git clone --recursive https://github.com/borferkic/K1C-CFS-POWER-SCREEN.git powerscreen
-cd powerscreen
-```
-
-La compilación para la K1C utiliza el toolchain MIPS y el flujo de trabajo conservados en la documentación privada del proyecto. La configuración principal usa el compilador `mipsel-buildroot-linux-musl-` y genera:
-
-```text
-build/bin/powerscreen
-```
-
-Las pruebas de interfaz y del flujo CFS deben realizarse en una K1C real. Una compilación correcta no sustituye la validación del diálogo, las macros ni el comportamiento físico del extrusor.
 
 ## Pendientes
 
