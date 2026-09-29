@@ -7,6 +7,13 @@ Proyecto: `PowerScreen`
 Última modificación: `2026-09-28`
 -->
 
+<div align="center">
+  <a href="https://github.com/borferkic/K1C-CFS-POWER-SCREEN/releases/latest"><img src="https://img.shields.io/github/v/release/borferkic/K1C-CFS-POWER-SCREEN?style=flat-square&color=2ea44f" alt="Latest release" /></a>
+  <a href="https://github.com/borferkic/K1C-CFS-POWER-SCREEN/releases"><img src="https://img.shields.io/github/downloads/borferkic/K1C-CFS-POWER-SCREEN/total?style=flat-square&color=555" alt="Downloads" /></a>
+  <img src="https://img.shields.io/badge/Printer-Creality%20K1C-0078D6?style=flat-square" alt="Printer: Creality K1C" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue?style=flat-square" alt="License: GPL-3.0" /></a>
+</div>
+
 [English](#english) | [Español](#espanol)
 
 ---
