@@ -57,3 +57,4 @@ else
 fi
 
 echo "Creality screen and services restored."
+echo "It is recommended to restart the printer now."
