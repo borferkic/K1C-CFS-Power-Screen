@@ -81,7 +81,7 @@ The K1C must report `mips`.
 Install and open the [CFS Power Script](https://github.com/borferkic/K1C-CFS-Power-Script) as described in its README, then select:
 
 ```text
-[Customize] Menu → 1) Install PowerScreen
+[Customize & PowerScreen] Menu → 1) Install PowerScreen
 ```
 
 The script shows the warning above, asks for confirmation and asks which build to install (`stable` or `nightly`). It then runs the PowerScreen installer without further questions.
@@ -119,7 +119,7 @@ Updates do not require running the installer again:
 
 ### 4. Remove PowerScreen
 
-- With the CFS Power Script: `[Customize] Menu → 2) Remove PowerScreen`.
+- With the CFS Power Script: `[Customize & PowerScreen] Menu → 2) Remove PowerScreen`.
 - Manually, to restore the Creality screen and services:
 
 ```sh
@@ -246,7 +246,7 @@ La K1C debe responder `mips`.
 Instala y abre el [CFS Power Script](https://github.com/borferkic/K1C-CFS-Power-Script) como se indica en su README y selecciona:
 
 ```text
-[Customize] Menu → 1) Install PowerScreen
+[Customize & PowerScreen] Menu → 1) Install PowerScreen
 ```
 
 El script muestra el aviso anterior, pide confirmación y pregunta qué versión instalar (`stable` o `nightly`). Después ejecuta el instalador de PowerScreen sin más preguntas.
@@ -284,7 +284,7 @@ Las actualizaciones no requieren volver a ejecutar el instalador:
 
 ### 4. Quitar PowerScreen
 
-- Con el CFS Power Script: `[Customize] Menu → 2) Remove PowerScreen`.
+- Con el CFS Power Script: `[Customize & PowerScreen] Menu → 2) Remove PowerScreen`.
 - Manualmente, para restaurar la pantalla y los servicios de Creality:
 
 ```sh
