@@ -110,6 +110,18 @@ class SysInfoPanel {
   lv_obj_t *update_title;
   lv_obj_t *update_phase;
   lv_obj_t *update_close_btn;
+  lv_obj_t *update_card = NULL;
+  lv_obj_t *update_icon_tile = NULL;
+  lv_obj_t *update_icon_label = NULL;
+  lv_obj_t *update_subtitle = NULL;
+  lv_obj_t *update_rule = NULL;
+  lv_obj_t *update_marks[3] = {NULL, NULL, NULL};
+  lv_obj_t *update_step_labels[3] = {NULL, NULL, NULL};
+  lv_obj_t *update_bar = NULL;
+  lv_obj_t *update_hint = NULL;
+  int update_step = -1;
+  std::time_t restart_since = 0;
+  void set_update_step(int step);
   lv_timer_t *update_timer;
 
   // State shared with worker threads. Workers never touch LVGL: they only

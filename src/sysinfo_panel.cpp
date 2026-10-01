@@ -998,7 +998,9 @@ void SysInfoPanel::start_update() {
   std::remove(UPDATE_STATUS_FILE);
   update_finished = false;
   update_running = true;
-  show_update_overlay("Updating PowerScreen", phase_text(""), true);
+  update_step = -1;
+  restart_since = 0;
+  show_update_overlay("Updating PowerScreen", "Preparing update...", true);
 
   const std::string script_str = script.string();
   run_detached([this, script_str]() {
@@ -1042,15 +1044,48 @@ void SysInfoPanel::poll_update() {
 
   const std::string status = read_first_line(UPDATE_STATUS_FILE);
   if (!status.empty()) {
-    lv_label_set_text(update_phase, phase_text(status).c_str());
+    const auto sep = status.find(':');
+    const std::string phase = status.substr(0, sep);
+    const std::string detail = sep == std::string::npos ? "" : status.substr(sep + 1);
+    int step = -1;
+    if (phase == "CHECKING" || phase == "DOWNLOADING") {
+      step = 0;
+    } else if (phase == "EXTRACTING") {
+      step = 1;
+    } else if (phase == "RESTARTING") {
+      step = 2;
+      if (restart_since == 0) {
+        restart_since = std::time(nullptr);
+      }
+    }
+    if (!detail.empty() && step >= 0) {
+      lv_label_set_text(update_subtitle, fmt::format("{} -> {}", split_version(installed_version()).first, split_version(detail).first).c_str());
+    } else if (step >= 0) {
+      lv_label_set_text(update_subtitle, "Checking for the latest version...");
+    }
+    if (step >= 0 && step != update_step) {
+      set_update_step(step);
+    }
+  }
+
+  // Restarting: the script stops PowerScreen by itself. If we are still alive well after that, the restart failed.
+  if (restart_since != 0 && std::time(nullptr) - restart_since > 30) {
+    update_running = false;
+    show_update_overlay("Restart needed", "Restart PowerScreen to apply the new version.", false);
+    return;
   }
 
   if (!update_finished) {
     return;
   }
 
+  if (status.rfind("RESTARTING", 0) == 0 && update_exit_code == 0) {
+    return;  // keep the Restarting step on screen until the restart (or the safety net above)
+  }
+
   // The script ended without restarting PowerScreen: error or no changes.
   update_running = false;
+  restart_since = 0;
   if (status.rfind("UP_TO_DATE", 0) == 0) {
     show_update_overlay("No update needed", phase_text(status), false);
   } else if (status.rfind("ERROR", 0) == 0) {
@@ -1058,7 +1093,7 @@ void SysInfoPanel::poll_update() {
   } else if (update_exit_code != 0) {
     show_update_overlay("Update failed", "The update script did not finish.", false);
   } else {
-    show_update_overlay("Update installed", "Restart PowerScreen to apply the new version.", false);
+    show_update_overlay("Restart needed", "Restart PowerScreen to apply the new version.", false);
   }
 }
 
@@ -1155,70 +1190,163 @@ void SysInfoPanel::apply_script_state() {
 }
 
 void SysInfoPanel::create_update_overlay() {
+  using namespace powerui;
   update_overlay = lv_obj_create(lv_layer_top());
   lv_obj_remove_style_all(update_overlay);
   lv_obj_set_size(update_overlay, LV_PCT(100), LV_PCT(100));
   lv_obj_set_style_bg_color(update_overlay, lv_color_black(), LV_PART_MAIN);
-  lv_obj_set_style_bg_opa(update_overlay, LV_OPA_80, LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(update_overlay, LV_OPA_70, LV_PART_MAIN);
   // Swallow all touches to lock the UI while updating.
   lv_obj_add_flag(update_overlay, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_clear_flag(update_overlay, LV_OBJ_FLAG_SCROLLABLE);
 
-  lv_obj_t *card = lv_obj_create(update_overlay);
-  lv_obj_set_size(card, 460, 260);
-  lv_obj_center(card);
-  lv_obj_clear_flag(card, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_style_bg_color(card, lv_color_hex(SCREEN_BACKGROUND), LV_PART_MAIN);
-  lv_obj_set_style_bg_opa(card, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_set_style_border_color(card, lv_color_hex(CARD_BORDER), LV_PART_MAIN);
-  lv_obj_set_style_border_width(card, 2, LV_PART_MAIN);
-  lv_obj_set_style_radius(card, 12, LV_PART_MAIN);
+  update_card = lv_obj_create(update_overlay);
+  lv_obj_set_size(update_card, px(500), px(316));
+  lv_obj_center(update_card);
+  lv_obj_clear_flag(update_card, LV_OBJ_FLAG_SCROLLABLE);
+  style_card(update_card);
+  lv_obj_set_style_border_opa(update_card, LV_OPA_30, LV_PART_MAIN);
+  lv_obj_set_style_radius(update_card, px(14), LV_PART_MAIN);
 
-  update_title = lv_label_create(card);
-  lv_obj_set_style_text_color(update_title, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
-  lv_obj_set_style_text_font(update_title, &lv_font_montserrat_20, LV_PART_MAIN);
-  lv_obj_align(update_title, LV_ALIGN_TOP_MID, 0, 4);
+  update_icon_tile = plain(update_card);
+  lv_obj_set_size(update_icon_tile, px(48), px(48));
+  lv_obj_set_pos(update_icon_tile, px(28), px(24));
+  lv_obj_set_style_radius(update_icon_tile, px(12), 0);
+  lv_obj_set_style_bg_color(update_icon_tile, lv_color_hex(COLOR_SECONDARY), 0);
+  lv_obj_set_style_bg_opa(update_icon_tile, LV_OPA_COVER, 0);
+  update_icon_label = label(update_icon_tile, LV_SYMBOL_REFRESH, &lv_font_montserrat_24, lv_color_hex(COLOR_ACCENT));
+  lv_obj_center(update_icon_label);
 
-  update_spinner = lv_spinner_create(card, 1000, 60);
-  lv_obj_set_size(update_spinner, 80, 80);
-  lv_obj_set_style_arc_color(update_spinner, lv_color_hex(CREALITY_GREEN), LV_PART_INDICATOR);
-  lv_obj_set_style_arc_color(update_spinner, lv_color_hex(BUTTON_GREY), LV_PART_MAIN);
-  lv_obj_align(update_spinner, LV_ALIGN_CENTER, 0, -10);
+  update_title = label(update_card, "Updating PowerScreen", &lv_font_montserrat_20, lv_color_hex(COLOR_FG));
+  lv_obj_set_pos(update_title, px(90), px(28));
+  update_subtitle = label(update_card, "", &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+  lv_obj_set_pos(update_subtitle, px(90), px(56));
 
-  update_phase = lv_label_create(card);
+  update_rule = plain(update_card);
+  lv_obj_set_size(update_rule, px(444), 1);
+  lv_obj_set_pos(update_rule, px(28), px(94));
+  lv_obj_set_style_bg_color(update_rule, lv_color_white(), 0);
+  lv_obj_set_style_bg_opa(update_rule, LV_OPA_10, 0);
+
+  const char *step_names[3] = {"Download", "Install files", "Restart PowerScreen"};
+  for (int i = 0; i < 3; ++i) {
+    update_marks[i] = plain(update_card);
+    lv_obj_set_size(update_marks[i], px(24), px(24));
+    lv_obj_set_pos(update_marks[i], px(34), px(110 + i * 38));
+    update_step_labels[i] = label(update_card, step_names[i], &lv_font_montserrat_16, lv_color_hex(COLOR_MUTED));
+    lv_obj_set_pos(update_step_labels[i], px(72), px(112 + i * 38));
+  }
+
+  update_bar = lv_bar_create(update_card);
+  lv_obj_set_size(update_bar, px(444), px(10));
+  lv_obj_set_pos(update_bar, px(28), px(240));
+  lv_bar_set_range(update_bar, 0, 100);
+  lv_obj_set_style_bg_color(update_bar, lv_color_hex(COLOR_SECONDARY), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(update_bar, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(update_bar, lv_color_hex(COLOR_ACCENT), LV_PART_INDICATOR);
+  lv_obj_set_style_bg_opa(update_bar, LV_OPA_COVER, LV_PART_INDICATOR);
+  lv_obj_set_style_radius(update_bar, LV_RADIUS_CIRCLE, LV_PART_MAIN);
+  lv_obj_set_style_radius(update_bar, LV_RADIUS_CIRCLE, LV_PART_INDICATOR);
+
+  update_hint = label(update_card, "", &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
+  lv_obj_set_pos(update_hint, px(28), px(262));
+
+  // Message for the end states (error, nothing to update, restart needed).
+  update_phase = label(update_card, "", &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
   lv_label_set_long_mode(update_phase, LV_LABEL_LONG_WRAP);
-  lv_obj_set_width(update_phase, LV_PCT(100));
+  lv_obj_set_width(update_phase, px(420));
   lv_obj_set_style_text_align(update_phase, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-  lv_obj_set_style_text_color(update_phase, lv_color_white(), LV_PART_MAIN);
-  lv_obj_set_style_text_font(update_phase, &lv_font_montserrat_16, LV_PART_MAIN);
-  lv_obj_align(update_phase, LV_ALIGN_BOTTOM_MID, 0, -4);
+  lv_obj_align(update_phase, LV_ALIGN_TOP_MID, 0, px(128));
 
-  update_close_btn = lv_btn_create(card);
-  lv_obj_set_size(update_close_btn, 160, 44);
-  lv_obj_align(update_close_btn, LV_ALIGN_CENTER, 0, -10);
+  update_close_btn = lv_btn_create(update_card);
+  lv_obj_set_size(update_close_btn, px(160), px(40));
+  lv_obj_align(update_close_btn, LV_ALIGN_BOTTOM_MID, 0, -px(28));
   lv_obj_set_style_bg_color(update_close_btn, lv_color_hex(0x16A34A), LV_PART_MAIN);
-  lv_obj_set_style_radius(update_close_btn, 12, LV_PART_MAIN);
-  lv_obj_t *close_label = lv_label_create(update_close_btn);
-  lv_label_set_text(close_label, "Close");
-  lv_obj_set_style_text_font(close_label, &lv_font_montserrat_20, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(update_close_btn, lv_color_hex(0x15803D), LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_set_style_border_width(update_close_btn, 0, LV_PART_MAIN);
+  lv_obj_set_style_shadow_width(update_close_btn, 0, LV_PART_MAIN);
+  lv_obj_set_style_radius(update_close_btn, px(10), LV_PART_MAIN);
+  lv_obj_t *close_label = label(update_close_btn, "Close", &lv_font_montserrat_16, lv_color_white());
   lv_obj_center(close_label);
   lv_obj_add_event_cb(update_close_btn, &SysInfoPanel::_handle_callback, LV_EVENT_CLICKED, this);
 
   lv_obj_add_flag(update_overlay, LV_OBJ_FLAG_HIDDEN);
 }
 
+// Progress steps of the update: 0 download, 1 install, 2 restart. The bar follows the phase (not real bytes).
+void SysInfoPanel::set_update_step(int step) {
+  using namespace powerui;
+  update_step = step;
+  static const int bar_values[3] = {25, 60, 100};
+  lv_bar_set_value(update_bar, bar_values[std::max(0, std::min(2, step))], LV_ANIM_ON);
+  for (int i = 0; i < 3; ++i) {
+    lv_obj_clean(update_marks[i]);
+    if (i < step) {
+      lv_obj_t *mark = label(update_marks[i], LV_SYMBOL_OK, &lv_font_montserrat_16, lv_color_hex(COLOR_ACCENT));
+      lv_obj_center(mark);
+      lv_obj_set_style_text_color(update_step_labels[i], lv_color_hex(COLOR_ACCENT), LV_PART_MAIN);
+    } else if (i == step) {
+      lv_obj_t *spinner = lv_spinner_create(update_marks[i], 1000, 60);
+      lv_obj_set_size(spinner, px(20), px(20));
+      lv_obj_center(spinner);
+      lv_obj_set_style_arc_width(spinner, 3, LV_PART_MAIN);
+      lv_obj_set_style_arc_width(spinner, 3, LV_PART_INDICATOR);
+      lv_obj_set_style_arc_color(spinner, lv_color_hex(COLOR_SECONDARY), LV_PART_MAIN);
+      lv_obj_set_style_arc_color(spinner, lv_color_hex(COLOR_ACCENT), LV_PART_INDICATOR);
+      lv_obj_set_style_text_color(update_step_labels[i], lv_color_hex(COLOR_FG), LV_PART_MAIN);
+    } else {
+      lv_obj_t *dot = plain(update_marks[i]);
+      lv_obj_set_size(dot, px(8), px(8));
+      lv_obj_center(dot);
+      lv_obj_set_style_radius(dot, LV_RADIUS_CIRCLE, 0);
+      lv_obj_set_style_bg_color(dot, lv_color_hex(0x404040), 0);
+      lv_obj_set_style_bg_opa(dot, LV_OPA_COVER, 0);
+      lv_obj_set_style_text_color(update_step_labels[i], lv_color_hex(COLOR_MUTED), LV_PART_MAIN);
+    }
+  }
+  lv_label_set_text(update_hint, step >= 2 ? "The screen will be back in a few seconds." : "Do not turn off the printer. The screen restarts by itself.");
+}
+
 void SysInfoPanel::show_update_overlay(const std::string &title, const std::string &phase, bool busy) {
+  using namespace powerui;
   lv_label_set_text(update_title, title.c_str());
-  lv_label_set_text(update_phase, phase.c_str());
+  const bool failure = title == "Update failed" || title == "Update not available";
+  lv_label_set_text(update_icon_label, busy ? LV_SYMBOL_REFRESH : (failure ? LV_SYMBOL_CLOSE : LV_SYMBOL_OK));
+  lv_obj_set_style_text_color(update_icon_label, lv_color_hex(failure ? COLOR_DESTRUCTIVE : COLOR_ACCENT), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(update_icon_tile, failure ? lv_color_hex(0x2A1517) : lv_color_hex(COLOR_SECONDARY), 0);
+
+  for (int i = 0; i < 3; ++i) {
+    for (lv_obj_t *obj : {update_marks[i], update_step_labels[i]}) {
+      if (busy) {
+        lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
+      } else {
+        lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
+      }
+    }
+  }
+  for (lv_obj_t *obj : {update_bar, update_hint}) {
+    if (busy) {
+      lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    } else {
+      lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    }
+  }
   if (busy) {
-    lv_obj_clear_flag(update_spinner, LV_OBJ_FLAG_HIDDEN);
+    lv_label_set_text(update_subtitle, phase.c_str());
+    lv_obj_add_flag(update_phase, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(update_close_btn, LV_OBJ_FLAG_HIDDEN);
+    if (update_step < 0) {
+      set_update_step(0);
+    }
   } else {
-    lv_obj_add_flag(update_spinner, LV_OBJ_FLAG_HIDDEN);
+    update_step = -1;
+    restart_since = 0;
+    lv_label_set_text(update_subtitle, "");
+    lv_label_set_text(update_phase, phase.c_str());
+    lv_obj_clear_flag(update_phase, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(update_close_btn, LV_OBJ_FLAG_HIDDEN);
   }
   lv_obj_clear_flag(update_overlay, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_move_foreground(update_overlay);
 }
 
 void SysInfoPanel::show_updated_notice() {
@@ -1231,21 +1359,31 @@ void SysInfoPanel::show_updated_notice() {
   std::remove(UPDATE_DONE_FILE);
   std::remove(UPDATE_STATUS_FILE);
 
+  using namespace powerui;
   lv_obj_t *notice = lv_obj_create(lv_layer_top());
-  lv_obj_set_size(notice, 520, LV_SIZE_CONTENT);
-  lv_obj_align(notice, LV_ALIGN_TOP_MID, 0, 50);
+  lv_obj_set_size(notice, px(400), px(64));
+  lv_obj_align(notice, LV_ALIGN_TOP_MID, 0, px(46));
   lv_obj_clear_flag(notice, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_clear_flag(notice, LV_OBJ_FLAG_CLICKABLE);
-  lv_obj_set_style_bg_color(notice, lv_color_hex(0x16A34A), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(notice, lv_color_hex(0x0F1F15), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(notice, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_set_style_border_width(notice, 0, LV_PART_MAIN);
-  lv_obj_set_style_radius(notice, 12, LV_PART_MAIN);
+  lv_obj_set_style_border_width(notice, 1, LV_PART_MAIN);
+  lv_obj_set_style_border_color(notice, lv_color_hex(COLOR_ACCENT), LV_PART_MAIN);
+  lv_obj_set_style_border_opa(notice, LV_OPA_50, LV_PART_MAIN);
+  lv_obj_set_style_radius(notice, px(14), LV_PART_MAIN);
+  lv_obj_set_style_pad_all(notice, 0, LV_PART_MAIN);
 
-  lv_obj_t *label = lv_label_create(notice);
-  lv_label_set_text(label, fmt::format(LV_SYMBOL_OK " PowerScreen updated to {}", version).c_str());
-  lv_obj_set_style_text_color(label, lv_color_white(), LV_PART_MAIN);
-  lv_obj_set_style_text_font(label, &lv_font_montserrat_20, LV_PART_MAIN);
-  lv_obj_center(label);
+  lv_obj_t *mark = plain(notice);
+  lv_obj_set_size(mark, px(32), px(32));
+  lv_obj_align(mark, LV_ALIGN_LEFT_MID, px(30), 0);
+  lv_obj_set_style_radius(mark, LV_RADIUS_CIRCLE, 0);
+  lv_obj_set_style_bg_color(mark, lv_color_hex(0x16A34A), 0);
+  lv_obj_set_style_bg_opa(mark, LV_OPA_COVER, 0);
+  lv_obj_t *mark_label = label(mark, LV_SYMBOL_OK, &lv_font_montserrat_16, lv_color_white());
+  lv_obj_center(mark_label);
+
+  lv_obj_t *text = label(notice, "PowerScreen UPDATED!", &lv_font_montserrat_20, lv_color_hex(COLOR_FG));
+  lv_obj_align(text, LV_ALIGN_LEFT_MID, px(76), 0);
 
   lv_obj_del_delayed(notice, 6000);
 }

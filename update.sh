@@ -162,6 +162,8 @@ set_moonraker_channel "$CHANNEL"
 echo "Updated PowerScreen to version $latest_version"
 set_status "RESTARTING:$latest_version"
 echo "$latest_version" > "$DONE_FILE"
+# Give PowerScreen time to draw the Restarting step before it is stopped.
+sleep 3
 if grep -Fqs "ID=buildroot" /etc/os-release
 then
     [ -f /etc/init.d/S99powerscreen ] && /etc/init.d/S99powerscreen stop &> /dev/null
