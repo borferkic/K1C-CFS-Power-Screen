@@ -517,6 +517,10 @@ void SysInfoPanel::foreground() {
   update_clock();
   refresh_network();
   show_tab(false);
+  {
+    std::lock_guard<std::mutex> guard(script_mutex);
+    refresh_system_versions();
+  }
   check_script_update();
   lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
   powerui::overlay_open("System", [this]() { lv_obj_move_background(cont); });
@@ -1342,7 +1346,15 @@ void SysInfoPanel::refresh_system_versions() {
   // Caller holds script_mutex.
   if (sys_value_labels[1] != NULL) {
     lv_label_set_text(sys_value_labels[1], script_base.c_str());
-    lv_label_set_text(sys_value_labels[2], klipper_version.c_str());
+    std::string klipper = klipper_version;
+    if (klipper == "..." || klipper == "unknown") {
+      // The K1C update manager has no data for Klipper: use the version reported by printer.info.
+      const auto &software_version = State::get_instance()->get_data("/printer_info/software_version"_json_pointer);
+      if (software_version.is_string() && !software_version.template get<std::string>().empty()) {
+        klipper = software_version.template get<std::string>();
+      }
+    }
+    lv_label_set_text(sys_value_labels[2], klipper.c_str());
     lv_label_set_text(sys_value_labels[3], moonraker_version.c_str());
   }
 }

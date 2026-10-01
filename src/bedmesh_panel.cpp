@@ -152,8 +152,8 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
     lv_obj_align(mesh_table, LV_ALIGN_TOP_MID, 0, px(68));
     lv_obj_set_style_bg_opa(mesh_table, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_set_style_border_width(mesh_table, 0, LV_PART_MAIN);
-    lv_obj_set_style_radius(mesh_table, px(6), LV_PART_ITEMS);
-    lv_obj_set_style_border_width(mesh_table, 3, LV_PART_ITEMS);
+    lv_obj_set_style_radius(mesh_table, 0, LV_PART_ITEMS);
+    lv_obj_set_style_border_width(mesh_table, 0, LV_PART_ITEMS);
     lv_obj_set_style_border_color(mesh_table, lv_color_hex(COLOR_CARD), LV_PART_ITEMS);
     lv_obj_set_style_text_color(mesh_table, lv_color_hex(COLOR_FG), LV_PART_ITEMS);
     lv_obj_set_style_pad_hor(mesh_table, 0, LV_PART_ITEMS);
@@ -162,11 +162,17 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
     lv_obj_t *profile_title = powerui::label(profile_card, "Profiles", &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
     lv_obj_set_pos(profile_title, px(20), px(16));
     lv_obj_set_parent(profile_cont, profile_card);
-    lv_obj_set_size(profile_cont, px(276), px(256));
+    lv_obj_set_size(profile_cont, px(276), px(272));
     lv_obj_set_pos(profile_cont, px(10), px(48));
     lv_obj_set_style_bg_opa(profile_cont, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_set_style_border_width(profile_cont, 0, LV_PART_MAIN);
     lv_obj_set_style_shadow_width(profile_cont, 0, LV_PART_MAIN);
+    lv_obj_set_flex_flow(profile_cont, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(profile_cont, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);  // profiles on top, details at the bottom
+    for (lv_obj_t *no_scroll : {profile_cont, profile_table, profile_info}) {
+      lv_obj_clear_flag(no_scroll, LV_OBJ_FLAG_SCROLLABLE);
+      lv_obj_set_scrollbar_mode(no_scroll, LV_SCROLLBAR_MODE_OFF);
+    }
     lv_obj_set_style_bg_opa(profile_cont, LV_OPA_TRANSP, LV_PART_ITEMS);  // profile_cont is a table: hide its stray empty cell
     lv_obj_set_style_border_width(profile_cont, 0, LV_PART_ITEMS);
     lv_obj_set_style_pad_all(profile_cont, 0, LV_PART_ITEMS);
@@ -226,7 +232,7 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
     lv_obj_set_height(profile_table, LV_SIZE_CONTENT);
     lv_table_set_col_width(profile_info, 0, px(176));
     lv_table_set_col_width(profile_info, 1, px(100));
-    lv_obj_set_height(profile_info, px(130));
+    lv_obj_set_height(profile_info, LV_SIZE_CONTENT);
     lv_obj_set_style_text_font(profile_info, &lv_font_montserrat_14, LV_PART_ITEMS);
     lv_obj_set_style_pad_hor(profile_info, px(4), LV_PART_ITEMS);
     lv_obj_set_style_pad_hor(profile_table, px(4), LV_PART_ITEMS);
