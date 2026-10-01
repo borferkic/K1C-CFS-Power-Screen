@@ -67,10 +67,11 @@ ConsolePanel::ConsolePanel(KWebSocketClient &websocket_client, std::mutex &lock,
   lv_obj_add_flag(label, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_add_event_cb(label, &ConsolePanel::_handle_clear_input, LV_EVENT_CLICKED, this);
 
-  // ---- PowerUI look: dark page, log box, macro list card, input pill and a green Send button.
+  // ---- PowerUI console (reference 11-consola): one card with a colored log, a row of shortcuts and the input.
   const lv_color_t bg = lv_color_hex(0x0A0A0A);
-  const lv_color_t card = lv_color_hex(0x171717);
+  const lv_color_t card_bg = lv_color_hex(0x171717);
   const lv_color_t fg = lv_color_hex(0xFAFAFA);
+  const lv_color_t muted = lv_color_hex(0xA1A1A1);
   const lv_color_t accent = lv_color_hex(0x4ADE80);
   auto border = [](lv_obj_t *obj, lv_part_t part) {
     lv_obj_set_style_border_width(obj, 1, part);
@@ -82,40 +83,84 @@ ConsolePanel::ConsolePanel(KWebSocketClient &websocket_client, std::mutex &lock,
   lv_obj_set_style_bg_opa(console_cont, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_width(console_cont, 0, LV_PART_MAIN);
   lv_obj_set_style_pad_all(console_cont, 12, LV_PART_MAIN);
-  lv_obj_set_style_pad_row(console_cont, 12, LV_PART_MAIN);
-  lv_obj_set_style_bg_opa(top_cont, LV_OPA_TRANSP, LV_PART_MAIN);
-  lv_obj_set_style_border_width(top_cont, 0, LV_PART_MAIN);
-  lv_obj_set_style_pad_column(top_cont, 12, LV_PART_MAIN);
+  lv_obj_set_style_pad_row(console_cont, 0, LV_PART_MAIN);
+  lv_obj_clear_flag(console_cont, LV_OBJ_FLAG_SCROLLABLE);
+
+  card = lv_obj_create(console_cont);
+  lv_obj_clear_flag(card, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_width(card, LV_PCT(100));
+  lv_obj_set_flex_grow(card, 1);
+  lv_obj_set_flex_flow(card, LV_FLEX_FLOW_COLUMN);
+  lv_obj_set_style_bg_color(card, card_bg, LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(card, LV_OPA_COVER, LV_PART_MAIN);
+  border(card, LV_PART_MAIN);
+  lv_obj_set_style_radius(card, 14, LV_PART_MAIN);
+  lv_obj_set_style_pad_all(card, 16, LV_PART_MAIN);
+  lv_obj_set_style_pad_row(card, 12, LV_PART_MAIN);
+  lv_obj_move_to_index(card, 0);
+
+  // Log box: dark, monospaced, colored lines, Clear button in the corner.
+  lv_obj_set_parent(top_cont, card);
+  lv_obj_set_width(top_cont, LV_PCT(100));
+  lv_obj_set_flex_grow(top_cont, 1);
+  lv_obj_set_style_bg_color(top_cont, bg, LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(top_cont, LV_OPA_COVER, LV_PART_MAIN);
+  border(top_cont, LV_PART_MAIN);
+  lv_obj_set_style_radius(top_cont, 10, LV_PART_MAIN);
+  lv_obj_set_style_pad_all(top_cont, 12, LV_PART_MAIN);
+  lv_obj_add_flag(output, LV_OBJ_FLAG_HIDDEN);        // the old text area; the log is a colored label now
+  lv_obj_add_flag(macro_list, LV_OBJ_FLAG_HIDDEN);    // replaced by the shortcut chips
+  log_box = top_cont;
+  lv_obj_add_flag(log_box, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_scroll_dir(log_box, LV_DIR_VER);
+  lv_obj_set_flex_flow(log_box, LV_FLEX_FLOW_COLUMN);
+  lv_obj_set_flex_align(log_box, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);  // short logs hug the bottom
+  log_label = lv_label_create(log_box);
+  lv_label_set_recolor(log_label, true);
+  lv_label_set_long_mode(log_label, LV_LABEL_LONG_WRAP);
+  lv_obj_set_width(log_label, LV_PCT(100));
+  lv_label_set_text(log_label, "");
+  lv_obj_set_style_text_font(log_label, &dejavusans_mono_14, LV_PART_MAIN);
+  lv_obj_set_style_text_color(log_label, fg, LV_PART_MAIN);
+
+  lv_obj_t *clear_btn = lv_btn_create(log_box);
+  lv_obj_add_flag(clear_btn, LV_OBJ_FLAG_FLOATING);
+  lv_obj_set_size(clear_btn, 88, 32);
+  lv_obj_align(clear_btn, LV_ALIGN_TOP_RIGHT, 0, 0);
+  lv_obj_set_style_bg_color(clear_btn, lv_color_hex(0x262626), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(clear_btn, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_radius(clear_btn, 8, LV_PART_MAIN);
+  lv_obj_set_style_shadow_width(clear_btn, 0, LV_PART_MAIN);
+  lv_obj_t *clear_label = lv_label_create(clear_btn);
+  lv_label_set_text(clear_label, LV_SYMBOL_CLOSE "  Clear");
+  lv_obj_set_style_text_font(clear_label, &lv_font_montserrat_14, LV_PART_MAIN);
+  lv_obj_set_style_text_color(clear_label, fg, LV_PART_MAIN);
+  lv_obj_center(clear_label);
+  lv_obj_add_event_cb(clear_btn, &ConsolePanel::_handle_clear_log, LV_EVENT_CLICKED, this);
+
+  // Shortcut chips: command history and the macros that match what is typed.
+  chips_row = lv_obj_create(card);
+  lv_obj_remove_style_all(chips_row);
+  lv_obj_set_size(chips_row, LV_PCT(100), 36);
+  lv_obj_set_flex_flow(chips_row, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(chips_row, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_style_pad_column(chips_row, 8, LV_PART_MAIN);
+  lv_obj_add_flag(chips_row, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_scroll_dir(chips_row, LV_DIR_HOR);
+  lv_obj_set_scrollbar_mode(chips_row, LV_SCROLLBAR_MODE_OFF);
+
+  // Input and Send.
+  lv_obj_set_parent(input_cont, card);
+  lv_obj_set_width(input_cont, LV_PCT(100));
+  lv_obj_set_height(input_cont, 44);
   lv_obj_set_style_bg_opa(input_cont, LV_OPA_TRANSP, LV_PART_MAIN);
   lv_obj_set_style_border_width(input_cont, 0, LV_PART_MAIN);
   lv_obj_set_style_pad_column(input_cont, 12, LV_PART_MAIN);
+  lv_obj_clear_flag(input_cont, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_flex_align(input_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
-  lv_obj_set_size(output, LV_PCT(60), LV_PCT(100));
-  lv_obj_set_style_bg_color(output, bg, LV_PART_MAIN);
-  lv_obj_set_style_bg_opa(output, LV_OPA_COVER, LV_PART_MAIN);
-  border(output, LV_PART_MAIN);
-  lv_obj_set_style_radius(output, 10, LV_PART_MAIN);
-  lv_obj_set_style_pad_all(output, 12, LV_PART_MAIN);
-  lv_obj_set_style_text_color(output, fg, LV_PART_MAIN);
-
-  lv_obj_set_size(macro_list, LV_PCT(40), LV_PCT(100));
-  lv_obj_set_style_bg_color(macro_list, card, LV_PART_MAIN);
-  lv_obj_set_style_bg_opa(macro_list, LV_OPA_COVER, LV_PART_MAIN);
-  border(macro_list, LV_PART_MAIN);
-  lv_obj_set_style_radius(macro_list, 14, LV_PART_MAIN);
-  lv_obj_set_style_pad_all(macro_list, 6, LV_PART_MAIN);
-  lv_obj_set_style_bg_opa(macro_list, LV_OPA_TRANSP, LV_PART_ITEMS);
-  lv_obj_set_style_text_color(macro_list, fg, LV_PART_ITEMS);
-  lv_obj_set_style_pad_ver(macro_list, 11, LV_PART_ITEMS);
-  lv_obj_set_style_pad_hor(macro_list, 10, LV_PART_ITEMS);
-  lv_obj_set_style_border_side(macro_list, LV_BORDER_SIDE_BOTTOM, LV_PART_ITEMS);
-  lv_obj_set_style_border_width(macro_list, 1, LV_PART_ITEMS);
-  lv_obj_set_style_border_color(macro_list, lv_color_white(), LV_PART_ITEMS);
-  lv_obj_set_style_border_opa(macro_list, LV_OPA_10, LV_PART_ITEMS);
-  lv_obj_set_style_bg_color(macro_list, lv_color_hex(0x262626), LV_PART_ITEMS | LV_STATE_PRESSED);
-  lv_obj_set_style_bg_opa(macro_list, LV_OPA_COVER, LV_PART_ITEMS | LV_STATE_PRESSED);
-
-  lv_obj_set_style_bg_color(input, card, LV_PART_MAIN);
+  lv_obj_set_height(input, 44);
+  lv_obj_set_style_bg_color(input, card_bg, LV_PART_MAIN);
   lv_obj_set_style_bg_opa(input, LV_OPA_COVER, LV_PART_MAIN);
   border(input, LV_PART_MAIN);
   lv_obj_set_style_border_color(input, accent, LV_PART_MAIN | LV_STATE_FOCUSED);
@@ -123,9 +168,9 @@ ConsolePanel::ConsolePanel(KWebSocketClient &websocket_client, std::mutex &lock,
   lv_obj_set_style_radius(input, 10, LV_PART_MAIN);
   lv_obj_set_style_text_color(input, fg, LV_PART_MAIN);
   lv_textarea_set_placeholder_text(input, "Send G-code...");
-  lv_obj_set_style_text_color(input, lv_color_hex(0xA1A1A1), LV_PART_TEXTAREA_PLACEHOLDER);
+  lv_obj_set_style_text_color(input, muted, LV_PART_TEXTAREA_PLACEHOLDER);
 
-  lv_obj_set_width(send_btn, 120);
+  lv_obj_set_size(send_btn, 110, 44);
   lv_obj_set_style_bg_color(send_btn, lv_color_hex(0x16A34A), LV_PART_MAIN);
   lv_obj_set_style_bg_color(send_btn, lv_color_hex(0x15803D), LV_PART_MAIN | LV_STATE_PRESSED);
   lv_obj_set_style_bg_opa(send_btn, LV_OPA_COVER, LV_PART_MAIN);
@@ -134,11 +179,13 @@ ConsolePanel::ConsolePanel(KWebSocketClient &websocket_client, std::mutex &lock,
   lv_label_set_text(send_btn_label, LV_SYMBOL_OK "  Send");
   lv_obj_set_style_text_color(send_btn_label, lv_color_white(), LV_PART_MAIN);
 
-  lv_obj_set_style_bg_color(kb, card, LV_PART_MAIN);
+  lv_obj_set_parent(kb, console_cont);
+  lv_obj_set_style_bg_color(kb, card_bg, LV_PART_MAIN);
   lv_obj_set_style_bg_color(kb, lv_color_hex(0x262626), LV_PART_ITEMS);
   lv_obj_set_style_text_color(kb, fg, LV_PART_ITEMS);
   lv_obj_set_style_radius(kb, 8, LV_PART_ITEMS);
   lv_obj_set_style_border_width(kb, 0, LV_PART_ITEMS);
+  refresh_chips("");
 
   // ws.register_gcode_resp([this](json& d) { this->handle_macro_response(d); });
   ws.register_method_callback("notify_gcode_response",
@@ -183,33 +230,10 @@ void ConsolePanel::handle_kb_input(lv_event_t *e)
   }
 
   if (code == LV_EVENT_VALUE_CHANGED) {
-    // filter macros with input
-    lv_obj_scroll_to_y(macro_list, 0, LV_ANIM_OFF);
-    std::string cmd = std::string(lv_textarea_get_text(input));
-    if (cmd.find_first_of(' ') == std::string::npos) {
-      std::string upper_cmd;
-      std::transform(cmd.begin(), cmd.end(), std::back_inserter(upper_cmd),
-		     [](unsigned char c){ return std::toupper(c); });
-
-      if (!all_macros.empty() || !history.empty()) {
-	uint16_t index = 0;
-	for (const auto &m : history) {
-	  if (m.rfind(upper_cmd, 0) == 0 || m.rfind(cmd, 0) == 0) {
-	    lv_table_set_cell_value(macro_list, index++, 0,  m.c_str());
-	  }
-	}
-	
-	for (const auto &m : all_macros) {
-	  if (m.rfind(upper_cmd, 0) == 0 || m.rfind(cmd, 0) == 0) {
-	    lv_table_set_cell_value(macro_list, index++, 0,  m.c_str());
-	  }
-	}
-
-	lv_table_set_row_cnt(macro_list, index);
-      }
-    }
+    // filter the shortcut chips with the typed text
+    refresh_chips(std::string(lv_textarea_get_text(input)));
   }
-  
+
   if (code == LV_EVENT_READY) {
     spdlog::debug("keyboard ready");
     const char *cmd = lv_textarea_get_text(input);
@@ -217,9 +241,7 @@ void ConsolePanel::handle_kb_input(lv_event_t *e)
       return;
     }
 
-    lv_textarea_add_text(output,"> ");
-    lv_textarea_add_text(output, cmd);
-    lv_textarea_add_text(output,"\n");
+    append_log(std::string("> ") + cmd);
     ws.gcode_script(cmd);
 
     if (!history.empty()) {
@@ -242,35 +264,15 @@ void ConsolePanel::handle_kb_input(lv_event_t *e)
     }
 		    
     lv_textarea_set_text(input, "");
-
-    uint32_t index = 0;
-    for (const auto &m : history) {
-      lv_table_set_cell_value(macro_list, index++, 0,  m.c_str());
-    }
-
-    for (const auto &m : all_macros) {
-      lv_table_set_cell_value(macro_list, index++, 0,  m.c_str());
-    }
-    
+    refresh_chips("");
   }
 }
 
 void ConsolePanel::handle_select_macro(lv_event_t *e) {
-  lv_event_code_t code = lv_event_get_code(e);
-  if (code == LV_EVENT_VALUE_CHANGED) {
-    uint16_t row;
-    uint16_t col;
-
-    lv_table_get_selected_cell(macro_list, &row, &col);
-    const char * macro = lv_table_get_cell_value(macro_list, row, col);
-    lv_textarea_set_text(input, macro);
-  }
-  
+  (void)e;  // the table was replaced by the shortcut chips
 }
 
 void ConsolePanel::handle_macros(json &j) {
-  uint32_t index = 0;
-
   // TODO: this is a race condition
   auto &db_history = State::get_instance()->get_data("/console/commandHistory"_json_pointer);
 
@@ -286,12 +288,101 @@ void ConsolePanel::handle_macros(json &j) {
   }
 
   std::lock_guard<std::mutex> lock(lv_lock);
+  refresh_chips("");
+}
+
+// A shortcut: history first, then macros, filtered by the typed prefix.
+void ConsolePanel::refresh_chips(const std::string &prefix) {
+  lv_obj_clean(chips_row);
+  std::string upper;
+  std::transform(prefix.begin(), prefix.end(), std::back_inserter(upper), [](unsigned char ch) { return std::toupper(ch); });
+  int count = 0;
+  auto add_chip = [this, &count](const std::string &text) {
+    if (count >= 16) {
+      return;
+    }
+    lv_obj_t *chip = lv_btn_create(chips_row);
+    lv_obj_set_height(chip, 36);
+    lv_obj_set_width(chip, LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_color(chip, lv_color_hex(0x262626), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(chip, lv_color_hex(0x333333), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_opa(chip, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_radius(chip, 8, LV_PART_MAIN);
+    lv_obj_set_style_shadow_width(chip, 0, LV_PART_MAIN);
+    lv_obj_set_style_pad_hor(chip, 14, LV_PART_MAIN);
+    lv_obj_t *chip_label = lv_label_create(chip);
+    lv_label_set_text(chip_label, text.c_str());
+    lv_obj_set_style_text_font(chip_label, &dejavusans_mono_14, LV_PART_MAIN);
+    lv_obj_set_style_text_color(chip_label, lv_color_hex(0xFAFAFA), LV_PART_MAIN);
+    lv_obj_center(chip_label);
+    lv_obj_add_event_cb(chip, &ConsolePanel::_handle_chip, LV_EVENT_CLICKED, this);
+    ++count;
+  };
+  auto matches = [&](const std::string &m) { return prefix.empty() || m.rfind(upper, 0) == 0 || m.rfind(prefix, 0) == 0; };
   for (const auto &m : history) {
-    lv_table_set_cell_value(macro_list, index++, 0,  m.c_str());
+    if (matches(m)) {
+      add_chip(m);
+    }
   }
-  
   for (const auto &m : all_macros) {
-    lv_table_set_cell_value(macro_list, index++, 0,  m.c_str());
+    if (matches(m)) {
+      add_chip(m);
+    }
+  }
+  lv_obj_scroll_to_x(chips_row, 0, LV_ANIM_OFF);
+}
+
+void ConsolePanel::handle_chip(lv_event_t *e) {
+  lv_obj_t *chip = lv_event_get_current_target(e);
+  lv_obj_t *chip_label = lv_obj_get_child(chip, 0);
+  if (chip_label != NULL) {
+    lv_textarea_set_text(input, lv_label_get_text(chip_label));
+  }
+}
+
+void ConsolePanel::handle_clear_log(lv_event_t *e) {
+  (void)e;
+  log_lines.clear();
+  refresh_log();
+}
+
+// Log lines are colored by kind: commands white, comments muted, ok green, errors red.
+void ConsolePanel::append_log(const std::string &line) {
+  log_lines.push_back(line);
+  while (log_lines.size() > 150) {
+    log_lines.pop_front();
+  }
+  refresh_log();
+}
+
+void ConsolePanel::refresh_log() {
+  std::string text;
+  for (const auto &line : log_lines) {
+    std::string escaped;
+    for (char ch : line) {
+      if (ch == '#') {
+        escaped += "##";
+      } else {
+        escaped += ch;
+      }
+    }
+    std::string lower;
+    std::transform(line.begin(), line.end(), std::back_inserter(lower), [](unsigned char ch) { return std::tolower(ch); });
+    const char *color = "FAFAFA";
+    if (line.rfind("//", 0) == 0) {
+      color = "A1A1A1";
+    } else if (line.rfind("!!", 0) == 0 || lower.find("error") != std::string::npos) {
+      color = "FF6467";
+    } else if (line.rfind("ok", 0) == 0) {
+      color = "4ADE80";
+    }
+    text += std::string("#") + color + " " + escaped + "#\n";
+  }
+  lv_label_set_text(log_label, text.c_str());
+  lv_obj_update_layout(log_box);
+  const lv_coord_t hidden_below = lv_obj_get_scroll_bottom(log_box);
+  if (hidden_below > 0 && lv_obj_get_height(log_box) > 40) {
+    lv_obj_scroll_by(log_box, 0, -hidden_below, LV_ANIM_OFF);  // follow the newest line
   }
 }
 
@@ -299,8 +390,7 @@ void ConsolePanel::handle_macro_response(json &j) {
   if (j.contains("params")) {
     std::lock_guard<std::mutex> lock(lv_lock);
     for (auto &l : j["params"]) {
-      lv_textarea_add_text(output, l.template get<std::string>().c_str());
-      lv_textarea_add_text(output, "\n");
+      append_log(l.template get<std::string>());
     }
   }
 }

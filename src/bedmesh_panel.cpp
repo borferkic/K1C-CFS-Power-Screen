@@ -9,9 +9,9 @@
 #include <string>
 
 LV_IMG_DECLARE(back);
-LV_IMG_DECLARE(delete_img);
-LV_IMG_DECLARE(bedmesh_img);
-LV_IMG_DECLARE(sd_img);
+LV_IMG_DECLARE(ui_icon_trash);
+LV_IMG_DECLARE(ui_icon_grid);
+LV_IMG_DECLARE(ui_icon_save);
 
 
 static lv_color_t color_gradient(double offset);
@@ -27,9 +27,9 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   , profile_table(lv_table_create(profile_cont))
   , profile_info(lv_table_create(profile_cont))
   , controls_cont(lv_obj_create(cont))
-  , save_btn(controls_cont, &sd_img, "Save Profile", &BedMeshPanel::_handle_callback, this)
-  , clear_btn(controls_cont, &delete_img, "Clear Profile", &BedMeshPanel::_handle_callback, this)
-  , calibrate_btn(controls_cont, &bedmesh_img, "Calibrate", &BedMeshPanel::_handle_callback, this)
+  , save_btn(controls_cont, &ui_icon_save, "Save", &BedMeshPanel::_handle_callback, this)
+  , clear_btn(controls_cont, &ui_icon_trash, "Clear", &BedMeshPanel::_handle_callback, this)
+  , calibrate_btn(controls_cont, &ui_icon_grid, "Calibrate", &BedMeshPanel::_handle_callback, this)
   , back_btn(controls_cont, &back, "Back", &BedMeshPanel::_handle_callback, this)
   , msgbox(lv_obj_create(prompt))
   , input(lv_textarea_create(msgbox))
@@ -51,11 +51,7 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_flex_flow(top_cont, LV_FLEX_FLOW_ROW);
 
   auto screen_width = powerui::overlay_width_px();
-  if (screen_width < 800) {
-    lv_obj_set_style_text_font(mesh_table, &lv_font_montserrat_8, LV_STATE_DEFAULT);
-  } else {
-    lv_obj_set_style_text_font(mesh_table, &lv_font_montserrat_10, LV_STATE_DEFAULT);
-  }
+  lv_obj_set_style_text_font(mesh_table, &lv_font_montserrat_14, LV_STATE_DEFAULT);
   auto scale = (double)screen_width / 800.0;
   auto hscale = powerui::overlay_height_scale();
   
@@ -144,7 +140,7 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
     lv_obj_set_style_bg_opa(cont, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_set_style_border_width(cont, 0, LV_PART_MAIN);
 
-    lv_obj_t *mesh_card = card(cont, 12, 12, 400, 320);
+    lv_obj_t *mesh_card = card(cont, 12, 12, 400, 416);
     lv_obj_t *mesh_title = powerui::label(mesh_card, "Bed mesh", &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
     lv_obj_set_pos(mesh_title, px(20), px(16));
     mesh_profile_label = powerui::label(mesh_card, "", &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
@@ -156,12 +152,13 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
     lv_obj_align(mesh_table, LV_ALIGN_TOP_MID, 0, px(68));
     lv_obj_set_style_bg_opa(mesh_table, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_set_style_border_width(mesh_table, 0, LV_PART_MAIN);
-    lv_obj_set_style_radius(mesh_table, px(3), LV_PART_ITEMS);
-    lv_obj_set_style_border_width(mesh_table, 1, LV_PART_ITEMS);
+    lv_obj_set_style_radius(mesh_table, px(6), LV_PART_ITEMS);
+    lv_obj_set_style_border_width(mesh_table, 3, LV_PART_ITEMS);
     lv_obj_set_style_border_color(mesh_table, lv_color_hex(COLOR_CARD), LV_PART_ITEMS);
     lv_obj_set_style_text_color(mesh_table, lv_color_hex(COLOR_FG), LV_PART_ITEMS);
+    lv_obj_set_style_pad_hor(mesh_table, 0, LV_PART_ITEMS);
 
-    lv_obj_t *profile_card = card(cont, 424, 12, 300, 320);
+    lv_obj_t *profile_card = card(cont, 424, 12, 300, 332);
     lv_obj_t *profile_title = powerui::label(profile_card, "Profiles", &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
     lv_obj_set_pos(profile_title, px(20), px(16));
     lv_obj_set_parent(profile_cont, profile_card);
@@ -170,6 +167,9 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
     lv_obj_set_style_bg_opa(profile_cont, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_set_style_border_width(profile_cont, 0, LV_PART_MAIN);
     lv_obj_set_style_shadow_width(profile_cont, 0, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(profile_cont, LV_OPA_TRANSP, LV_PART_ITEMS);  // profile_cont is a table: hide its stray empty cell
+    lv_obj_set_style_border_width(profile_cont, 0, LV_PART_ITEMS);
+    lv_obj_set_style_pad_all(profile_cont, 0, LV_PART_ITEMS);
 
     for (lv_obj_t *table : {profile_table, profile_info}) {
       lv_obj_set_style_bg_opa(table, LV_OPA_TRANSP, LV_PART_MAIN);
@@ -180,30 +180,69 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
       lv_obj_set_style_border_width(table, 1, LV_PART_ITEMS);
       lv_obj_set_style_border_color(table, lv_color_white(), LV_PART_ITEMS);
       lv_obj_set_style_border_opa(table, LV_OPA_10, LV_PART_ITEMS);
-      lv_obj_set_style_pad_top(table, px(7), LV_PART_ITEMS);
-      lv_obj_set_style_pad_bottom(table, px(7), LV_PART_ITEMS);
+      lv_obj_set_style_pad_top(table, px(9), LV_PART_ITEMS);
+      lv_obj_set_style_pad_bottom(table, px(9), LV_PART_ITEMS);
+      for (lv_state_t state : {LV_STATE_PRESSED, LV_STATE_FOCUSED, LV_STATE_FOCUS_KEY, LV_STATE_CHECKED, LV_STATE_EDITED}) {
+        lv_obj_set_style_bg_opa(table, LV_OPA_TRANSP, LV_PART_ITEMS | state);
+        lv_obj_set_style_outline_width(table, 0, LV_PART_ITEMS | state);
+      }
+      lv_obj_set_style_text_font(table, &lv_font_montserrat_14, LV_PART_ITEMS);
     }
+    lv_obj_add_event_cb(profile_table, [](lv_event_t *e) {
+      lv_obj_draw_part_dsc_t *dsc = lv_event_get_draw_part_dsc(e);
+      if (dsc->part != LV_PART_ITEMS || dsc->label_dsc == NULL) {
+        return;
+      }
+      auto *self = static_cast<BedMeshPanel *>(e->user_data);
+      lv_obj_t *table = lv_event_get_target(e);
+      const uint32_t cols = lv_table_get_col_cnt(table);
+      const uint32_t row = dsc->id / cols;
+      const uint32_t col = dsc->id - row * cols;
+      const char *name = lv_table_get_cell_value(table, row, 0);
+      if (col == 0 && name != NULL && self->active_profile == name) {
+        dsc->label_dsc->color = lv_color_hex(COLOR_ACCENT);
+      } else if (col > 0) {
+        dsc->label_dsc->color = lv_color_hex(COLOR_MUTED);
+        dsc->label_dsc->align = LV_TEXT_ALIGN_CENTER;
+      }
+    }, LV_EVENT_DRAW_PART_BEGIN, this);
+    lv_obj_add_event_cb(profile_info, [](lv_event_t *e) {
+      lv_obj_draw_part_dsc_t *dsc = lv_event_get_draw_part_dsc(e);
+      if (dsc->part != LV_PART_ITEMS || dsc->label_dsc == NULL) {
+        return;
+      }
+      lv_obj_t *table = lv_event_get_target(e);
+      const uint32_t cols = lv_table_get_col_cnt(table);
+      const uint32_t col = dsc->id % cols;
+      if (col == 1) {
+        dsc->label_dsc->align = LV_TEXT_ALIGN_RIGHT;
+      } else {
+        dsc->label_dsc->color = lv_color_hex(COLOR_MUTED);
+      }
+    }, LV_EVENT_DRAW_PART_BEGIN, this);
     lv_table_set_col_width(profile_table, 0, px(168));
     lv_table_set_col_width(profile_table, 1, px(54));
     lv_table_set_col_width(profile_table, 2, px(54));
-    lv_obj_set_height(profile_table, px(116));
-    lv_table_set_col_width(profile_info, 0, px(150));
-    lv_table_set_col_width(profile_info, 1, px(126));
+    lv_obj_set_height(profile_table, LV_SIZE_CONTENT);
+    lv_table_set_col_width(profile_info, 0, px(176));
+    lv_table_set_col_width(profile_info, 1, px(100));
     lv_obj_set_height(profile_info, px(130));
-    lv_obj_set_style_text_font(profile_info, &lv_font_montserrat_12, LV_PART_ITEMS);
+    lv_obj_set_style_text_font(profile_info, &lv_font_montserrat_14, LV_PART_ITEMS);
+    lv_obj_set_style_pad_hor(profile_info, px(4), LV_PART_ITEMS);
+    lv_obj_set_style_pad_hor(profile_table, px(4), LV_PART_ITEMS);
 
     lv_obj_add_flag(top_cont, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(controls_cont, LV_OBJ_FLAG_HIDDEN);
 
-    // Action row: three buttons across the full width at y 344.
-    auto put = [this](ButtonContainer &button, int x, int w) {
+    // Action row: three small buttons under the profiles card (Calibrate, Save, Clear).
+    auto put = [this](ButtonContainer &button, int x) {
       lv_obj_set_parent(button.get_container(), cont);
-      button.set_fixed_size(powerui::px(w), powerui::px(84));
-      lv_obj_set_pos(button.get_container(), powerui::px(x), powerui::px(344));
+      button.set_fixed_size(powerui::px(92), powerui::px(72));
+      lv_obj_set_pos(button.get_container(), powerui::px(x), powerui::px(356));
     };
-    put(calibrate_btn, 12, 229);
-    put(save_btn, 253, 230);
-    put(clear_btn, 494, 229);
+    put(calibrate_btn, 424);
+    put(save_btn, 528);
+    put(clear_btn, 632);
     style_button(calibrate_btn.get_container(), calibrate_btn.get_button(), ButtonKind::Soft);
     style_button(save_btn.get_container(), save_btn.get_button(), ButtonKind::Outline);
     style_button(clear_btn.get_container(), clear_btn.get_button(), ButtonKind::Destructive);
@@ -277,9 +316,9 @@ void BedMeshPanel::refresh_views(json &bm) {
 
       // calculate cell width
       if (mesh.size() > 0 && mesh[0].size() > 0) {
-	auto scale = powerui::overlay_width_scale();
-	int col_width = std::max(4, (int)(370 * scale / mesh[0].size()));
-	int cel_height = std::max(1, (int)(col_width / 2 - 8));
+	int col_width = std::max(4, (int)(powerui::px(372) / mesh[0].size()));
+	int row_height = std::max(8, (int)(powerui::px(316) / mesh.size()));
+	int cel_height = std::max(1, (int)((row_height - 22) / 2));
 
 	lv_obj_set_style_pad_top(mesh_table, cel_height, LV_PART_ITEMS | LV_STATE_DEFAULT);
 	lv_obj_set_style_pad_bottom(mesh_table, cel_height, LV_PART_ITEMS | LV_STATE_DEFAULT);
@@ -365,27 +404,27 @@ void BedMeshPanel::refresh_profile_info(std::string profile) {
     }    
 
     std::vector<int> xvalues;
-    for (auto &param : {"min_x", "max_x", "x_count", "mesh_x_pps"}) {
+    for (auto &param : {"min_x", "max_x", "x_count"}) {
       v = mesh_params[json::json_pointer(fmt::format("/{}", param))];
       if (!v.is_null()) {
 	xvalues.push_back(v.template get<int>());
       }
     }
 
-    lv_table_set_cell_value(profile_info, rowidx, 0, "X (min, max, count, pps)");
+    lv_table_set_cell_value(profile_info, rowidx, 0, "X (min, max, count)");
     lv_table_set_cell_value(profile_info, rowidx, 1, fmt::format("{}", fmt::join(xvalues, ", ")).c_str());
     rowidx++;    
 
     std::vector<int> yvalues;
-    for (auto &param : {"min_y", "max_y", "y_count", "mesh_y_pps"}) {
+    for (auto &param : {"min_y", "max_y", "y_count"}) {
       v = mesh_params[json::json_pointer(fmt::format("/{}", param))];
       if (!v.is_null()) {
 	yvalues.push_back(v.template get<int>());
       }
     }
 
-    lv_table_set_cell_value(profile_info, rowidx, 0, "Y (min, max, count, pps)");
-    lv_table_set_cell_value(profile_info, rowidx, 1, fmt::format("{}", fmt::join(xvalues, ", ")).c_str());
+    lv_table_set_cell_value(profile_info, rowidx, 0, "Y (min, max, count)");
+    lv_table_set_cell_value(profile_info, rowidx, 1, fmt::format("{}", fmt::join(yvalues, ", ")).c_str());
     rowidx++;
   }
 }

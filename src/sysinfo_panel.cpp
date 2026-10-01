@@ -555,34 +555,45 @@ void SysInfoPanel::create_tabs() {
   using namespace powerui;
   lv_obj_add_flag(title_bar, LV_OBJ_FLAG_HIDDEN);  // the main title bar replaces the panel's own one
 
-  // Left column: printer photo card and the system information card.
+  // Left column: a compact printer card (photo on the left, model and size on the right) and a roomy
+  // system information card with text as large as the other cards of the screen.
   lv_obj_t *printer_card = lv_obj_create(general_page);
   style_card(printer_card);
-  lv_obj_set_size(printer_card, px(350), px(224));
+  lv_obj_set_size(printer_card, px(350), px(110));
   lv_obj_set_pos(printer_card, px(12), px(12));
   lv_obj_set_parent(printer_img, printer_card);
-  lv_img_set_zoom(printer_img, 110);
-  lv_obj_align(printer_img, LV_ALIGN_CENTER, 0, -px(20));
-  lv_obj_t *printer_name = label(printer_card, "Creality K1C", &lv_font_montserrat_18, lv_color_hex(COLOR_FG));
-  lv_obj_align(printer_name, LV_ALIGN_BOTTOM_MID, 0, -px(32));
-  lv_obj_t *printer_info = label(printer_card, "CoreXY  220 x 220 x 250 mm", &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
-  lv_obj_align(printer_info, LV_ALIGN_BOTTOM_MID, 0, -px(12));
+  lv_img_set_size_mode(printer_img, LV_IMG_SIZE_MODE_REAL);
+  lv_img_set_zoom(printer_img, 72);
+  lv_obj_align(printer_img, LV_ALIGN_LEFT_MID, px(14), 0);
+  lv_obj_t *printer_name = label(printer_card, "Creality K1C", &lv_font_montserrat_20, lv_color_hex(COLOR_FG));
+  lv_obj_align(printer_name, LV_ALIGN_LEFT_MID, px(124), -px(14));
+  lv_obj_t *printer_info = label(printer_card, "CoreXY", &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+  lv_obj_align(printer_info, LV_ALIGN_LEFT_MID, px(124), px(12));
+  lv_obj_t *printer_size = label(printer_card, "220 x 220 x 250 mm", &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+  lv_obj_align(printer_size, LV_ALIGN_LEFT_MID, px(124), px(34));
 
   lv_obj_t *info_card = lv_obj_create(general_page);
   style_card(info_card);
-  lv_obj_set_size(info_card, px(350), px(180));
-  lv_obj_set_pos(info_card, px(12), px(248));
+  lv_obj_set_size(info_card, px(350), px(294));
+  lv_obj_set_pos(info_card, px(12), px(134));
   lv_obj_t *info_title = label(info_card, "System", &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
   lv_obj_set_pos(info_title, px(20), px(14));
   const char *info_names[5] = {"PowerScreen", "CFS Power Script", "Klipper", "Moonraker", "K1C Firmware"};
   for (int i = 0; i < 5; ++i) {
-    lv_obj_t *name = label(info_card, info_names[i], &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
-    lv_obj_set_pos(name, px(20), px(44 + i * 26));
-    lv_obj_t *value = label(info_card, "...", &lv_font_montserrat_14, lv_color_hex(COLOR_FG));
-    lv_obj_set_width(value, px(170));
+    const int row_y = 46 + i * 49;
+    lv_obj_t *line = plain(info_card);
+    lv_obj_set_size(line, LV_PCT(100), 1);
+    lv_obj_set_pos(line, 0, px(row_y));
+    lv_obj_set_style_bg_color(line, lv_color_white(), 0);
+    lv_obj_set_style_bg_opa(line, LV_OPA_10, 0);
+
+    lv_obj_t *name = label(info_card, info_names[i], &lv_font_montserrat_16, lv_color_hex(COLOR_MUTED));
+    lv_obj_set_pos(name, px(20), px(row_y + 14));
+    lv_obj_t *value = label(info_card, "...", &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
+    lv_obj_set_width(value, px(160));
     lv_label_set_long_mode(value, LV_LABEL_LONG_CLIP);
     lv_obj_set_style_text_align(value, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN);
-    lv_obj_set_pos(value, px(350 - 20 - 170), px(44 + i * 26));
+    lv_obj_set_pos(value, px(350 - 20 - 160), px(row_y + 14));
     sys_value_labels[i] = value;
   }
   lv_label_set_text(sys_value_labels[0], split_version(installed_version()).first.c_str());

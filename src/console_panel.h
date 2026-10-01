@@ -6,7 +6,9 @@
 
 #include <functional>
 #include <mutex>
+#include <deque>
 #include <list>
+#include <string>
 
 class ConsolePanel {
  public:
@@ -21,6 +23,8 @@ class ConsolePanel {
   void handle_macro_response(json &d);
   void handle_send_macro(lv_event_t *e);
   void handle_clear_input(lv_event_t *e);
+  void handle_chip(lv_event_t *e);
+  void handle_clear_log(lv_event_t *e);
   void set_back_callback(std::function<void()> callback);
   void handle_back(lv_event_t *e);
 
@@ -44,6 +48,14 @@ class ConsolePanel {
     panel->handle_back(e);
   };
 
+  static void _handle_chip(lv_event_t *e) {
+    static_cast<ConsolePanel*>(e->user_data)->handle_chip(e);
+  };
+
+  static void _handle_clear_log(lv_event_t *e) {
+    static_cast<ConsolePanel*>(e->user_data)->handle_clear_log(e);
+  };
+
   static void _handle_clear_input(lv_event_t *e) {
     ConsolePanel *panel = (ConsolePanel*)e->user_data;
     panel->handle_clear_input(e);
@@ -59,6 +71,14 @@ class ConsolePanel {
   lv_obj_t *input_cont;
   lv_obj_t *input;
   lv_obj_t *kb;
+  lv_obj_t *card = NULL;
+  lv_obj_t *log_box = NULL;
+  lv_obj_t *log_label = NULL;
+  lv_obj_t *chips_row = NULL;
+  std::deque<std::string> log_lines;
+  void append_log(const std::string &line);
+  void refresh_log();
+  void refresh_chips(const std::string &prefix);
   std::list<std::string> all_macros;
   std::list<std::string> history;
   std::function<void()> back_callback;
