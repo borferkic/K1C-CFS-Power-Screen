@@ -3,8 +3,12 @@
 #include "state.h"
 #include "lvgl/lvgl.h"
 #include "spdlog/spdlog.h"
+#include "utils.h"
 
 #include <ctime>
+#include <experimental/filesystem>
+#include <fstream>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -282,6 +286,7 @@ void MainPanel::poll_network() {
 
 void MainPanel::init(json &j) {
   std::lock_guard<std::mutex> lock(lv_lock);
+  sync_klipper_macros(j);
   update_header();
   led_panel.refresh();
 
@@ -779,4 +784,73 @@ void MainPanel::enable_spoolman() {
   spoolman_panel.init();
   setting_panel.enable_spoolman();
   extruder_panel.enable_spoolman();
+}
+
+void MainPanel::sync_klipper_macros(json &printer_status) {
+  namespace fs = std::experimental::filesystem;
+  try {
+    const fs::path source = fs::canonical("/proc/self/exe").parent_path() / "scripts";
+    const std::string config_root = KUtils::get_root_path("config");
+    if (config_root.empty() || !fs::is_directory(source)) {
+      return;
+    }
+    const fs::path target = fs::path(config_root) / "PowerScreen";
+    if (!fs::is_directory(target)) {
+      return;  // PowerScreen is not installed in the Klipper config of this printer
+    }
+
+    auto read_all = [](const fs::path &path) {
+      std::ifstream in(path.string(), std::ios::binary);
+      return std::string(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+    };
+    auto copy_if_different = [&read_all](const fs::path &from, const fs::path &to) {
+      std::error_code ec;
+      if (fs::exists(to, ec) && read_all(from) == read_all(to)) {
+        return false;
+      }
+      fs::copy_file(from, to, fs::copy_options::overwrite_existing, ec);
+      if (ec) {
+        spdlog::warn("could not copy {} to {}: {}", from.string(), to.string(), ec.message());
+        return false;
+      }
+      return true;
+    };
+
+    bool macros_changed = false;
+    for (const auto &entry : fs::directory_iterator(source)) {
+      if (entry.path().extension() == ".cfg") {
+        macros_changed = copy_if_different(entry.path(), target / entry.path().filename()) || macros_changed;
+      }
+    }
+    std::error_code ec;
+    fs::create_directories(target / "scripts", ec);
+    for (const auto &entry : fs::directory_iterator(source)) {
+      if (entry.path().extension() == ".py") {
+        copy_if_different(entry.path(), target / "scripts" / entry.path().filename());
+      }
+    }
+
+    if (!macros_changed) {
+      return;
+    }
+    // Klipper only reads its macros at startup. Restart it only when we know the printer is idle.
+    std::string state;
+    auto from_status = printer_status["/result/status/print_stats/state"_json_pointer];
+    if (from_status.is_string()) {
+      state = from_status.template get<std::string>();
+    } else {
+      auto from_state = State::get_instance()->get_data("/printer_state/print_stats/state"_json_pointer);
+      if (from_state.is_string()) {
+        state = from_state.template get<std::string>();
+      }
+    }
+    if (state == "standby" || state == "complete" || state == "cancelled" || state == "error") {
+      spdlog::info("PowerScreen macros changed, restarting Klipper to load them");
+      ws.send_jsonrpc("printer.restart");
+    } else {
+      spdlog::info("PowerScreen macros changed; Klipper restart postponed (print state: '{}')", state);
+    }
+  } catch (const std::exception &error) {
+    spdlog::warn("macro sync failed: {}", error.what());
+  }
 }

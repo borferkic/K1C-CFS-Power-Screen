@@ -39,6 +39,9 @@ class MainPanel : public NotifyConsumer {
   void consume(json &data);
   void init(json &data);
   void subscribe();
+  // Copies the PowerScreen Klipper macros of the installed package to the printer config and restarts Klipper
+  // when they changed (never while printing), so every update path ends with the macros the UI needs.
+  void sync_klipper_macros(json &printer_status);
   PrinterTunePanel& get_tune_panel();
   void enable_spoolman();
   // The file picker is not reachable from the Home screen anymore; kept for the screen that will host it.
