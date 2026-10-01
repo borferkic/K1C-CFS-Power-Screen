@@ -1,7 +1,7 @@
 #include "wide_button.h"
 
 namespace {
-constexpr uint32_t CREALITY_GREEN = 0x4CAF50;
+constexpr uint32_t CREALITY_GREEN = 0x16A34A;
 }
 
 WideButton::WideButton(lv_obj_t *parent,

@@ -9,7 +9,7 @@
 LV_IMG_DECLARE(print);
 LV_IMG_DECLARE(back);
 
-constexpr uint32_t CREALITY_GREEN = 0x4CAF50;
+constexpr uint32_t CREALITY_GREEN = 0x4ADE80;
 
 #define SORTED_BY_NAME 1 << 0
 #define SORTED_BY_MODIFIED  1 << 1
@@ -104,9 +104,9 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
     lv_obj_set_size(sort_button, sort_button == modified_sort_btn ? 144 : 120, 38);
     lv_obj_set_style_pad_all(sort_button, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(sort_button, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(sort_button, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(sort_button, lv_color_hex(0x16A34A), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(sort_button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(sort_button, lv_color_hex(0x388E3C), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(sort_button, lv_color_hex(0x15803D), LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_bg_opa(sort_button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_border_width(sort_button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(sort_button, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -147,9 +147,9 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_move_foreground(back_btn.get_container());
   lv_obj_move_foreground(print_btn.get_container());
 
-  const lv_color_t file_button_grey = lv_color_hex(0x555555);
-  const lv_color_t file_button_green = lv_color_hex(CREALITY_GREEN);
-  const lv_color_t file_button_green_pressed = lv_color_hex(0x388E3C);
+  const lv_color_t file_button_grey = lv_color_hex(0x262626);
+  const lv_color_t file_button_green = lv_color_hex(0x16A34A);
+  const lv_color_t file_button_green_pressed = lv_color_hex(0x15803D);
   lv_obj_t *file_action_buttons[] = {
     print_btn.get_container(), back_btn.get_container()
   };
@@ -159,7 +159,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
     lv_obj_set_width(button, file_action_width);
     lv_obj_set_style_bg_color(button, file_button_grey, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(button, lv_color_hex(0x3A3A3A), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(button, lv_color_hex(0x333333), LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_border_width(button, 0, LV_PART_MAIN);
     lv_obj_set_style_radius(button, 12, LV_PART_MAIN);
@@ -378,9 +378,9 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_add_flag(card, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_event_cb(card, &PrintPanel::_handle_file_card, LV_EVENT_CLICKED, this);
     lv_obj_add_event_cb(card, &PrintPanel::_handle_file_card, LV_EVENT_LONG_PRESSED, this);
-    lv_obj_set_style_bg_color(card, lv_color_hex(0x555555), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(card, lv_color_hex(0x262626), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(card, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(card, lv_color_hex(0x3A3A3A), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(card, lv_color_hex(0x333333), LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_bg_opa(card, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_border_width(card, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_width(card, 2, LV_PART_MAIN | LV_STATE_CHECKED);
@@ -396,7 +396,7 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_set_size(thumbnail_frame, 112, 112);
     lv_obj_clear_flag(thumbnail_frame, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_clear_flag(thumbnail_frame, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_style_bg_color(thumbnail_frame, lv_color_hex(0x555555), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(thumbnail_frame, lv_color_hex(0x262626), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(thumbnail_frame, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_set_style_border_width(thumbnail_frame, 0, LV_PART_MAIN);
     lv_obj_set_style_radius(thumbnail_frame, 6, LV_PART_MAIN);

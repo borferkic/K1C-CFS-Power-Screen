@@ -40,7 +40,7 @@ constexpr lv_coord_t BUTTON_VERTICAL_PAD = 6;
 constexpr lv_coord_t PROGRESS_LABEL_GAP = 2;
 
 lv_color_t system_background_color() {
-  return lv_palette_darken(LV_PALETTE_GREY, 4);
+  return lv_color_hex(0x0A0A0A);
 }
 
 void style_detail_item(lv_obj_t *item) {
@@ -135,7 +135,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_size(title_bar, LV_PCT(100), 32);
   lv_obj_set_pos(title_bar, 0, 0);
   lv_obj_set_style_pad_all(title_bar, 0, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(title_bar, lv_color_hex(0x555555), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(title_bar, lv_color_hex(0x171717), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(title_bar, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_width(title_bar, 0, LV_PART_MAIN);
 
@@ -250,9 +250,9 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_width(cancel_btn.get_container(), PAUSE_CANCEL_BUTTON_WIDTH);
   lv_obj_set_width(emergency_btn.get_container(), SECONDARY_BUTTON_WIDTH);
   lv_obj_set_width(back_btn.get_container(), TUNE_BACK_BUTTON_WIDTH);
-  style_action_button(pause_btn.get_container(), 0x4CAF50, true);
-  style_action_button(resume_btn.get_container(), 0x4CAF50, true);
-  style_action_button(cancel_btn.get_container(), 0x4CAF50, true);
+  style_action_button(pause_btn.get_container(), 0x4ADE80, true);
+  style_action_button(resume_btn.get_container(), 0x4ADE80, true);
+  style_action_button(cancel_btn.get_container(), 0x4ADE80, true);
   style_action_button(finetune_btn.get_container(), 0, false);
   style_action_button(emergency_btn.get_container(), 0xF44336, true);
   style_action_button(back_btn.get_container(), 0, false);
@@ -268,7 +268,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_img_set_src(file_icon, &sd_img);
   lv_img_set_size_mode(file_icon, LV_IMG_SIZE_MODE_REAL);
   lv_img_set_zoom(file_icon, 100);
-  lv_obj_set_style_img_recolor(file_icon, lv_color_hex(0x4CAF50), LV_PART_MAIN);
+  lv_obj_set_style_img_recolor(file_icon, lv_color_hex(0x4ADE80), LV_PART_MAIN);
   lv_obj_set_style_img_recolor_opa(file_icon, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_align(file_icon, LV_ALIGN_LEFT_MID, 5, 0);
 
@@ -286,11 +286,11 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_width(status_label, PROGRESS_WIDTH);
   lv_obj_set_height(status_label, status_height);
   lv_obj_set_style_text_align(status_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-  lv_obj_set_style_text_color(status_label, lv_color_hex(0x4CAF50), LV_PART_MAIN);
+  lv_obj_set_style_text_color(status_label, lv_color_hex(0x4ADE80), LV_PART_MAIN);
   lv_obj_set_style_text_font(status_label, &lv_font_montserrat_20, LV_PART_MAIN);
 
   lv_obj_set_style_border_width(thumbnail, 2, LV_PART_MAIN);
-  lv_obj_set_style_border_color(thumbnail, lv_color_hex(0x4CAF50), LV_PART_MAIN);
+  lv_obj_set_style_border_color(thumbnail, lv_color_hex(0x4ADE80), LV_PART_MAIN);
   lv_obj_set_style_border_opa(thumbnail, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_radius(thumbnail, 12, LV_PART_MAIN);
   lv_obj_set_style_clip_corner(thumbnail, true, LV_PART_MAIN);
@@ -706,13 +706,13 @@ void PrintStatusPanel::update_status_label(const std::string &status) {
 
   if (status == "printing") {
     text = "PRINTING";
-    color = lv_color_hex(0x4CAF50);
+    color = lv_color_hex(0x4ADE80);
   } else if (status == "paused") {
     text = "PAUSED";
     color = lv_palette_main(LV_PALETTE_ORANGE);
   } else if (status == "complete") {
     text = "COMPLETE";
-    color = lv_color_hex(0x4CAF50);
+    color = lv_color_hex(0x4ADE80);
   } else if (status == "cancelled") {
     text = "CANCELLED";
     color = lv_palette_main(LV_PALETTE_RED);

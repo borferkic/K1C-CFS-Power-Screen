@@ -26,7 +26,7 @@ FilePanel::FilePanel(lv_obj_t *parent)
   lv_obj_set_style_text_align(fname_label, LV_TEXT_ALIGN_CENTER, 0);
 
   lv_obj_set_style_border_width(thumbnail, 2, LV_PART_MAIN);
-  lv_obj_set_style_border_color(thumbnail, lv_color_hex(0x4CAF50), LV_PART_MAIN);
+  lv_obj_set_style_border_color(thumbnail, lv_color_hex(0x4ADE80), LV_PART_MAIN);
   lv_obj_set_style_border_opa(thumbnail, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_radius(thumbnail, 6, LV_PART_MAIN);
   lv_obj_set_style_pad_all(thumbnail, 4, LV_PART_MAIN);
@@ -60,7 +60,7 @@ FilePanel::FilePanel(lv_obj_t *parent)
   for (uint32_t i = 0; i < 2; ++i) {
     lv_obj_t *title = lv_label_create(detail_cont);
     lv_label_set_text(title, titles[i]);
-    lv_obj_set_style_text_color(title, lv_color_hex(0x4CAF50), LV_PART_MAIN);
+    lv_obj_set_style_text_color(title, lv_color_hex(0x4ADE80), LV_PART_MAIN);
     lv_obj_set_style_text_font(title, &lv_font_montserrat_20, LV_PART_MAIN);
     lv_obj_set_style_text_align(title, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
     lv_obj_set_grid_cell(title, LV_GRID_ALIGN_START, 0, 1,

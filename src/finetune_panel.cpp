@@ -18,8 +18,8 @@ LV_IMG_DECLARE(flow_up_img);
 LV_IMG_DECLARE(flow_down_img);
 LV_IMG_DECLARE(back);
 
-constexpr uint32_t CREALITY_GREEN = 0x4CAF50;
-constexpr uint32_t CREALITY_GREEN_PRESSED = 0x388E3C;
+constexpr uint32_t CREALITY_GREEN = 0x4ADE80;
+constexpr uint32_t CREALITY_GREEN_PRESSED = 0x22C55E;
 
 FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   : NotifyConsumer(l)
@@ -63,7 +63,7 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   lv_obj_set_size(title_bar, LV_PCT(100), 32);
   lv_obj_set_pos(title_bar, 0, 0);
   lv_obj_set_style_pad_all(title_bar, 0, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(title_bar, lv_color_hex(0x555555), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(title_bar, lv_color_hex(0x171717), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(title_bar, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_width(title_bar, 0, LV_PART_MAIN);
 
@@ -98,9 +98,9 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
 
   auto style_button_background = [](ButtonContainer &button) {
     lv_obj_t *container = button.get_container();
-    lv_obj_set_style_bg_color(container, lv_color_hex(0x555555), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(container, lv_color_hex(0x262626), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(container, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(container, lv_color_hex(0x3A3A3A), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(container, lv_color_hex(0x333333), LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_bg_opa(container, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_radius(container, 12, LV_PART_MAIN);
     lv_obj_set_style_border_width(container, 0, LV_PART_MAIN);
@@ -117,9 +117,9 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   }
 
   for (ButtonContainer *button : {&zreset_btn, &pareset_btn, &speed_reset_btn, &flow_reset_btn}) {
-    lv_obj_set_style_bg_color(button->get_container(), lv_color_hex(CREALITY_GREEN),
+    lv_obj_set_style_bg_color(button->get_container(), lv_color_hex(0x16A34A),
                               LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(button->get_container(), lv_color_hex(CREALITY_GREEN_PRESSED),
+    lv_obj_set_style_bg_color(button->get_container(), lv_color_hex(0x15803D),
                               LV_PART_MAIN | LV_STATE_PRESSED);
   }
 

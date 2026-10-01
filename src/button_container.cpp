@@ -87,8 +87,8 @@ ButtonContainer::ButtonContainer(lv_obj_t *parent,
     lv_obj_clear_flag(pill, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_radius(pill, 12, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(pill, LV_OPA_COVER, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(pill, lv_color_hex(0x555555), LV_PART_MAIN);
-    lv_obj_set_style_bg_color(pill, lv_color_hex(0x3A3A3A), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(pill, lv_color_hex(0x262626), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(pill, lv_color_hex(0x333333), LV_PART_MAIN | LV_STATE_PRESSED);
 
     lv_obj_set_parent(label, pill);
     lv_label_set_text(label, fmt::format(LV_SYMBOL_LEFT "  {}", text).c_str());

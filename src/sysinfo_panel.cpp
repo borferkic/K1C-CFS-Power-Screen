@@ -58,14 +58,14 @@ std::string update_channel() {
   return "nightly";
 }
 
-constexpr uint32_t CARD_BORDER = 0x4CAF50;
-constexpr uint32_t CREALITY_GREEN = 0x4CAF50;
-constexpr uint32_t BUTTON_GREY = 0x555555;
-constexpr uint32_t SCREEN_BACKGROUND = 0x282B30;
+constexpr uint32_t CARD_BORDER = 0x4ADE80;
+constexpr uint32_t CREALITY_GREEN = 0x4ADE80;
+constexpr uint32_t BUTTON_GREY = 0x262626;
+constexpr uint32_t SCREEN_BACKGROUND = 0x0A0A0A;
 constexpr uint32_t BACK_BUTTON_BACKGROUND = SCREEN_BACKGROUND;
 
 lv_color_t screen_background_color() {
-  return lv_palette_darken(LV_PALETTE_GREY, 4);
+  return lv_color_hex(0x0A0A0A);
 }
 
 void style_screen_object(lv_obj_t *obj) {
@@ -335,7 +335,7 @@ SysInfoPanel::SysInfoPanel()
                             LV_PART_MAIN | LV_STATE_PRESSED);
   lv_obj_set_style_bg_opa(update_button, LV_OPA_COVER,
                           LV_PART_MAIN | LV_STATE_PRESSED);
-  lv_obj_set_style_bg_color(update_button, lv_color_hex(0x3A3A3A),
+  lv_obj_set_style_bg_color(update_button, lv_color_hex(0x333333),
                             LV_PART_MAIN | LV_STATE_DISABLED);
   lv_obj_set_style_bg_opa(update_button, LV_OPA_COVER,
                           LV_PART_MAIN | LV_STATE_DISABLED);
@@ -474,8 +474,8 @@ void SysInfoPanel::create_tabs() {
     lv_obj_set_pos(btn, x, 2);
     lv_obj_set_style_radius(btn, 8, LV_PART_MAIN);
     lv_obj_set_style_shadow_width(btn, 0, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(btn, lv_color_hex(0x3A3A3A), LV_PART_MAIN);
-    lv_obj_set_style_bg_color(btn, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_color(btn, lv_color_hex(0x333333), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(btn, lv_color_hex(0x16A34A), LV_PART_MAIN | LV_STATE_CHECKED);
     lv_obj_t *label = lv_label_create(btn);
     lv_label_set_text(label, text);
     lv_obj_set_style_text_color(label, lv_color_white(), LV_PART_MAIN);
@@ -744,7 +744,7 @@ void SysInfoPanel::create_update_overlay() {
   update_close_btn = lv_btn_create(card);
   lv_obj_set_size(update_close_btn, 160, 44);
   lv_obj_align(update_close_btn, LV_ALIGN_CENTER, 0, -10);
-  lv_obj_set_style_bg_color(update_close_btn, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(update_close_btn, lv_color_hex(0x16A34A), LV_PART_MAIN);
   lv_obj_set_style_radius(update_close_btn, 12, LV_PART_MAIN);
   lv_obj_t *close_label = lv_label_create(update_close_btn);
   lv_label_set_text(close_label, "Close");
@@ -784,7 +784,7 @@ void SysInfoPanel::show_updated_notice() {
   lv_obj_align(notice, LV_ALIGN_TOP_MID, 0, 50);
   lv_obj_clear_flag(notice, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_clear_flag(notice, LV_OBJ_FLAG_CLICKABLE);
-  lv_obj_set_style_bg_color(notice, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(notice, lv_color_hex(0x16A34A), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(notice, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_width(notice, 0, LV_PART_MAIN);
   lv_obj_set_style_radius(notice, 12, LV_PART_MAIN);

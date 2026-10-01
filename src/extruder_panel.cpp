@@ -79,7 +79,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   lv_obj_set_size(title_bar, LV_PCT(100), 32);
   lv_obj_set_pos(title_bar, 0, 0);
   lv_obj_set_style_pad_all(title_bar, 0, 0);
-  lv_obj_set_style_bg_color(title_bar, lv_color_hex(0x555555), 0);
+  lv_obj_set_style_bg_color(title_bar, lv_color_hex(0x171717), 0);
   lv_obj_set_style_bg_opa(title_bar, LV_OPA_COVER, 0);
   lv_obj_set_style_border_width(title_bar, 0, 0);
 
@@ -139,8 +139,8 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
     lv_obj_set_style_bg_opa(button, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DISABLED);
   };
 
-  const auto button_grey = lv_color_hex(0x555555);
-  const auto button_grey_pressed = lv_color_hex(0x3A3A3A);
+  const auto button_grey = lv_color_hex(0x262626);
+  const auto button_grey_pressed = lv_color_hex(0x333333);
   set_button_background(load_btn.get_container(), load_btn.get_button(), button_grey, button_grey_pressed);
   set_button_background(unload_btn.get_container(), unload_btn.get_button(), button_grey, button_grey_pressed);
   set_button_background(extrude_btn.get_container(), extrude_btn.get_button(), button_grey, button_grey_pressed);
@@ -149,9 +149,9 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   set_button_background(cooldown_btn.get_container(), cooldown_btn.get_button(),
                         button_grey, button_grey_pressed);
   set_button_background(manual_change_btn.get_container(), manual_change_btn.get_button(),
-                        lv_color_hex(0x4CAF50), lv_color_hex(0x388E3C));
+                        lv_color_hex(0x16A34A), lv_color_hex(0x15803D));
   set_button_background(spoolman_btn.get_container(), spoolman_btn.get_button(),
-                        lv_color_hex(0x4CAF50), lv_color_hex(0x388E3C));
+                        lv_color_hex(0x16A34A), lv_color_hex(0x15803D));
   lv_obj_set_style_bg_color(spoolman_btn.get_container(), button_grey, LV_PART_MAIN | LV_STATE_DISABLED);
   lv_obj_set_style_bg_opa(spoolman_btn.get_container(), LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DISABLED);
   spoolman_btn.set_disabled_text_color(lv_color_hex(0xF44336));

@@ -8,7 +8,7 @@ LV_IMG_DECLARE(fan_on);
 LV_IMG_DECLARE(back);
 
 namespace {
-constexpr uint32_t FAN_PANEL_BACKGROUND = 0x282B30;
+constexpr uint32_t FAN_PANEL_BACKGROUND = 0x0A0A0A;
 }
 
 FanPanel::FanPanel(KWebSocketClient &websocket_client, std::mutex &lock)
@@ -33,7 +33,7 @@ FanPanel::FanPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   lv_obj_set_size(title_bar, LV_PCT(100), 32);
   lv_obj_set_pos(title_bar, 0, 0);
   lv_obj_set_style_pad_all(title_bar, 0, 0);
-  lv_obj_set_style_bg_color(title_bar, lv_color_hex(0x555555), 0);
+  lv_obj_set_style_bg_color(title_bar, lv_color_hex(0x171717), 0);
   lv_obj_set_style_bg_opa(title_bar, LV_OPA_COVER, 0);
   lv_obj_set_style_border_width(title_bar, 0, 0);
 

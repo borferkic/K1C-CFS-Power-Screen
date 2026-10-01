@@ -8,9 +8,9 @@
 static const float distances[] = {0.1, 0.5, 1, 5, 10, 25, 50};
 
 namespace {
-constexpr uint32_t HOMING_PANEL_BACKGROUND = 0x282B30;
-constexpr uint32_t BUTTON_GREY = 0x555555;
-constexpr uint32_t BUTTON_GREY_PRESSED = 0x3A3A3A;
+constexpr uint32_t HOMING_PANEL_BACKGROUND = 0x0A0A0A;
+constexpr uint32_t BUTTON_GREY = 0x262626;
+constexpr uint32_t BUTTON_GREY_PRESSED = 0x333333;
 }
 
 LV_IMG_DECLARE(arrow_left);
@@ -161,13 +161,13 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   style_button(emergency_btn);
   style_button(back_btn);
 
-  lv_obj_set_style_bg_color(home_all_btn.get_container(), lv_color_hex(0x4CAF50),
+  lv_obj_set_style_bg_color(home_all_btn.get_container(), lv_color_hex(0x16A34A),
                             LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_bg_color(home_all_btn.get_container(), lv_color_hex(0x388E3C),
+  lv_obj_set_style_bg_color(home_all_btn.get_container(), lv_color_hex(0x15803D),
                             LV_PART_MAIN | LV_STATE_PRESSED);
-  lv_obj_set_style_bg_color(home_xy_btn.get_container(), lv_color_hex(0x4CAF50),
+  lv_obj_set_style_bg_color(home_xy_btn.get_container(), lv_color_hex(0x16A34A),
                             LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_bg_color(home_xy_btn.get_container(), lv_color_hex(0x388E3C),
+  lv_obj_set_style_bg_color(home_xy_btn.get_container(), lv_color_hex(0x15803D),
                             LV_PART_MAIN | LV_STATE_PRESSED);
 
   lv_obj_set_style_border_width(emergency_btn.get_container(), 2, LV_PART_MAIN);

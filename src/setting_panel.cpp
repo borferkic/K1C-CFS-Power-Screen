@@ -178,9 +178,9 @@ void SettingPanel::create_confirm_overlay() {
   lv_obj_set_size(card, 460, 220);
   lv_obj_center(card);
   lv_obj_clear_flag(card, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_style_bg_color(card, lv_color_hex(0x282B30), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(card, lv_color_hex(0x0A0A0A), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(card, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_set_style_border_color(card, lv_color_hex(0x4CAF50), LV_PART_MAIN);
+  lv_obj_set_style_border_color(card, lv_color_hex(0x4ADE80), LV_PART_MAIN);
   lv_obj_set_style_border_width(card, 2, LV_PART_MAIN);
   lv_obj_set_style_radius(card, 12, LV_PART_MAIN);
 
@@ -192,7 +192,7 @@ void SettingPanel::create_confirm_overlay() {
   lv_obj_set_style_text_font(confirm_label, &lv_font_montserrat_20, LV_PART_MAIN);
   lv_obj_align(confirm_label, LV_ALIGN_TOP_MID, 0, 10);
 
-  confirm_cancel_btn = create_dialog_button(card, "Cancel", 0x555555,
+  confirm_cancel_btn = create_dialog_button(card, "Cancel", 0x262626,
                                             &SettingPanel::_handle_callback, this);
   lv_obj_align(confirm_cancel_btn, LV_ALIGN_BOTTOM_LEFT, 10, -6);
   confirm_accept_btn = create_dialog_button(card, "Restart", 0xF44336,

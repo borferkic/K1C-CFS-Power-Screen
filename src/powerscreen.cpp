@@ -68,7 +68,7 @@ PowerScreen *PowerScreen::init(std::function<void(lv_color_t, lv_color_t)> hal_i
   theme_conf->init(theme_config);
 
   auto primary_color = theme_conf->get_json("/primary_color").empty()
-          ? lv_color_hex(0x4CAF50)
+          ? lv_color_hex(0x16A34A)
           : lv_color_hex(std::stoul(theme_conf->get<std::string>("/primary_color"), nullptr, 16));
 
   auto secondary_color = theme_conf->get_json("/secondary_color").empty()
@@ -268,7 +268,7 @@ void PowerScreen::refresh_theme() {
   lv_theme_t *th = lv_theme_default_get();
   ThemeConfig *theme_conf = ThemeConfig::get_instance();
   auto primary_color = theme_conf->get_json("/primary_color").empty()
-                       ? lv_color_hex(0x4CAF50)
+                       ? lv_color_hex(0x16A34A)
                        : lv_color_hex(std::stoul(theme_conf->get<std::string>("/primary_color"), nullptr, 16));
 
   auto secondary_color = theme_conf->get_json("/secondary_color").empty()

@@ -1,8 +1,8 @@
 #include "square_button.h"
 
 namespace {
-constexpr uint32_t SETTINGS_BUTTON_GREY = 0x555555;
-constexpr uint32_t CREALITY_GREEN = 0x4CAF50;
+constexpr uint32_t SETTINGS_BUTTON_GREY = 0x171717;
+constexpr uint32_t ICON_COLOR = 0xFAFAFA;
 constexpr uint32_t DISABLED_RED = 0xF44336;
 }
 
@@ -16,18 +16,19 @@ SquareButton::SquareButton(lv_obj_t *parent,
   , label(lv_label_create(button))
 {
   const lv_color_t button_grey = lv_color_hex(SETTINGS_BUTTON_GREY);
-  const lv_color_t green = lv_color_hex(CREALITY_GREEN);
-  icon_color = green;
+  icon_color = lv_color_hex(ICON_COLOR);
   text_color = lv_color_white();
 
   lv_obj_set_size(button, 150, 150);
   lv_obj_set_style_bg_color(button, button_grey, LV_PART_MAIN | LV_STATE_DEFAULT);
   lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_bg_color(button, lv_color_darken(button_grey, LV_OPA_20),
+  lv_obj_set_style_bg_color(button, lv_color_hex(0x262626),
                             LV_PART_MAIN | LV_STATE_PRESSED);
   lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
-  lv_obj_set_style_border_width(button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_radius(button, 12, LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_border_width(button, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_border_color(button, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_border_opa(button, LV_OPA_10, LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_radius(button, 14, LV_PART_MAIN | LV_STATE_DEFAULT);
   lv_obj_set_style_pad_all(button, 4, LV_PART_MAIN | LV_STATE_DEFAULT);
   lv_obj_set_style_pad_row(button, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
 
