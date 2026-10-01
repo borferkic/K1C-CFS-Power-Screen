@@ -1,4 +1,5 @@
 #include "prompt_panel.h"
+#include "powerui.h"
 #include "state.h"
 #include "utils.h"
 #include "spdlog/spdlog.h"
@@ -293,15 +294,15 @@ void PromptPanel::handle_macro_response(json &j) {
                 lv_obj_set_grid_cell(footer_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 2);
                 lv_obj_set_size(footer_cont, lv_pct(100), lv_pct(100));
                 if (manual_filament_prompt) {
-                    static lv_coord_t manual_button_cols[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+                    static lv_coord_t manual_button_cols[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
                     // Two compact rows: LOAD, UNLOAD, RESUME above; STOP and CLOSE below.
-                    static lv_coord_t manual_button_rows[] = {LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST};
+                    static lv_coord_t manual_button_rows[] = {LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST};
                     lv_obj_set_layout(footer_cont, LV_LAYOUT_GRID);
                     lv_obj_set_grid_dsc_array(footer_cont, manual_button_cols, manual_button_rows);
                     // Keep the 2x2 controls inside the K1C display margins.
                     lv_obj_set_style_pad_all(footer_cont, 0, 0);
                     // Leave a clear gap after the instruction and between both rows.
-                    lv_obj_set_style_pad_top(footer_cont, 14, 0);
+                    lv_obj_set_style_pad_top(footer_cont, 8, 0);
                     lv_obj_set_style_pad_row(footer_cont, 12, 0);
                     lv_obj_set_style_pad_column(footer_cont, 12, 0);
                 } else {
@@ -319,8 +320,12 @@ void PromptPanel::handle_macro_response(json &j) {
 
                 if (manual_filament_prompt) {
                     // The K1C needs extra vertical room for the second row.
-                    lv_obj_set_size(prompt_cont, lv_pct(76), lv_pct(70));
+                    lv_obj_set_style_min_width(prompt_cont, 0, 0);
+                    lv_obj_set_style_min_height(prompt_cont, 0, 0);
+                    lv_obj_set_size(prompt_cont, powerui::px(392), powerui::px(322));
                 } else {
+                    lv_obj_set_style_min_height(prompt_cont, lv_pct(60), 0);
+                    lv_obj_set_style_min_width(prompt_cont, lv_pct(60), 0);
                     lv_obj_set_size(prompt_cont, lv_pct(72), lv_pct(60));
                 }
                 lv_obj_set_height(flex, lv_pct(70));
@@ -413,25 +418,25 @@ void PromptPanel::handle_macro_response(json &j) {
                 }
                 if (btn) {
                     if (manual_filament_prompt) {
+                        // LOAD and UNLOAD on the first row, RESUME and STOP on the second, a small CLOSE pill below.
+                        int button_column = 0;
+                        int button_row = 0;
+                        if (prompt_footer_button == "UNLOAD") {
+                            button_column = 1;
+                        } else if (prompt_footer_button == "RESUME") {
+                            button_row = 1;
+                        } else if (prompt_footer_button == "STOP") {
+                            button_column = 1;
+                            button_row = 1;
+                        } else if (prompt_footer_button == "CLOSE") {
+                            button_row = 2;
+                        }
                         if (prompt_footer_button == "CLOSE") {
-                            // Keep CLOSE on the lower row, opposite STOP.
-                            lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_CENTER, 2, 1,
-                                                  LV_GRID_ALIGN_CENTER, 1, 1);
-                            lv_obj_set_size(btn, 135, 88);
+                            lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_CENTER, 0, 2, LV_GRID_ALIGN_CENTER, button_row, 1);
+                            lv_obj_set_size(btn, powerui::px(96), powerui::px(32));
                         } else {
-                            int button_column = 0;
-                            int button_row = 0;
-                            if (prompt_footer_button == "UNLOAD") {
-                                button_column = 1;
-                            } else if (prompt_footer_button == "RESUME") {
-                                button_column = 2;
-                            } else if (prompt_footer_button == "STOP") {
-                                button_column = 0;
-                                button_row = 1;
-                            }
-                            lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_CENTER, button_column, 1,
-                                                  LV_GRID_ALIGN_CENTER, button_row, 1);
-                            lv_obj_set_size(btn, 135, 88);
+                            lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_STRETCH, button_column, 1, LV_GRID_ALIGN_CENTER, button_row, 1);
+                            lv_obj_set_size(btn, LV_PCT(100), powerui::px(84));
                         }
                         lv_obj_set_style_min_width(btn, 0, 0);
                         lv_obj_set_style_min_height(btn, 0, 0);
@@ -472,9 +477,11 @@ void PromptPanel::handle_macro_response(json &j) {
                         lv_obj_t *icon = lv_img_create(btn);
                         lv_img_set_src(icon, button_icon);
                         lv_img_set_size_mode(icon, LV_IMG_SIZE_MODE_REAL);
-                        lv_img_set_zoom(icon, 128);  // 32 px, like the other button icons of the theme
-                        lv_obj_align(icon, LV_ALIGN_TOP_MID, 0, 14);
-                        lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, -12);
+                        const lv_img_dsc_t *icon_dsc = static_cast<const lv_img_dsc_t *>(button_icon);
+                        const int icon_natural = icon_dsc->header.w > icon_dsc->header.h ? icon_dsc->header.w : icon_dsc->header.h;
+                        lv_img_set_zoom(icon, 256 * 28 / (icon_natural > 0 ? icon_natural : 64));  // 28 px, like the other button icons of the theme
+                        lv_obj_align(icon, LV_ALIGN_TOP_MID, 0, 10);
+                        lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, -10);
                     } else {
                         lv_obj_center(label);
                     }
@@ -513,6 +520,14 @@ void PromptPanel::handle_macro_response(json &j) {
                         lv_obj_set_style_border_opa(btn, border_opa, LV_PART_MAIN);
                         lv_obj_set_style_text_color(btn, main_color, LV_PART_MAIN);
                         lv_obj_set_style_text_font(label, &lv_font_montserrat_16, LV_PART_MAIN);
+                        if (manual_filament_prompt && prompt_footer_button == "CLOSE") {
+                            lv_obj_set_style_bg_color(btn, lv_color_hex(0x16A34A), LV_PART_MAIN | LV_STATE_DEFAULT);
+                            lv_obj_set_style_bg_color(btn, lv_color_hex(0x15803D), LV_PART_MAIN | LV_STATE_PRESSED);
+                            lv_obj_set_style_border_width(btn, 0, LV_PART_MAIN);
+                            lv_obj_set_style_radius(btn, powerui::px(8), LV_PART_MAIN);
+                            lv_obj_set_style_text_color(btn, lv_color_white(), LV_PART_MAIN);
+                            lv_label_set_text(label, LV_SYMBOL_CLOSE "  Close");
+                        }
                         if (button_icon != NULL) {
                             lv_obj_t *icon_obj = lv_obj_get_child(btn, lv_obj_get_child_cnt(btn) - 1);
                             lv_obj_set_style_img_recolor(icon_obj, main_color, LV_PART_MAIN);
