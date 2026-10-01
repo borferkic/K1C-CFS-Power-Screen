@@ -4,8 +4,16 @@ Nombre: `README.md`
 Fecha de creación: `2026-09-10`
 Descripción: Presentación pública, alcance e instrucciones de PowerScreen para la Creality K1C.
 Proyecto: `PowerScreen`
-Última modificación: `2026-09-28`
+Última modificación: `2026-10-01`
 -->
+
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/powerscreen-logo-dark.svg" />
+    <img src="docs/images/powerscreen-logo-light.svg" alt="PowerScreen" width="460" />
+  </picture>
+  <br /><br />
+</div>
 
 <div align="center">
   <a href="https://github.com/borferkic/K1C-CFS-POWER-SCREEN/releases/latest"><img src="https://img.shields.io/github/v/release/borferkic/K1C-CFS-POWER-SCREEN?style=flat-square&color=2ea44f" alt="Latest release" /></a>
@@ -37,7 +45,7 @@ There are no builds, instructions, or support for Android, Raspberry Pi, `PowerS
 
 ## Screenshots
 
-![PowerScreen interface overview](screenshots/GITSCREEN.png)
+![PowerScreen interface overview: Home, Print Status, Filament, Movement, Bed Mesh, Fine Tune, System, Power Update, Fans, Wi-Fi, Calibrations, Settings and Files](screenshots/GITSCREEN.png)
 
 ## Installation / Update on a K1C
 
