@@ -103,6 +103,18 @@ void style_row(lv_obj_t *row, lv_coord_t y) {
   lv_obj_set_pos(row, 0, y);
 }
 
+// The row's text label (the dropdown or switch of the row is created first, so it is not always child 0).
+lv_obj_t *find_row_label(lv_obj_t *row) {
+  const uint32_t count = lv_obj_get_child_cnt(row);
+  for (uint32_t i = 0; i < count; ++i) {
+    lv_obj_t *child = lv_obj_get_child(row, i);
+    if (lv_obj_check_type(child, &lv_label_class)) {
+      return child;
+    }
+  }
+  return NULL;
+}
+
 lv_obj_t *create_row_label(lv_obj_t *row, const char *text) {
   lv_obj_t *label = lv_label_create(row);
   lv_label_set_text(label, text);
@@ -568,7 +580,7 @@ void SysInfoPanel::create_tabs() {
     lv_obj_set_pos(name, px(20), px(44 + i * 26));
     lv_obj_t *value = label(info_card, "...", &lv_font_montserrat_14, lv_color_hex(COLOR_FG));
     lv_obj_set_width(value, px(170));
-    lv_label_set_long_mode(value, LV_LABEL_LONG_DOT);
+    lv_label_set_long_mode(value, LV_LABEL_LONG_CLIP);
     lv_obj_set_style_text_align(value, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN);
     lv_obj_set_pos(value, px(350 - 20 - 170), px(44 + i * 26));
     sys_value_labels[i] = value;
@@ -593,7 +605,7 @@ void SysInfoPanel::create_tabs() {
   lv_obj_center(network_icon);
   lv_obj_set_pos(network_name_label, px(92), px(22));
   lv_obj_set_width(network_name_label, px(220));
-  lv_obj_set_height(network_name_label, LV_SIZE_CONTENT);
+  lv_obj_set_height(network_name_label, px(24));
   lv_obj_set_style_text_font(network_name_label, &lv_font_montserrat_18, LV_PART_MAIN);
   lv_obj_set_pos(network_ip_label, px(92), px(50));
   lv_obj_set_width(network_ip_label, px(220));
@@ -611,13 +623,12 @@ void SysInfoPanel::create_tabs() {
   lv_obj_set_pos(prefs_title, px(20), px(14));
 
   lv_obj_add_flag(z_icon_toggle_cont, LV_OBJ_FLAG_HIDDEN);  // "Invert Z icon" is no longer offered
-  lv_obj_add_flag(channel_cont, LV_OBJ_FLAG_HIDDEN);
   struct PrefRow { lv_obj_t *row; lv_obj_t *control; int y; };
   PrefRow pref_rows[3] = {{disp_sleep_cont, display_sleep_dd, 46}, {estop_toggle_cont, prompt_estop_toggle, 182}, {ll_cont, loglevel_dd, 234}};
   for (const auto &pref : pref_rows) {
     lv_obj_set_size(pref.row, LV_PCT(100), px(52));
     lv_obj_set_pos(pref.row, 0, px(pref.y));
-    lv_obj_t *row_label = lv_obj_get_child(pref.row, 0);
+    lv_obj_t *row_label = find_row_label(pref.row);
     if (row_label != NULL) {
       lv_obj_set_style_text_font(row_label, &lv_font_montserrat_16, LV_PART_MAIN);
       lv_obj_set_style_translate_y(row_label, 0, LV_PART_MAIN);
@@ -713,7 +724,7 @@ void SysInfoPanel::create_tabs() {
       lv_obj_set_parent(status, parent);
     }
     lv_label_set_text(status, "");
-    lv_label_set_long_mode(status, LV_LABEL_LONG_DOT);
+    lv_label_set_long_mode(status, LV_LABEL_LONG_CLIP);
     lv_obj_set_width(status, px(250));
     lv_obj_set_style_text_align(status, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN);
     lv_obj_set_style_text_color(status, lv_color_white(), LV_PART_MAIN);
@@ -760,7 +771,7 @@ void SysInfoPanel::create_tabs() {
   lv_obj_set_parent(channel_cont, card);
   lv_obj_set_size(channel_cont, px(376), px(46));
   lv_obj_set_pos(channel_cont, px(16), px(110));
-  lv_obj_t *channel_label = lv_obj_get_child(channel_cont, 0);
+  lv_obj_t *channel_label = find_row_label(channel_cont);
   if (channel_label != NULL) {
     lv_label_set_text(channel_label, "Update channel");
     lv_obj_set_style_text_font(channel_label, &lv_font_montserrat_14, LV_PART_MAIN);
@@ -1075,7 +1086,7 @@ void SysInfoPanel::check_script_update() {
       script_message = script_state == 2 ? "New version " + remote + " available." : "Power Script is up to date.";
     } else {
       script_state = 3;
-      script_message = "The Power Script is not in the update manager.";
+      script_message = "Not in the update manager.";
     }
     script_dirty = true;
   });

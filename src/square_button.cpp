@@ -67,7 +67,7 @@ SquareButton::SquareButton(lv_obj_t *parent,
 
   label = lv_label_create(text_cont);
   lv_label_set_text(label, text);
-  lv_label_set_long_mode(label, LV_LABEL_LONG_DOT);
+  lv_label_set_long_mode(label, LV_LABEL_LONG_CLIP);
   lv_obj_set_width(label, LV_PCT(100));
   lv_obj_set_style_text_color(label, text_color, LV_PART_MAIN | LV_STATE_DEFAULT);
   lv_obj_set_style_text_font(label, &lv_font_montserrat_16, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -83,7 +83,7 @@ SquareButton::~SquareButton() {
 void SquareButton::set_subtitle(const char *text) {
   if (subtitle == NULL) {
     subtitle = lv_label_create(text_cont);
-    lv_label_set_long_mode(subtitle, LV_LABEL_LONG_DOT);
+    lv_label_set_long_mode(subtitle, LV_LABEL_LONG_CLIP);
     lv_obj_set_width(subtitle, LV_PCT(100));
     lv_obj_set_style_text_color(subtitle, lv_color_hex(powerui::COLOR_MUTED), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(subtitle, &lv_font_montserrat_12, LV_PART_MAIN | LV_STATE_DEFAULT);
