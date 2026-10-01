@@ -152,4 +152,70 @@ void view_toggle_set(lv_obj_t *t, bool print_view) {
   }
 }
 
+void style_button(lv_obj_t *container, lv_obj_t *inner, ButtonKind kind) {
+  lv_color_t main = lv_color_hex(COLOR_FG);
+  lv_color_t border = lv_color_white();
+  lv_opa_t border_opa = LV_OPA_10;
+  lv_color_t bg = lv_color_hex(COLOR_CARD);
+  lv_opa_t bg_opa = LV_OPA_COVER;
+  lv_color_t bg_pressed = lv_color_hex(COLOR_SECONDARY);
+  lv_opa_t bg_pressed_opa = LV_OPA_COVER;
+
+  if (kind == ButtonKind::Soft) {
+    main = lv_color_hex(COLOR_ACCENT);
+    border = main;
+    border_opa = LV_OPA_50;
+    bg = main;
+    bg_opa = LV_OPA_10 + 11;
+    bg_pressed = main;
+    bg_pressed_opa = LV_OPA_30;
+  } else if (kind == ButtonKind::Destructive) {
+    main = lv_color_hex(COLOR_DESTRUCTIVE);
+    border = main;
+    border_opa = LV_OPA_40;
+  }
+
+  lv_obj_set_style_radius(container, px(10), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(container, bg, LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_bg_opa(container, bg_opa, LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_bg_color(container, bg_pressed, LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_set_style_bg_opa(container, bg_pressed_opa, LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_set_style_border_width(container, 1, LV_PART_MAIN);
+  lv_obj_set_style_border_color(container, border, LV_PART_MAIN);
+  lv_obj_set_style_border_opa(container, border_opa, LV_PART_MAIN);
+  lv_obj_set_style_text_color(container, main, LV_PART_MAIN);
+  lv_obj_set_style_opa(container, LV_OPA_50, LV_PART_MAIN | LV_STATE_DISABLED);
+  if (inner != NULL) {
+    lv_obj_set_style_bg_opa(inner, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(inner, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_opa(inner, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DISABLED);
+    lv_obj_set_style_img_recolor(inner, main, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_img_recolor_opa(inner, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
+  }
+}
+
+void style_segmented(lv_obj_t *btnm) {
+  lv_obj_set_style_bg_opa(btnm, LV_OPA_TRANSP, LV_PART_MAIN);
+  lv_obj_set_style_border_width(btnm, 0, LV_PART_MAIN);
+  lv_obj_set_style_pad_all(btnm, 0, LV_PART_MAIN);
+  lv_obj_set_style_pad_row(btnm, px(6), LV_PART_MAIN);
+  lv_obj_set_style_pad_column(btnm, px(6), LV_PART_MAIN);
+  lv_obj_set_style_outline_width(btnm, 0, LV_PART_ITEMS);
+  lv_obj_set_style_shadow_width(btnm, 0, LV_PART_ITEMS);
+  lv_obj_set_style_radius(btnm, px(8), LV_PART_ITEMS);
+  lv_obj_set_style_border_width(btnm, 0, LV_PART_ITEMS);
+  lv_obj_set_style_bg_color(btnm, lv_color_hex(COLOR_SECONDARY), LV_PART_ITEMS);
+  lv_obj_set_style_bg_opa(btnm, LV_OPA_COVER, LV_PART_ITEMS);
+  lv_obj_set_style_text_color(btnm, lv_color_hex(COLOR_FG), LV_PART_ITEMS);
+  lv_obj_set_style_text_font(btnm, &lv_font_montserrat_16, LV_PART_ITEMS);
+
+  lv_obj_set_style_bg_color(btnm, lv_color_hex(COLOR_ACCENT), LV_PART_ITEMS | LV_STATE_CHECKED);
+  lv_obj_set_style_bg_opa(btnm, LV_OPA_20, LV_PART_ITEMS | LV_STATE_CHECKED);
+  lv_obj_set_style_border_width(btnm, 1, LV_PART_ITEMS | LV_STATE_CHECKED);
+  lv_obj_set_style_border_color(btnm, lv_color_hex(COLOR_ACCENT), LV_PART_ITEMS | LV_STATE_CHECKED);
+  lv_obj_set_style_border_opa(btnm, LV_OPA_50, LV_PART_ITEMS | LV_STATE_CHECKED);
+  lv_obj_set_style_text_color(btnm, lv_color_hex(COLOR_ACCENT), LV_PART_ITEMS | LV_STATE_CHECKED);
+  lv_obj_set_style_bg_color(btnm, lv_color_hex(0x333333), LV_PART_ITEMS | LV_STATE_PRESSED);
+}
+
 } // namespace powerui

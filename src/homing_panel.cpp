@@ -8,12 +8,6 @@
 
 static const float distances[] = {0.1, 0.5, 1, 5, 10, 25, 50};
 
-namespace {
-constexpr uint32_t HOMING_PANEL_BACKGROUND = 0x0A0A0A;
-constexpr uint32_t BUTTON_GREY = 0x262626;
-constexpr uint32_t BUTTON_GREY_PRESSED = 0x333333;
-}
-
 LV_IMG_DECLARE(arrow_left);
 LV_IMG_DECLARE(arrow_up);
 LV_IMG_DECLARE(arrow_right);
@@ -56,131 +50,71 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   , distance_selector(motion_cont, "Move Distance (mm)",
 		     {".1", ".5", "1", "5", "10", "25", "50", ""}, 2, 70, 15, &HomingPanel::_handle_selector_cb, this)
 {
-  const auto width_scale = powerui::overlay_width_scale();
-  const auto height_scale = powerui::overlay_height_scale();
-  const lv_coord_t square_width = static_cast<lv_coord_t>(130 * width_scale);
-  const lv_coord_t square_height = static_cast<lv_coord_t>(130 * height_scale);
-  const lv_coord_t horizontal_gap = static_cast<lv_coord_t>(30 * width_scale);
-  const lv_coord_t vertical_gap = static_cast<lv_coord_t>(25 * height_scale);
-  const lv_coord_t selector_gap = static_cast<lv_coord_t>(25 * height_scale);
-  const lv_coord_t safety_gap = static_cast<lv_coord_t>(14 * width_scale);
-  const lv_coord_t safety_top = static_cast<lv_coord_t>(48 * height_scale);
-  const lv_coord_t right_margin = static_cast<lv_coord_t>(14 * width_scale);
-  const lv_coord_t title_height = static_cast<lv_coord_t>(32 * height_scale);
-  const lv_coord_t motion_width = square_width * 4 + horizontal_gap * 3;
-  const lv_coord_t safety_width = square_width;
-  const lv_coord_t emergency_height = static_cast<lv_coord_t>(160 * height_scale);
-  const lv_coord_t back_height = static_cast<lv_coord_t>(100 * height_scale);
-  const lv_coord_t safety_height = emergency_height + square_height + back_height + safety_gap * 2;
-  const lv_coord_t selector_y = square_height * 2 + vertical_gap + selector_gap;
-  const lv_coord_t motion_height = selector_y + static_cast<lv_coord_t>(96 * height_scale);
-  const lv_coord_t available_height = powerui::overlay_height_px() - title_height;
-  const lv_coord_t motion_top = title_height + (available_height - motion_height) / 2;
-
+  // PowerUI layout for the overlay area (736 x 440): cross pad, Z column, actions column and a distance bar.
+  using namespace powerui;
   lv_obj_clear_flag(homing_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(homing_cont, LV_PCT(100), LV_PCT(100));
   lv_obj_set_style_pad_all(homing_cont, 0, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(homing_cont, lv_color_hex(HOMING_PANEL_BACKGROUND), LV_PART_MAIN);
+  lv_obj_set_style_radius(homing_cont, 0, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(homing_cont, lv_color_hex(COLOR_BG), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(homing_cont, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_width(homing_cont, 0, LV_PART_MAIN);
 
-  lv_obj_clear_flag(title_bar, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_size(title_bar, LV_PCT(100), 32);
-  lv_obj_set_pos(title_bar, 0, 0);
-  lv_obj_set_style_pad_all(title_bar, 0, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(title_bar, lv_color_hex(BUTTON_GREY), LV_PART_MAIN);
-  lv_obj_set_style_bg_opa(title_bar, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_set_style_border_width(title_bar, 0, LV_PART_MAIN);
-
-  lv_label_set_text(title_label, "HOMING CONTROL");
-  lv_obj_set_width(title_label, LV_PCT(100));
-  lv_label_set_long_mode(title_label, LV_LABEL_LONG_DOT);
-  lv_obj_set_style_text_align(title_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-  lv_obj_set_style_text_color(title_label, lv_color_white(), LV_PART_MAIN);
-  lv_obj_set_style_text_font(title_label, &lv_font_montserrat_20, LV_PART_MAIN);
-  lv_obj_align(title_label, LV_ALIGN_CENTER, 0, 0);
-
-  lv_obj_set_width(time_label, LV_SIZE_CONTENT);
-  lv_obj_set_style_text_color(time_label, lv_color_white(), LV_PART_MAIN);
-  lv_obj_set_style_text_font(time_label, &lv_font_montserrat_20, LV_PART_MAIN);
-  lv_obj_align(time_label, LV_ALIGN_RIGHT_MID, -10, 0);
+  // The main title bar replaces the panel's own one; the clock timer keeps running on the hidden label.
+  lv_obj_add_flag(title_bar, LV_OBJ_FLAG_HIDDEN);
   update_clock();
   clock_timer = lv_timer_create(&HomingPanel::_update_clock_cb, 1000, this);
 
-  auto style_group = [horizontal_gap](lv_obj_t *group) {
-    lv_obj_clear_flag(group, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_style_pad_all(group, 0, LV_PART_MAIN);
-    lv_obj_set_style_pad_column(group, horizontal_gap, LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(group, LV_OPA_TRANSP, LV_PART_MAIN);
-    lv_obj_set_style_border_width(group, 0, LV_PART_MAIN);
-    lv_obj_set_flex_flow(group, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(group, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_add_flag(motion_cont, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_add_flag(safety_cont, LV_OBJ_FLAG_HIDDEN);
+
+  lv_obj_t *xy_card = card(homing_cont, 12, 12, 332, 344);
+  lv_obj_t *z_card = card(homing_cont, 356, 12, 128, 344);
+  lv_obj_t *actions_card = card(homing_cont, 496, 12, 228, 344);
+  lv_obj_t *distance_card = card(homing_cont, 12, 368, 712, 60);
+
+  auto place = [](ButtonContainer &button, lv_obj_t *parent, int x, int y, int w, int h) {
+    lv_obj_set_parent(button.get_container(), parent);
+    button.set_fixed_size(px(w), px(h));
+    lv_obj_set_pos(button.get_container(), px(x), px(y));
   };
 
-  auto style_vertical_group = [safety_gap](lv_obj_t *group) {
-    lv_obj_clear_flag(group, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_style_pad_all(group, 0, LV_PART_MAIN);
-    lv_obj_set_style_pad_row(group, safety_gap, LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(group, LV_OPA_TRANSP, LV_PART_MAIN);
-    lv_obj_set_style_border_width(group, 0, LV_PART_MAIN);
-    lv_obj_set_flex_flow(group, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_flex_align(group, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-  };
+  // XY cross: Y+ on top, X- / Home XY / X+ in the middle, Y- below (cells of 96 x 100 with 8 px gaps).
+  const int cx = 13, cy = 13, cw = 96, ch = 100, cg = 8;
+  place(y_up_btn, xy_card, cx + (cw + cg), cy, cw, ch);
+  place(x_down_btn, xy_card, cx, cy + (ch + cg), cw, ch);
+  place(home_xy_btn, xy_card, cx + (cw + cg), cy + (ch + cg), cw, ch);
+  place(x_up_btn, xy_card, cx + 2 * (cw + cg), cy + (ch + cg), cw, ch);
+  place(y_down_btn, xy_card, cx + (cw + cg), cy + 2 * (ch + cg), cw, ch);
 
-  auto style_button = [](ButtonContainer &button) {
-    lv_obj_t *container = button.get_container();
-    lv_obj_set_style_bg_color(container, lv_color_hex(BUTTON_GREY), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(container, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(container, lv_color_hex(BUTTON_GREY_PRESSED), LV_PART_MAIN | LV_STATE_PRESSED);
-    lv_obj_set_style_bg_opa(container, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
-    lv_obj_set_style_radius(container, 12, LV_PART_MAIN);
-    lv_obj_set_style_border_width(container, 0, LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(button.get_button(), LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(button.get_button(), LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_PRESSED);
-  };
+  // Z column.
+  place(z_up_btn, z_card, 12, 12, 102, 155);
+  place(z_down_btn, z_card, 12, 175, 102, 155);
 
-  lv_obj_clear_flag(motion_cont, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_style_pad_all(motion_cont, 0, LV_PART_MAIN);
-  lv_obj_set_style_bg_opa(motion_cont, LV_OPA_TRANSP, LV_PART_MAIN);
-  lv_obj_set_style_border_width(motion_cont, 0, LV_PART_MAIN);
-  style_group(motion_top_cont);
-  style_group(motion_bottom_cont);
-  style_vertical_group(safety_cont);
-  lv_obj_set_size(motion_top_cont, motion_width, square_height);
-  lv_obj_set_size(motion_bottom_cont, motion_width, square_height);
-  lv_obj_set_size(motion_cont, motion_width, motion_height);
-  lv_obj_set_size(safety_cont, safety_width, safety_height);
+  // Actions: Home All, Motor Off, Emergency Stop and the Back pill.
+  place(home_all_btn, actions_card, 12, 12, 202, 84);
+  place(motoroff_btn, actions_card, 12, 102, 202, 84);
+  place(emergency_btn, actions_card, 12, 192, 202, 84);
+  place(back_btn, actions_card, 53, 282, 120, 44);
 
-  for (ButtonContainer *button : {&home_all_btn, &home_xy_btn, &x_up_btn, &x_down_btn,
-                                  &y_up_btn, &y_down_btn, &z_up_btn, &z_down_btn,
-                                  &motoroff_btn}) {
-    button->set_fixed_size(square_width, square_height);
-    style_button(*button);
+  for (ButtonContainer *button : {&y_up_btn, &x_down_btn, &x_up_btn, &y_down_btn, &z_up_btn, &z_down_btn, &motoroff_btn}) {
+    style_button(button->get_container(), button->get_button(), ButtonKind::Outline);
   }
-  emergency_btn.set_fixed_size(safety_width, emergency_height);
-  back_btn.set_fixed_size(safety_width, back_height);
-  style_button(emergency_btn);
-  style_button(back_btn);
+  style_button(home_xy_btn.get_container(), home_xy_btn.get_button(), ButtonKind::Soft);
+  style_button(home_all_btn.get_container(), home_all_btn.get_button(), ButtonKind::Soft);
+  style_button(emergency_btn.get_container(), emergency_btn.get_button(), ButtonKind::Destructive);
 
-  lv_obj_set_style_bg_color(home_all_btn.get_container(), lv_color_hex(0x16A34A),
-                            LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_bg_color(home_all_btn.get_container(), lv_color_hex(0x15803D),
-                            LV_PART_MAIN | LV_STATE_PRESSED);
-  lv_obj_set_style_bg_color(home_xy_btn.get_container(), lv_color_hex(0x16A34A),
-                            LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_bg_color(home_xy_btn.get_container(), lv_color_hex(0x15803D),
-                            LV_PART_MAIN | LV_STATE_PRESSED);
+  // Move distance bar: label on the left, segmented selector on the right.
+  lv_obj_t *distance_label = label(distance_card, "Distance (mm)", &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+  lv_obj_align(distance_label, LV_ALIGN_LEFT_MID, px(14), 0);
 
-  lv_obj_set_style_border_width(emergency_btn.get_container(), 2, LV_PART_MAIN);
-  lv_obj_set_style_border_color(emergency_btn.get_container(), lv_color_hex(0xF44336), LV_PART_MAIN);
-
-  lv_obj_align(motion_cont, LV_ALIGN_TOP_RIGHT,
-               -(safety_width + safety_gap + right_margin), motion_top);
-  lv_obj_align(motion_top_cont, LV_ALIGN_TOP_MID, 0, 0);
-  lv_obj_align(motion_bottom_cont, LV_ALIGN_TOP_MID, 0, square_height + vertical_gap);
-  lv_obj_set_width(distance_selector.get_container(), motion_width);
-  lv_obj_align(distance_selector.get_container(), LV_ALIGN_TOP_MID, 0, selector_y);
-  lv_obj_align(safety_cont, LV_ALIGN_TOP_RIGHT, -right_margin, safety_top);
+  lv_obj_t *selector_cont = distance_selector.get_container();
+  lv_obj_set_parent(selector_cont, distance_card);
+  lv_obj_add_flag(distance_selector.get_label(), LV_OBJ_FLAG_HIDDEN);
+  lv_obj_set_size(selector_cont, px(572), px(44));
+  lv_obj_align(selector_cont, LV_ALIGN_RIGHT_MID, -px(12), 0);
+  lv_obj_set_size(distance_selector.get_selector(), px(572), px(44));
+  style_segmented(distance_selector.get_selector());
 
   ws.register_notify_update(this);
 }

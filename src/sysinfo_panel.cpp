@@ -1,4 +1,5 @@
 #include "sysinfo_panel.h"
+#include "powerui.h"
 #include "utils.h"
 #include "config.h"
 #include "state.h"
@@ -22,6 +23,7 @@ namespace sp = subprocess;
 
 LV_IMG_DECLARE(back);
 LV_IMG_DECLARE(device);
+LV_IMG_DECLARE(network_img);
 
 #ifdef POWERSCREEN_VERSION
 #define GS_VERSION POWERSCREEN_VERSION
@@ -56,6 +58,15 @@ std::string update_channel() {
     return "stable";
   }
   return "nightly";
+}
+
+// "v0.34.5-nightly.20261001.085346Z" -> base "v0.34.5" and suffix "nightly.20261001.085346Z".
+std::pair<std::string, std::string> split_version(const std::string &version) {
+  const auto dash = version.find('-');
+  if (dash == std::string::npos) {
+    return {version, ""};
+  }
+  return {version.substr(0, dash), version.substr(dash + 1)};
 }
 
 constexpr uint32_t CARD_BORDER = 0x4ADE80;
@@ -437,36 +448,140 @@ void SysInfoPanel::create_tabs() {
   lv_obj_set_parent(brand_label, general_page);
   lv_obj_set_parent(version_label, general_page);
 
-  // Updates tab.
+  // ---- System page (PowerUI): network card, printer photo card, preferences card.
+  using namespace powerui;
+  lv_obj_add_flag(title_bar, LV_OBJ_FLAG_HIDDEN);  // the main title bar replaces the panel's own one
+
+  lv_obj_set_size(network_card, px(272), px(76));
+  lv_obj_set_pos(network_card, px(12), px(12));
+  lv_obj_add_flag(network_title_label, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_t *network_tile = plain(network_card);
+  lv_obj_set_size(network_tile, px(48), px(48));
+  lv_obj_set_pos(network_tile, px(14), px(13));
+  lv_obj_set_style_radius(network_tile, px(10), 0);
+  lv_obj_set_style_bg_color(network_tile, lv_color_hex(COLOR_SECONDARY), 0);
+  lv_obj_set_style_bg_opa(network_tile, LV_OPA_COVER, 0);
+  lv_obj_t *network_icon = icon(network_tile, &network_img, 30, lv_color_hex(COLOR_ACCENT));
+  lv_obj_center(network_icon);
+  lv_obj_set_pos(network_name_label, px(74), px(14));
+  lv_obj_set_width(network_name_label, px(180));
+  lv_obj_set_style_text_font(network_name_label, &lv_font_montserrat_16, LV_PART_MAIN);
+  lv_obj_set_pos(network_ip_label, px(74), px(40));
+  lv_obj_set_width(network_ip_label, px(180));
+  lv_obj_set_style_text_font(network_ip_label, &lv_font_montserrat_12, LV_PART_MAIN);
+
+  lv_obj_t *printer_card = lv_obj_create(general_page);
+  style_card(printer_card);
+  lv_obj_set_size(printer_card, px(272), px(272));
+  lv_obj_set_pos(printer_card, px(12), px(100));
+  lv_obj_set_parent(printer_img, printer_card);
+  lv_img_set_zoom(printer_img, 150);
+  lv_obj_align(printer_img, LV_ALIGN_CENTER, 0, -px(14));
+  lv_obj_t *printer_name = label(printer_card, "Creality K1C", &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
+  lv_obj_align(printer_name, LV_ALIGN_BOTTOM_MID, 0, -px(14));
+
+  lv_obj_set_size(controls_card, px(428), px(360));
+  lv_obj_set_pos(controls_card, px(296), px(12));
+  lv_obj_t *prefs_title = label(controls_card, "Preferences", &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
+  lv_obj_set_pos(prefs_title, px(22), px(14));
+
+  lv_obj_t *pref_rows[4] = {disp_sleep_cont, estop_toggle_cont, z_icon_toggle_cont, ll_cont};
+  for (int i = 0; i < 4; ++i) {
+    lv_obj_set_pos(pref_rows[i], 0, px(48 + i * 62));
+    lv_obj_set_height(pref_rows[i], px(62));
+    lv_obj_t *row_label = lv_obj_get_child(pref_rows[i], 0);
+    if (row_label != NULL) {
+      lv_obj_set_style_translate_y(row_label, 0, LV_PART_MAIN);
+    }
+  }
+  for (int i = 0; i < 5; ++i) {
+    lv_obj_t *line = plain(controls_card);
+    lv_obj_set_size(line, LV_PCT(100), 1);
+    lv_obj_set_pos(line, 0, px(48 + i * 62));
+    lv_obj_set_style_bg_color(line, lv_color_white(), 0);
+    lv_obj_set_style_bg_opa(line, LV_OPA_10, 0);
+  }
+
+  // About row: opens the About page (version, channel and updates).
+  about_row = lv_obj_create(controls_card);
+  style_screen_object(about_row);
+  lv_obj_add_flag(about_row, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_set_size(about_row, LV_PCT(100), px(62));
+  lv_obj_set_pos(about_row, 0, px(48 + 4 * 62));
+  lv_obj_set_style_bg_color(about_row, lv_color_hex(COLOR_SECONDARY), LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_set_style_bg_opa(about_row, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_t *about_label = create_row_label(about_row, "About");
+  lv_obj_set_style_translate_y(about_label, 0, LV_PART_MAIN);
+  const std::string about_text = fmt::format("{}  " LV_SYMBOL_RIGHT, split_version(installed_version()).first);
+  lv_obj_t *about_value = label(about_row, about_text.c_str(), &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+  lv_obj_align(about_value, LV_ALIGN_RIGHT_MID, -px(22), 0);
+  lv_obj_add_event_cb(about_row, &SysInfoPanel::_handle_callback, LV_EVENT_CLICKED, this);
+
+  lv_obj_add_flag(brand_label, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_add_flag(version_label, LV_OBJ_FLAG_HIDDEN);
+
+  // ---- About page (PowerUI): version, channel, update status and button, credits.
   lv_obj_t *card = lv_obj_create(updates_page);
   style_card(card);
-  lv_obj_set_size(card, 700, 330);
-  lv_obj_set_pos(card, 18, 47);
+  lv_obj_set_size(card, px(712), px(296));
+  lv_obj_set_pos(card, px(12), px(12));
 
   lv_obj_t *installed_title = lv_label_create(card);
-  lv_label_set_text(installed_title, "Installed version");
-  lv_obj_set_style_text_color(installed_title, lv_color_hex(0xA1A1A1), LV_PART_MAIN);
+  lv_label_set_text(installed_title, "POWERSCREEN");
+  lv_obj_set_style_text_color(installed_title, lv_color_hex(COLOR_MUTED), LV_PART_MAIN);
   lv_obj_set_style_text_font(installed_title, &lv_font_montserrat_14, LV_PART_MAIN);
-  lv_obj_set_pos(installed_title, 22, 18);
+  lv_obj_set_pos(installed_title, px(20), px(16));
 
+  const auto parts = split_version(installed_version());
   updates_version_label = lv_label_create(card);
-  lv_label_set_text(updates_version_label, installed_version().c_str());
-  lv_label_set_long_mode(updates_version_label, LV_LABEL_LONG_WRAP);
-  lv_obj_set_width(updates_version_label, 650);
-  lv_obj_set_style_text_color(updates_version_label, lv_color_hex(0xFAFAFA), LV_PART_MAIN);
-  lv_obj_set_style_text_font(updates_version_label, &lv_font_montserrat_24, LV_PART_MAIN);
-  lv_obj_set_pos(updates_version_label, 22, 46);
+  lv_label_set_text(updates_version_label, parts.first.c_str());
+  lv_label_set_long_mode(updates_version_label, LV_LABEL_LONG_CLIP);
+  lv_obj_set_width(updates_version_label, px(672));
+  lv_obj_set_style_text_color(updates_version_label, lv_color_hex(COLOR_FG), LV_PART_MAIN);
+  lv_obj_set_style_text_font(updates_version_label, &lv_font_montserrat_40, LV_PART_MAIN);
+  lv_obj_set_pos(updates_version_label, px(20), px(38));
+
+  version_suffix_label = lv_label_create(card);
+  lv_label_set_text(version_suffix_label, parts.second.c_str());
+  lv_label_set_long_mode(version_suffix_label, LV_LABEL_LONG_CLIP);
+  lv_obj_set_width(version_suffix_label, px(672));
+  lv_obj_set_style_text_color(version_suffix_label, lv_color_hex(COLOR_MUTED), LV_PART_MAIN);
+  lv_obj_set_style_text_font(version_suffix_label, &lv_font_montserrat_14, LV_PART_MAIN);
+  lv_obj_set_pos(version_suffix_label, px(22), px(96));
 
   lv_obj_set_parent(channel_cont, card);
-  lv_obj_set_pos(channel_cont, 0, 88);
+  lv_obj_set_pos(channel_cont, 0, px(128));
+  lv_obj_set_height(channel_cont, px(56));
+  lv_obj_t *channel_label = lv_obj_get_child(channel_cont, 0);
+  if (channel_label != NULL) {
+    lv_obj_set_style_translate_y(channel_label, 0, LV_PART_MAIN);
+  }
+  lv_obj_t *channel_line = plain(card);
+  lv_obj_set_size(channel_line, LV_PCT(100), 1);
+  lv_obj_set_pos(channel_line, 0, px(128));
+  lv_obj_set_style_bg_color(channel_line, lv_color_white(), 0);
+  lv_obj_set_style_bg_opa(channel_line, LV_OPA_10, 0);
 
   lv_obj_set_parent(update_status, card);
   lv_label_set_long_mode(update_status, LV_LABEL_LONG_WRAP);
-  lv_obj_set_width(update_status, 650);
-  lv_obj_set_pos(update_status, 22, 160);
+  lv_obj_set_width(update_status, px(672));
+  lv_obj_set_pos(update_status, px(20), px(196));
 
   lv_obj_set_parent(update_button, card);
-  lv_obj_set_pos(update_button, 22, 210);
+  lv_obj_set_size(update_button, px(672), px(52));
+  lv_obj_set_pos(update_button, px(20), px(232));
+  lv_obj_set_style_radius(update_button, px(10), LV_PART_MAIN);
+
+  lv_obj_t *credits = lv_obj_create(updates_page);
+  style_card(credits);
+  lv_obj_set_size(credits, px(712), px(52));
+  lv_obj_set_pos(credits, px(12), px(320));
+  lv_obj_set_parent(brand_label, credits);
+  lv_obj_clear_flag(brand_label, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_set_pos(brand_label, px(20), px(14));
+  lv_obj_set_style_text_font(brand_label, &lv_font_montserrat_16, LV_PART_MAIN);
+  lv_obj_t *theme_label = label(credits, "PowerUI 2026", &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+  lv_obj_align(theme_label, LV_ALIGN_RIGHT_MID, -px(20), 0);
 
   // Tab buttons on the left of the title bar.
   auto create_tab_btn = [this](const char *text, lv_coord_t x) {
@@ -498,7 +613,7 @@ void SysInfoPanel::show_tab(bool updates) {
     lv_obj_clear_flag(updates_page, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_state(tab_general_btn, LV_STATE_CHECKED);
     lv_obj_add_state(tab_updates_btn, LV_STATE_CHECKED);
-    lv_label_set_text(updates_version_label, installed_version().c_str());
+    lv_label_set_text(updates_version_label, split_version(installed_version()).first.c_str());
     check_for_update();
   } else {
     lv_obj_clear_flag(general_page, LV_OBJ_FLAG_HIDDEN);
@@ -814,10 +929,14 @@ void SysInfoPanel::handle_callback(lv_event_t *e)
 
     if (btn == tab_general_btn) {
       show_tab(false);
-    } else if (btn == tab_updates_btn) {
+    } else if (btn == tab_updates_btn || btn == about_row) {
       show_tab(true);
     } else if (btn == back_btn.get_container()) {
-      lv_obj_move_background(cont);
+      if (!lv_obj_has_flag(updates_page, LV_OBJ_FLAG_HIDDEN)) {
+        show_tab(false);  // About -> System
+      } else {
+        lv_obj_move_background(cont);
+      }
     } else if (btn == update_button) {
       if (lv_obj_has_state(update_button, LV_STATE_DISABLED)) {
         return;

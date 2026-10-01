@@ -353,7 +353,7 @@ void MainPanel::create_panel() {
 
   const lv_coord_t tab_btns_width = lv_obj_get_width(tab_btns);
   const lv_coord_t tab_btns_height = lv_obj_get_height(tab_btns);
-  const lv_coord_t tile = px(44);
+  const lv_coord_t tile = px(52);
   const lv_coord_t gap = (tab_btns_height - px(16) - 4 * tile) / 4;
   nav_tile_x = (tab_btns_width - tile) / 2;
 
@@ -372,8 +372,8 @@ void MainPanel::create_panel() {
   const lv_img_dsc_t *nav_sources[4] = {&ui_icon_house, &ui_icon_sliders, &ui_icon_folder, &ui_icon_settings};
   for (int tab_index = 0; tab_index < 4; ++tab_index) {
     nav_tile_top[tab_index] = px(8) + gap / 2 + tab_index * (tile + gap);
-    nav_icons[tab_index] = icon(tab_btns, nav_sources[tab_index], 22, lv_color_hex(COLOR_MUTED));
-    lv_obj_set_pos(nav_icons[tab_index], nav_tile_x + (tile - px(22)) / 2, nav_tile_top[tab_index] + (tile - px(22)) / 2);
+    nav_icons[tab_index] = icon(tab_btns, nav_sources[tab_index], 32, lv_color_hex(COLOR_MUTED));
+    lv_obj_set_pos(nav_icons[tab_index], nav_tile_x + (tile - px(32)) / 2, nav_tile_top[tab_index] + (tile - px(32)) / 2);
   }
 
   lv_obj_set_style_pad_all(main_tab, 0, 0);

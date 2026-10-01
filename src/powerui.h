@@ -51,6 +51,14 @@ void badge_set(lv_obj_t *badge, const char *text, lv_color_t dot);
 lv_obj_t *view_toggle(lv_obj_t *parent, lv_event_cb_t cb, void *user_data);
 void view_toggle_set(lv_obj_t *toggle, bool print_view);
 
+// Styles for the existing icon-and-label buttons (ButtonContainer): `container` is the button's outer object and
+// `inner` its image button (made transparent). Icon and text take the color of the kind.
+enum class ButtonKind { Outline, Soft, Destructive };
+void style_button(lv_obj_t *container, lv_obj_t *inner, ButtonKind kind);
+
+// Segmented control look for a button matrix with checkable items (soft green when selected).
+void style_segmented(lv_obj_t *btnm);
+
 } // namespace powerui
 
 #endif // __POWERUI_H__

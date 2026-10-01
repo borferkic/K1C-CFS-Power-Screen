@@ -99,109 +99,81 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   update_clock();
   clock_timer = lv_timer_create(&ExtruderPanel::_update_clock_cb, 1000, this);
 
-  auto width_scale = powerui::overlay_width_scale();
-  auto height_scale = powerui::overlay_height_scale();
-  load_btn.set_fixed_size(130 * width_scale, 86);
-  unload_btn.set_fixed_size(130 * width_scale, 86);
-  cooldown_btn.set_fixed_size(130 * width_scale, 86);
-  extrude_btn.set_fixed_size(130 * width_scale, 86);
-  retract_btn.set_fixed_size(130 * width_scale, 86);
-  back_btn.set_fixed_size(130 * width_scale, 86);
-  lv_obj_set_width(extruder_temp.get_sensor(), 130 * width_scale);
-  lv_obj_set_height(extruder_temp.get_sensor(), 32 * height_scale);
-  extruder_temp.set_current_only(75 * width_scale, 5 * width_scale);
-  extruder_temp.set_image_zoom(100);
+  // PowerUI layout for the overlay area (736 x 440): left rail, three option cards, right rail.
+  using namespace powerui;
+  lv_obj_set_style_radius(panel_cont, 0, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(panel_cont, lv_color_hex(COLOR_BG), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(panel_cont, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_border_width(panel_cont, 0, LV_PART_MAIN);
 
-  lv_obj_set_size(rightside_btns_cont, LV_PCT(20), LV_SIZE_CONTENT);
-  lv_obj_set_style_pad_row(rightside_btns_cont, 15, 0);
-  lv_obj_set_flex_flow(rightside_btns_cont, LV_FLEX_FLOW_COLUMN);
-  lv_obj_set_flex_align(rightside_btns_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-  lv_obj_clear_flag(rightside_btns_cont, LV_OBJ_FLAG_SCROLLABLE);
+  // The main title bar replaces the panel's own one; the clock timer keeps running on the hidden label.
+  lv_obj_add_flag(title_bar, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_add_flag(leftside_btns_cont, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_add_flag(rightside_btns_cont, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_clear_flag(panel_cont, LV_OBJ_FLAG_SCROLLABLE);
 
-  lv_obj_set_size(leftside_btns_cont, LV_PCT(20), LV_SIZE_CONTENT);
-  lv_obj_set_style_pad_row(leftside_btns_cont, 15, 0);
-  lv_obj_set_flex_flow(leftside_btns_cont, LV_FLEX_FLOW_COLUMN);
-  lv_obj_set_flex_align(leftside_btns_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-  lv_obj_clear_flag(leftside_btns_cont, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_move_to_index(manual_change_btn.get_container(), 0);
-  
-  spoolman_btn.disable();  
+  spoolman_btn.disable();
 
-  auto set_button_background = [](lv_obj_t *container, lv_obj_t *button,
-                                  lv_color_t normal, lv_color_t pressed) {
-    lv_obj_set_style_bg_color(container, normal, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(container, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(container, pressed, LV_PART_MAIN | LV_STATE_PRESSED);
-    lv_obj_set_style_bg_opa(container, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
-    lv_obj_set_style_radius(container, 12, LV_PART_MAIN);
-    lv_obj_set_style_border_width(container, 0, LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(button, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(button, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_PRESSED);
-    lv_obj_set_style_bg_opa(button, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DISABLED);
+  auto put = [this](ButtonContainer &button, int x, int y, int w, int h) {
+    lv_obj_set_parent(button.get_container(), panel_cont);
+    button.set_fixed_size(px(w), px(h));
+    lv_obj_set_pos(button.get_container(), px(x), px(y));
   };
 
-  const auto button_grey = lv_color_hex(0x262626);
-  const auto button_grey_pressed = lv_color_hex(0x333333);
-  set_button_background(load_btn.get_container(), load_btn.get_button(), button_grey, button_grey_pressed);
-  set_button_background(unload_btn.get_container(), unload_btn.get_button(), button_grey, button_grey_pressed);
-  set_button_background(extrude_btn.get_container(), extrude_btn.get_button(), button_grey, button_grey_pressed);
-  set_button_background(retract_btn.get_container(), retract_btn.get_button(), button_grey, button_grey_pressed);
-  set_button_background(back_btn.get_container(), back_btn.get_button(), button_grey, button_grey_pressed);
-  set_button_background(cooldown_btn.get_container(), cooldown_btn.get_button(),
-                        button_grey, button_grey_pressed);
-  set_button_background(manual_change_btn.get_container(), manual_change_btn.get_button(),
-                        lv_color_hex(0x16A34A), lv_color_hex(0x15803D));
-  set_button_background(spoolman_btn.get_container(), spoolman_btn.get_button(),
-                        lv_color_hex(0x16A34A), lv_color_hex(0x15803D));
-  lv_obj_set_style_bg_color(spoolman_btn.get_container(), button_grey, LV_PART_MAIN | LV_STATE_DISABLED);
-  lv_obj_set_style_bg_opa(spoolman_btn.get_container(), LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DISABLED);
-  spoolman_btn.set_disabled_text_color(lv_color_hex(0xF44336));
+  // Left rail (x 12, 140 wide, 95 high with 12 px gaps).
+  put(manual_change_btn, 12, 12, 140, 95);
+  put(load_btn, 12, 119, 140, 95);
+  put(unload_btn, 12, 226, 140, 95);
+  put(cooldown_btn, 12, 333, 140, 95);
+  // Right rail.
+  put(spoolman_btn, 584, 12, 140, 95);
+  put(extrude_btn, 584, 119, 140, 95);
+  put(retract_btn, 584, 226, 140, 95);
+  put(back_btn, 594, 358, 120, 44);
 
-  lv_obj_set_width(manual_change_btn.get_container(), 130 * width_scale);
-  lv_obj_set_size(manual_change_btn.get_button(), 130 * width_scale, 60);
-  // CFS icon (four spools) to the left of the label; red while the CFS is not available.
-  spoolman_icon = powerui::icon(spoolman_btn.get_container(), &ui_cfs_img, 26, lv_color_hex(0xF44336));
+  for (ButtonContainer *button : {&manual_change_btn, &load_btn, &unload_btn, &spoolman_btn, &retract_btn}) {
+    style_button(button->get_container(), button->get_button(), ButtonKind::Outline);
+  }
+  style_button(extrude_btn.get_container(), extrude_btn.get_button(), ButtonKind::Soft);
+  style_button(cooldown_btn.get_container(), cooldown_btn.get_button(), ButtonKind::Outline);
+  cooldown_btn.set_image_color(lv_color_hex(COLOR_CHAMBER));
+  lv_obj_set_style_text_color(cooldown_btn.get_container(), lv_color_hex(COLOR_CHAMBER), LV_PART_MAIN);
+
+  // CFS: icon (four spools) to the left of the label; red while the CFS is not available.
+  spoolman_btn.set_disabled_text_color(lv_color_hex(COLOR_DESTRUCTIVE));
+  spoolman_icon = powerui::icon(spoolman_btn.get_container(), &ui_cfs_img, 26, lv_color_hex(COLOR_DESTRUCTIVE));
   lv_obj_align(spoolman_icon, LV_ALIGN_LEFT_MID, 12, 0);
 
-  lv_obj_set_width(spoolman_btn.get_container(), 130 * width_scale);
-  lv_obj_set_size(spoolman_btn.get_button(), 130 * width_scale, 60);
+  // Option cards: title on top and a segmented selector below.
+  struct CardSpec { Selector *selector; const char *title; int y; int h; };
+  const CardSpec specs[3] = {{&speed_selector, "Extrude speed (mm/s)", 12, 130},
+                             {&length_selector, "Extrude length (mm)", 154, 130},
+                             {&temp_selector, "Extruder temperature (°C)", 296, 132}};
+  lv_obj_t *temp_card = NULL;
+  for (const CardSpec &spec : specs) {
+    lv_obj_t *option_card = card(panel_cont, 164, spec.y, 408, spec.h);
+    lv_obj_t *title = label(option_card, spec.title, &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+    lv_obj_align(title, LV_ALIGN_TOP_LEFT, px(15), px(14));
 
-  static lv_coord_t grid_main_row_dsc[] = {32, LV_GRID_FR(6), LV_GRID_FR(6), LV_GRID_FR(6),
-    LV_GRID_TEMPLATE_LAST};
-  static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(2), LV_GRID_FR(7), LV_GRID_FR(2), LV_GRID_TEMPLATE_LAST};
-  
-  lv_obj_clear_flag(panel_cont, LV_OBJ_FLAG_SCROLLABLE);
-  
-  lv_obj_set_grid_dsc_array(panel_cont, grid_main_col_dsc, grid_main_row_dsc);
-  lv_obj_add_flag(extruder_temp.get_sensor(), LV_OBJ_FLAG_FLOATING);
-  lv_obj_align(extruder_temp.get_sensor(), LV_ALIGN_TOP_LEFT, 0, 0);
+    lv_obj_t *selector_cont = spec.selector->get_container();
+    lv_obj_set_parent(selector_cont, option_card);
+    lv_obj_add_flag(spec.selector->get_label(), LV_OBJ_FLAG_HIDDEN);
+    lv_obj_set_size(selector_cont, px(374), px(52));
+    lv_obj_align(selector_cont, LV_ALIGN_BOTTOM_MID, 0, -px(16));
+    lv_obj_set_size(spec.selector->get_selector(), px(374), px(52));
+    style_segmented(spec.selector->get_selector());
+    if (spec.selector == &temp_selector) {
+      temp_card = option_card;
+    }
+  }
 
-  // lv_obj_set_size(extruder_temp.get_sensor(), 350, 60);
-  // col 0
-  // lv_obj_set_grid_cell(spoolman_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 0, 2);
-  // lv_obj_set_grid_cell(load_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_END, 0, 2);
-  // lv_obj_set_grid_cell(unload_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 2, 2);
-  // lv_obj_set_grid_cell(cooldown_btn.get_container(), LV_GRID_ALIGN_END, 0, 1, LV_GRID_ALIGN_END, 2, 2);
-
-  lv_obj_set_grid_cell(leftside_btns_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 3);
-  
-  // col 1
-  // lv_obj_set_grid_cell(extruder_temp.get_sensor(), LV_GRID_ALIGN_CENTER, 0, 2, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(speed_selector.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_END, 1, 1);
-  lv_obj_set_grid_cell(length_selector.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 2, 1);
-  lv_obj_set_grid_cell(temp_selector.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 3, 1);
-  
-  // col 2
-  // lv_obj_set_grid_cell(spoolman_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 0, 2);
-  // lv_obj_set_grid_cell(retract_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_END, 0, 2);
-  // lv_obj_set_grid_cell(extrude_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 2);
-  // lv_obj_set_grid_cell(back_btn.get_container(), LV_GRID_ALIGN_END, 2, 1, LV_GRID_ALIGN_END, 2, 2);
-
-  lv_obj_set_grid_cell(rightside_btns_cont, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 3);
-  // lv_obj_set_grid_cell(retract_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_END, 0, 2);
-  // lv_obj_set_grid_cell(extrude_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 2);
-  // lv_obj_set_grid_cell(back_btn.get_container(), LV_GRID_ALIGN_END, 2, 1, LV_GRID_ALIGN_END, 2, 2);
-  
+  // Current extruder temperature next to the temperature card title.
+  lv_obj_set_parent(extruder_temp.get_sensor(), temp_card);
+  lv_obj_clear_flag(extruder_temp.get_sensor(), LV_OBJ_FLAG_FLOATING);
+  lv_obj_set_size(extruder_temp.get_sensor(), px(120), px(32));
+  extruder_temp.set_current_only(px(70), px(5));
+  extruder_temp.set_image_zoom(100);
+  lv_obj_align(extruder_temp.get_sensor(), LV_ALIGN_TOP_RIGHT, -px(10), px(6));
 
   ws.register_notify_update(this);    
 }

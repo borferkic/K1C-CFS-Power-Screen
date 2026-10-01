@@ -24,6 +24,8 @@ class SysInfoPanel {
   };
 
  private:
+  lv_obj_t *about_row = NULL;
+  lv_obj_t *version_suffix_label = NULL;
   lv_obj_t *cont;
   lv_obj_t *title_bar;
   lv_obj_t *title_label;
