@@ -11,7 +11,7 @@ namespace sp = subprocess;
 
 LV_IMG_DECLARE(network_img);
 LV_IMG_DECLARE(refresh_img);
-LV_IMG_DECLARE(spoolman_img);
+LV_IMG_DECLARE(ui_cfs_img);
 LV_IMG_DECLARE(update_img);
 
 LV_IMG_DECLARE(info_img);
@@ -31,7 +31,7 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
   , restart_klipper_btn(cont, &refresh_img, "Restart\nKlipper", &SettingPanel::_handle_callback, this)
   , restart_firmware_btn(cont, &refresh_img, "Restart\nFirmware", &SettingPanel::_handle_callback, this)
   , sysinfo_btn(cont, &info_img, "System", &SettingPanel::_handle_callback, this)
-  , spoolman_btn(cont, &spoolman_img, "CFS", &SettingPanel::_handle_callback, this)
+  , spoolman_btn(cont, &ui_cfs_img, "CFS", &SettingPanel::_handle_callback, this)
   , powerscreen_restart_btn(cont, &refresh_img, "Restart PowerScreen", &SettingPanel::_handle_callback, this)
   , powerscreen_update_btn(cont, &update_img, "Update PowerScreen", &SettingPanel::_handle_callback, this)
   , printer_select_btn(cont, &print, "Printers", &SettingPanel::_handle_callback, this)
@@ -43,6 +43,15 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
 {
   lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(cont, LV_PCT(100), LV_PCT(100));
+
+  wifi_btn.set_subtitle("Network");
+  restart_klipper_btn.set_subtitle("Service");
+  restart_firmware_btn.set_subtitle("Firmware");
+  sysinfo_btn.set_subtitle("Preferences and About");
+  spoolman_btn.set_subtitle("Filament system");
+  powerscreen_restart_btn.set_subtitle("This interface");
+  powerscreen_update_btn.set_subtitle("Check for updates");
+  console_btn.set_subtitle("G-code and macros");
 
   spoolman_btn.disable();
 #ifdef OS_ANDROID

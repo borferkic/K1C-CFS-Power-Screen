@@ -52,6 +52,7 @@ class MainPanel : public NotifyConsumer {
   void handle_ledpanel_cb(lv_event_t *event);
   void handle_tab_change_cb(lv_event_t *event);
   void handle_view_toggle_cb(lv_event_t *event);
+  void handle_tab_click_cb(lv_event_t *event);
 
   static void _handle_homing_cb(lv_event_t *event) {
     MainPanel *panel = (MainPanel*)event->user_data;
@@ -76,6 +77,11 @@ class MainPanel : public NotifyConsumer {
   static void _handle_tab_change_cb(lv_event_t *event) {
     MainPanel *panel = (MainPanel*)event->user_data;
     panel->handle_tab_change_cb(event);
+  };
+
+  static void _handle_tab_click_cb(lv_event_t *event) {
+    MainPanel *panel = (MainPanel*)event->user_data;
+    panel->handle_tab_click_cb(event);
   };
 
   static void _handle_view_toggle_cb(lv_event_t *event) {

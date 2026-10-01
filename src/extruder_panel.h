@@ -34,6 +34,7 @@ class ExtruderPanel : public NotifyConsumer {
   }
 
  private:
+  lv_obj_t *spoolman_icon = NULL;
   KWebSocketClient &ws;
   lv_obj_t *panel_cont;
   lv_obj_t *title_bar;

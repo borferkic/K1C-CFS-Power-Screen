@@ -59,6 +59,18 @@ SquareButton::SquareButton(lv_obj_t *parent,
 SquareButton::~SquareButton() {
 }
 
+// Small muted line below the label (e.g. "Network" under WIFI).
+void SquareButton::set_subtitle(const char *text) {
+  if (subtitle == NULL) {
+    subtitle = lv_label_create(button);
+    lv_obj_set_width(subtitle, LV_PCT(100));
+    lv_obj_set_style_text_align(subtitle, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(subtitle, lv_color_hex(0xA1A1A1), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(subtitle, &lv_font_montserrat_12, LV_PART_MAIN | LV_STATE_DEFAULT);
+  }
+  lv_label_set_text(subtitle, text);
+}
+
 lv_obj_t *SquareButton::get_button() {
   return button;
 }

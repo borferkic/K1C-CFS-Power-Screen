@@ -1,4 +1,5 @@
 #include "wifi_panel.h"
+#include "powerui.h"
 #include "utils.h"
 #include "config.h"
 #include "spdlog/spdlog.h"
@@ -60,7 +61,7 @@ WifiPanel::WifiPanel(std::mutex &l)
   // lv_obj_remove_style(wifi_table, NULL, LV_PART_ITEMS | LV_STATE_PRESSED);
   lv_obj_add_flag(wifi_table, LV_OBJ_FLAG_HIDDEN);
 
-  auto screen_width = lv_disp_get_physical_hor_res(NULL) / 2 - 100;
+  auto screen_width = powerui::overlay_width_px() / 2 - 100;
   
   lv_table_set_col_width(wifi_table, 0, screen_width);
   lv_table_set_col_width(wifi_table, 1, 100);

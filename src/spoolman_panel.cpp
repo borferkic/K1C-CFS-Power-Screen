@@ -1,4 +1,5 @@
 #include "spoolman_panel.h"
+#include "powerui.h"
 #include "utils.h"
 #include "spdlog/spdlog.h"
 
@@ -36,8 +37,8 @@ SpoolmanPanel::SpoolmanPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_align(spool_table, LV_ALIGN_TOP_MID, 0, 5);
 
   lv_table_set_col_cnt(spool_table, 8);
-  auto screen_width = lv_disp_get_physical_hor_res(NULL);
-  auto scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
+  auto screen_width = powerui::overlay_width_px();
+  auto scale = powerui::overlay_width_scale();
   lv_table_set_col_width(spool_table, 0, 64 * scale); // id
   lv_table_set_col_width(spool_table, 3, 50 * scale); // color
   lv_table_set_col_width(spool_table, 6, 60 * scale); // set active

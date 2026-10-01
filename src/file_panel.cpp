@@ -1,4 +1,5 @@
 #include "file_panel.h"
+#include "powerui.h"
 #include "config.h"
 #include "state.h"
 #include "utils.h"
@@ -99,11 +100,11 @@ void FilePanel::refresh_view(json &j, const std::string &gcode_path) {
   lv_label_set_text(print_time_value, print_time.c_str());
   lv_label_set_text(filament_weight_value, filament_weight.c_str());
 
-  auto width_scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
+  auto width_scale = powerui::overlay_width_scale();
   auto thumb_detail = KUtils::get_thumbnail(gcode_path, j, width_scale);
   std::string fullpath = thumb_detail.first;    
   if (fullpath.length() > 0) {
-    auto screen_width = lv_disp_get_physical_hor_res(NULL);
+    auto screen_width = powerui::overlay_width_px();
     size_t thumb_width = thumb_detail.second > 0 ? thumb_detail.second : 300;
     uint32_t normalized_thumb_scale = ((0.29 * (double)screen_width) / (double)thumb_width) * 256;
     thumbnail_source = "A:" + fullpath;

@@ -1,4 +1,5 @@
 #include "inputshaper_panel.h"
+#include "powerui.h"
 #include "state.h"
 #include "utils.h"
 #include "config.h"
@@ -151,7 +152,7 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_clear_flag(switch_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_style_pad_all(switch_cont, 0, 0);
 
-  auto scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
+  auto scale = powerui::overlay_width_scale();
 
   // controls
   lv_obj_set_flex_flow(xcontrol, LV_FLEX_FLOW_ROW_WRAP);
@@ -422,8 +423,8 @@ void InputShaperPanel::handle_macro_response(json &j) {
 
     } else if ("// Resonances data written to " Y_DATA " file" == resp) {
       auto config_root = KUtils::get_root_path("config");
-      auto screen_width = (double)lv_disp_get_physical_hor_res(NULL) / 100.0;
-      auto screen_height = (double)lv_disp_get_physical_ver_res(NULL) / 100.0;
+      auto screen_width = (double)powerui::overlay_width_px() / 100.0;
+      auto screen_height = (double)powerui::overlay_height_px() / 100.0;
       auto png_path = fmt::format("{}/{}", config_root.length() > 0 ? config_root : "/tmp" , Y_PNG);
       std::string arg = graph_requested
 	? fmt::format("{} -o {} -w {} -l {}", Y_DATA, png_path, screen_width, screen_height)
@@ -433,8 +434,8 @@ void InputShaperPanel::handle_macro_response(json &j) {
 
     } else if ("// Resonances data written to " X_DATA " file" == resp) {
       auto config_root = KUtils::get_root_path("config");
-      auto screen_width = (double)lv_disp_get_physical_hor_res(NULL) / 100.0;
-      auto screen_height = (double)lv_disp_get_physical_ver_res(NULL) / 100.0;
+      auto screen_width = (double)powerui::overlay_width_px() / 100.0;
+      auto screen_height = (double)powerui::overlay_height_px() / 100.0;
       auto png_path = fmt::format("{}/{}", config_root.length() > 0 ? config_root : "/tmp" , X_PNG);
       std::string arg = graph_requested
 	? fmt::format("{} -o {} -w {} -l {}", X_DATA, png_path, screen_width, screen_height)

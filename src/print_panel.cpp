@@ -1,4 +1,5 @@
 #include "print_panel.h"
+#include "powerui.h"
 #include "file_panel.h"
 #include "state.h"
 #include "utils.h"
@@ -154,7 +155,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
     print_btn.get_container(), back_btn.get_container()
   };
   const auto file_action_width = static_cast<lv_coord_t>(
-    119 * static_cast<double>(lv_disp_get_physical_hor_res(NULL)) / 800.0);
+    119 * powerui::overlay_width_scale());
   for (lv_obj_t *button : file_action_buttons) {
     lv_obj_set_width(button, file_action_width);
     lv_obj_set_style_bg_color(button, file_button_grey, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -209,8 +210,8 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_add_event_cb(delete_confirm_cont, &PrintPanel::_handle_btns,
                       LV_EVENT_CLICKED, this);
 
-  const auto width_scale = static_cast<double>(lv_disp_get_physical_hor_res(NULL)) / 800.0;
-  const auto height_scale = static_cast<double>(lv_disp_get_physical_ver_res(NULL)) / 480.0;
+  const auto width_scale = powerui::overlay_width_scale();
+  const auto height_scale = powerui::overlay_height_scale();
   lv_obj_set_size(delete_confirm_box, static_cast<lv_coord_t>(440 * width_scale),
                   static_cast<lv_coord_t>(190 * height_scale));
   lv_obj_align(delete_confirm_box, LV_ALIGN_CENTER, 0, 0);

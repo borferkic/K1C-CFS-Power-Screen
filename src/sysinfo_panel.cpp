@@ -77,11 +77,12 @@ void style_screen_object(lv_obj_t *obj) {
 
 void style_card(lv_obj_t *card) {
   style_screen_object(card);
-  lv_obj_set_style_bg_color(card, screen_background_color(), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(card, lv_color_hex(0x171717), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(card, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_set_style_border_color(card, lv_color_hex(CARD_BORDER), LV_PART_MAIN);
+  lv_obj_set_style_border_color(card, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_border_opa(card, LV_OPA_10, LV_PART_MAIN);
   lv_obj_set_style_border_width(card, 1, LV_PART_MAIN);
-  lv_obj_set_style_radius(card, 12, LV_PART_MAIN);
+  lv_obj_set_style_radius(card, 14, LV_PART_MAIN);
 }
 
 void style_row(lv_obj_t *row, lv_coord_t y) {
@@ -94,7 +95,7 @@ lv_obj_t *create_row_label(lv_obj_t *row, const char *text) {
   lv_obj_t *label = lv_label_create(row);
   lv_label_set_text(label, text);
   lv_obj_set_style_text_color(label, lv_color_white(), LV_PART_MAIN);
-  lv_obj_set_style_text_font(label, &lv_font_montserrat_20, LV_PART_MAIN);
+  lv_obj_set_style_text_font(label, &lv_font_montserrat_16, LV_PART_MAIN);
   lv_obj_set_style_translate_y(label, 5, LV_PART_MAIN);
   lv_obj_align(label, LV_ALIGN_LEFT_MID, 22, 0);
   return label;
@@ -183,7 +184,7 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_set_size(title_bar, LV_PCT(100), 32);
   lv_obj_set_pos(title_bar, 0, 0);
   lv_obj_set_style_pad_all(title_bar, 0, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(title_bar, lv_color_hex(BUTTON_GREY), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(title_bar, lv_color_hex(0x171717), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(title_bar, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_width(title_bar, 0, LV_PART_MAIN);
 
@@ -204,24 +205,24 @@ SysInfoPanel::SysInfoPanel()
 
   style_card(network_card);
   lv_obj_set_size(network_card, 264, 104);
-  lv_obj_set_pos(network_card, 35, 47);
+  lv_obj_set_pos(network_card, 12, 47);
 
-  lv_label_set_text(network_title_label, "Network:");
-  lv_obj_set_style_text_color(network_title_label, lv_color_white(), LV_PART_MAIN);
-  lv_obj_set_style_text_font(network_title_label, &lv_font_montserrat_20, LV_PART_MAIN);
+  lv_label_set_text(network_title_label, "Network");
+  lv_obj_set_style_text_color(network_title_label, lv_color_hex(0xA1A1A1), LV_PART_MAIN);
+  lv_obj_set_style_text_font(network_title_label, &lv_font_montserrat_14, LV_PART_MAIN);
   lv_obj_set_pos(network_title_label, 32, 18);
 
   lv_obj_set_width(network_name_label, 225);
   lv_obj_set_height(network_name_label, 24);
-  lv_obj_set_style_text_color(network_name_label, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
+  lv_obj_set_style_text_color(network_name_label, lv_color_hex(0xFAFAFA), LV_PART_MAIN);
   lv_obj_set_style_text_font(network_name_label, &lv_font_montserrat_20, LV_PART_MAIN);
   lv_label_set_long_mode(network_name_label, LV_LABEL_LONG_DOT);
   lv_obj_set_pos(network_name_label, 32, 42);
 
   lv_obj_set_width(network_ip_label, 225);
   lv_obj_set_height(network_ip_label, 24);
-  lv_obj_set_style_text_color(network_ip_label, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
-  lv_obj_set_style_text_font(network_ip_label, &lv_font_montserrat_20, LV_PART_MAIN);
+  lv_obj_set_style_text_color(network_ip_label, lv_color_hex(0xA1A1A1), LV_PART_MAIN);
+  lv_obj_set_style_text_font(network_ip_label, &lv_font_montserrat_16, LV_PART_MAIN);
   lv_obj_set_pos(network_ip_label, 32, 66);
 
   lv_img_set_src(printer_img, &device);
@@ -229,7 +230,7 @@ SysInfoPanel::SysInfoPanel()
 
   style_card(controls_card);
   lv_obj_set_size(controls_card, 410, 220);
-  lv_obj_set_pos(controls_card, 360, 47);
+  lv_obj_set_pos(controls_card, 314, 47);
 
   style_row(disp_sleep_cont, 13);
   create_row_label(disp_sleep_cont, "Display Sleep");
@@ -314,28 +315,28 @@ SysInfoPanel::SysInfoPanel()
                       LV_EVENT_VALUE_CHANGED, this);
 
   lv_label_set_text(brand_label, "PowerScreen by Boris SdK");
-  lv_obj_set_style_text_color(brand_label, lv_color_white(), LV_PART_MAIN);
-  lv_obj_set_style_text_font(brand_label, &lv_font_montserrat_20, LV_PART_MAIN);
-  lv_obj_set_pos(brand_label, 376, 292);
+  lv_obj_set_style_text_color(brand_label, lv_color_hex(0xFAFAFA), LV_PART_MAIN);
+  lv_obj_set_style_text_font(brand_label, &lv_font_montserrat_16, LV_PART_MAIN);
+  lv_obj_set_pos(brand_label, 330, 292);
 
   lv_label_set_text(version_label, fmt::format("Version: {}", installed_version()).c_str());
   lv_obj_set_width(version_label, 410);
-  lv_obj_set_style_text_color(version_label, lv_color_white(), LV_PART_MAIN);
-  lv_obj_set_style_text_font(version_label, &lv_font_montserrat_16, LV_PART_MAIN);
+  lv_obj_set_style_text_color(version_label, lv_color_hex(0xA1A1A1), LV_PART_MAIN);
+  lv_obj_set_style_text_font(version_label, &lv_font_montserrat_14, LV_PART_MAIN);
   lv_label_set_long_mode(version_label, LV_LABEL_LONG_CLIP);
-  lv_obj_set_pos(version_label, 376, 318);
+  lv_obj_set_pos(version_label, 330, 318);
 
   lv_obj_clear_flag(update_button, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(update_button, 300, 50);
-  lv_obj_set_style_bg_color(update_button, lv_color_hex(BUTTON_GREY),
+  lv_obj_set_style_bg_color(update_button, lv_color_hex(0x16A34A),
                             LV_PART_MAIN | LV_STATE_DEFAULT);
   lv_obj_set_style_bg_opa(update_button, LV_OPA_COVER,
                           LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_bg_color(update_button, lv_color_darken(lv_color_hex(BUTTON_GREY), LV_OPA_20),
+  lv_obj_set_style_bg_color(update_button, lv_color_hex(0x15803D),
                             LV_PART_MAIN | LV_STATE_PRESSED);
   lv_obj_set_style_bg_opa(update_button, LV_OPA_COVER,
                           LV_PART_MAIN | LV_STATE_PRESSED);
-  lv_obj_set_style_bg_color(update_button, lv_color_hex(0x333333),
+  lv_obj_set_style_bg_color(update_button, lv_color_hex(0x262626),
                             LV_PART_MAIN | LV_STATE_DISABLED);
   lv_obj_set_style_bg_opa(update_button, LV_OPA_COVER,
                           LV_PART_MAIN | LV_STATE_DISABLED);
@@ -354,7 +355,7 @@ SysInfoPanel::SysInfoPanel()
 
   lv_label_set_text(update_status, "");
   lv_obj_set_style_text_color(update_status, lv_color_white(), LV_PART_MAIN);
-  lv_obj_set_style_text_font(update_status, &lv_font_montserrat_20, LV_PART_MAIN);
+  lv_obj_set_style_text_font(update_status, &lv_font_montserrat_16, LV_PART_MAIN);
 
   create_tabs();
 
@@ -439,21 +440,21 @@ void SysInfoPanel::create_tabs() {
   // Updates tab.
   lv_obj_t *card = lv_obj_create(updates_page);
   style_card(card);
-  lv_obj_set_size(card, 730, 330);
-  lv_obj_set_pos(card, 35, 47);
+  lv_obj_set_size(card, 700, 330);
+  lv_obj_set_pos(card, 18, 47);
 
   lv_obj_t *installed_title = lv_label_create(card);
-  lv_label_set_text(installed_title, "Installed version:");
-  lv_obj_set_style_text_color(installed_title, lv_color_white(), LV_PART_MAIN);
-  lv_obj_set_style_text_font(installed_title, &lv_font_montserrat_20, LV_PART_MAIN);
+  lv_label_set_text(installed_title, "Installed version");
+  lv_obj_set_style_text_color(installed_title, lv_color_hex(0xA1A1A1), LV_PART_MAIN);
+  lv_obj_set_style_text_font(installed_title, &lv_font_montserrat_14, LV_PART_MAIN);
   lv_obj_set_pos(installed_title, 22, 18);
 
   updates_version_label = lv_label_create(card);
   lv_label_set_text(updates_version_label, installed_version().c_str());
   lv_label_set_long_mode(updates_version_label, LV_LABEL_LONG_WRAP);
-  lv_obj_set_width(updates_version_label, 680);
-  lv_obj_set_style_text_color(updates_version_label, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
-  lv_obj_set_style_text_font(updates_version_label, &lv_font_montserrat_20, LV_PART_MAIN);
+  lv_obj_set_width(updates_version_label, 650);
+  lv_obj_set_style_text_color(updates_version_label, lv_color_hex(0xFAFAFA), LV_PART_MAIN);
+  lv_obj_set_style_text_font(updates_version_label, &lv_font_montserrat_24, LV_PART_MAIN);
   lv_obj_set_pos(updates_version_label, 22, 46);
 
   lv_obj_set_parent(channel_cont, card);
@@ -461,7 +462,7 @@ void SysInfoPanel::create_tabs() {
 
   lv_obj_set_parent(update_status, card);
   lv_label_set_long_mode(update_status, LV_LABEL_LONG_WRAP);
-  lv_obj_set_width(update_status, 680);
+  lv_obj_set_width(update_status, 650);
   lv_obj_set_pos(update_status, 22, 160);
 
   lv_obj_set_parent(update_button, card);
@@ -474,7 +475,7 @@ void SysInfoPanel::create_tabs() {
     lv_obj_set_pos(btn, x, 2);
     lv_obj_set_style_radius(btn, 8, LV_PART_MAIN);
     lv_obj_set_style_shadow_width(btn, 0, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(btn, lv_color_hex(0x333333), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(btn, lv_color_hex(0x262626), LV_PART_MAIN);
     lv_obj_set_style_bg_color(btn, lv_color_hex(0x16A34A), LV_PART_MAIN | LV_STATE_CHECKED);
     lv_obj_t *label = lv_label_create(btn);
     lv_label_set_text(label, text);
@@ -484,8 +485,8 @@ void SysInfoPanel::create_tabs() {
     lv_obj_add_event_cb(btn, &SysInfoPanel::_handle_callback, LV_EVENT_CLICKED, this);
     return btn;
   };
-  tab_general_btn = create_tab_btn("General", 8);
-  tab_updates_btn = create_tab_btn("Updates", 134);
+  tab_general_btn = create_tab_btn("System", 8);
+  tab_updates_btn = create_tab_btn("About", 134);
 
   lv_obj_move_foreground(title_bar);
   show_tab(false);

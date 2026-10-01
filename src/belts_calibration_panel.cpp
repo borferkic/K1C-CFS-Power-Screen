@@ -1,4 +1,5 @@
 #include "belts_calibration_panel.h"
+#include "powerui.h"
 #include "utils.h"
 #include "config.h"
 #include "spdlog/spdlog.h"
@@ -60,8 +61,8 @@ BeltsCalibrationPanel::BeltsCalibrationPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_add_flag(spinner, LV_OBJ_FLAG_HIDDEN);
   lv_obj_set_size(spinner, 100, 100);
 
-  auto scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
-  auto hscale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
+  auto scale = powerui::overlay_width_scale();
+  auto hscale = powerui::overlay_height_scale();
 
   // excite controls
   lv_obj_t *label = lv_label_create(excite_control);
@@ -125,8 +126,8 @@ void BeltsCalibrationPanel::handle_callback(lv_event_t *event) {
       ws.gcode_script("G28");
     }
 
-    auto screen_width = (double)lv_disp_get_physical_hor_res(NULL) / 100.0;
-    auto screen_height = (double)lv_disp_get_physical_ver_res(NULL) / 100.0;
+    auto screen_width = (double)powerui::overlay_width_px() / 100.0;
+    auto screen_height = (double)powerui::overlay_height_px() / 100.0;
     ws.gcode_script(fmt::format("PS_BELTS_SHAPER_CALIBRATION PNG_OUT_PATH={} PNG_WIDTH={} PNG_HEIGHT={}",
 				png_path, screen_width, screen_height));
 

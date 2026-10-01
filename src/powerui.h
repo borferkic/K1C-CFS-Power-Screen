@@ -23,6 +23,13 @@ constexpr uint32_t COLOR_CHAMBER = 0x60A5FA;
 double scale();
 lv_coord_t px(int design_px);
 
+// Area left for the panels that open over the Home tabs: the screen minus the sidebar column (64) and the
+// title bar (40). Panels size their fixed-pixel layouts with these instead of the full display resolution.
+lv_coord_t overlay_width_px();
+lv_coord_t overlay_height_px();
+double overlay_width_scale();   // overlay width / 800
+double overlay_height_scale();  // overlay height / 480
+
 // Transparent, non-clickable, non-scrollable container without padding or border.
 lv_obj_t *plain(lv_obj_t *parent);
 

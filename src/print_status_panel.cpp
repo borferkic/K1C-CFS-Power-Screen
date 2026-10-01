@@ -1,4 +1,5 @@
 #include "print_status_panel.h"
+#include "powerui.h"
 #include "finetune_panel.h"
 #include "state.h"
 #include "utils.h"
@@ -197,7 +198,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_grid_cell(time_left.get_container(), LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 4, 1);
   // lv_obj_set_grid_cell(fan2.get_container(), LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 4, 1);  
   
-  auto hscale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
+  auto hscale = powerui::overlay_height_scale();
   auto progress_height = static_cast<lv_coord_t>(20 * hscale);
   auto status_height = lv_font_get_line_height(&lv_font_montserrat_20);
   auto progress_area_height = progress_height + status_height + PROGRESS_LABEL_GAP;
@@ -522,7 +523,7 @@ void PrintStatusPanel::handle_metadata(const std::string &gcode_file, json &j) {
     mini_print_status.update_material(material.template get<std::string>());
   }
 
-  auto width_scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
+  auto width_scale = powerui::overlay_width_scale();
   auto thumb_detail = KUtils::get_thumbnail(gcode_file, j, width_scale);
   std::string fullpath = thumb_detail.first;
   if (fullpath.length() > 0) {

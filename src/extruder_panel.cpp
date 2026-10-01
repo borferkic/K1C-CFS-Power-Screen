@@ -1,4 +1,5 @@
 #include "extruder_panel.h"
+#include "powerui.h"
 #include "state.h"
 #include "config.h"
 #include "spdlog/spdlog.h"
@@ -6,7 +7,7 @@
 #include <limits>
 
 LV_IMG_DECLARE(back);
-LV_IMG_DECLARE(spoolman_img);
+LV_IMG_DECLARE(ui_cfs_img);
 LV_IMG_DECLARE(extrude_img);
 LV_IMG_DECLARE(retract_img);
 LV_IMG_DECLARE(unload_filament_img);
@@ -98,14 +99,14 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   update_clock();
   clock_timer = lv_timer_create(&ExtruderPanel::_update_clock_cb, 1000, this);
 
-  auto width_scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
-  auto height_scale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
-  load_btn.set_fixed_size(130 * width_scale, 100);
-  unload_btn.set_fixed_size(130 * width_scale, 100);
-  cooldown_btn.set_fixed_size(130 * width_scale, 100);
-  extrude_btn.set_fixed_size(130 * width_scale, 100);
-  retract_btn.set_fixed_size(130 * width_scale, 100);
-  back_btn.set_fixed_size(130 * width_scale, 100);
+  auto width_scale = powerui::overlay_width_scale();
+  auto height_scale = powerui::overlay_height_scale();
+  load_btn.set_fixed_size(130 * width_scale, 86);
+  unload_btn.set_fixed_size(130 * width_scale, 86);
+  cooldown_btn.set_fixed_size(130 * width_scale, 86);
+  extrude_btn.set_fixed_size(130 * width_scale, 86);
+  retract_btn.set_fixed_size(130 * width_scale, 86);
+  back_btn.set_fixed_size(130 * width_scale, 86);
   lv_obj_set_width(extruder_temp.get_sensor(), 130 * width_scale);
   lv_obj_set_height(extruder_temp.get_sensor(), 32 * height_scale);
   extruder_temp.set_current_only(75 * width_scale, 5 * width_scale);
@@ -158,6 +159,10 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
 
   lv_obj_set_width(manual_change_btn.get_container(), 130 * width_scale);
   lv_obj_set_size(manual_change_btn.get_button(), 130 * width_scale, 60);
+  // CFS icon (four spools) to the left of the label; red while the CFS is not available.
+  spoolman_icon = powerui::icon(spoolman_btn.get_container(), &ui_cfs_img, 26, lv_color_hex(0xF44336));
+  lv_obj_align(spoolman_icon, LV_ALIGN_LEFT_MID, 12, 0);
+
   lv_obj_set_width(spoolman_btn.get_container(), 130 * width_scale);
   lv_obj_set_size(spoolman_btn.get_button(), 130 * width_scale, 60);
 
@@ -233,6 +238,7 @@ void ExtruderPanel::show_manual_filament_change() {
 
 void ExtruderPanel::enable_spoolman() {
   spoolman_btn.enable();
+  powerui::icon_set_color(spoolman_icon, lv_color_hex(0xFAFAFA));
 }
 
 void ExtruderPanel::consume(json& j) {

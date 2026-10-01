@@ -1,4 +1,5 @@
 #include "homing_panel.h"
+#include "powerui.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
 #include "config.h"
@@ -55,8 +56,8 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   , distance_selector(motion_cont, "Move Distance (mm)",
 		     {".1", ".5", "1", "5", "10", "25", "50", ""}, 2, 70, 15, &HomingPanel::_handle_selector_cb, this)
 {
-  const auto width_scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
-  const auto height_scale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
+  const auto width_scale = powerui::overlay_width_scale();
+  const auto height_scale = powerui::overlay_height_scale();
   const lv_coord_t square_width = static_cast<lv_coord_t>(130 * width_scale);
   const lv_coord_t square_height = static_cast<lv_coord_t>(130 * height_scale);
   const lv_coord_t horizontal_gap = static_cast<lv_coord_t>(30 * width_scale);
@@ -73,7 +74,7 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   const lv_coord_t safety_height = emergency_height + square_height + back_height + safety_gap * 2;
   const lv_coord_t selector_y = square_height * 2 + vertical_gap + selector_gap;
   const lv_coord_t motion_height = selector_y + static_cast<lv_coord_t>(96 * height_scale);
-  const lv_coord_t available_height = static_cast<lv_coord_t>(lv_disp_get_physical_ver_res(NULL)) - title_height;
+  const lv_coord_t available_height = powerui::overlay_height_px() - title_height;
   const lv_coord_t motion_top = title_height + (available_height - motion_height) / 2;
 
   lv_obj_clear_flag(homing_cont, LV_OBJ_FLAG_SCROLLABLE);

@@ -1,4 +1,5 @@
 #include "printer_select_panel.h"
+#include "powerui.h"
 #include "powerscreen.h"
 #include "config.h"
 #include "hv/json.hpp"
@@ -115,7 +116,7 @@ lv_obj_t *PrinterSelectContainer::prompt(const std::string &prompt_text) {
   lv_obj_add_flag(btnm, LV_OBJ_FLAG_FLOATING);
   lv_obj_align(btnm, LV_ALIGN_BOTTOM_MID, 0, 0);
   
-  auto hscale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
+  auto hscale = powerui::overlay_height_scale();
 
   lv_obj_set_size(btnm, LV_PCT(90), 50 *hscale);
   lv_obj_set_size(mbox1, LV_PCT(50), LV_PCT(35));

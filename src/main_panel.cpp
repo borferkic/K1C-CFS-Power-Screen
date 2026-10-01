@@ -78,9 +78,17 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
     const lv_color_t screen_background = lv_color_hex(COLOR_BG);
 
     // Title bar: logo (Home) or tab title, status icons and clock.
+    // The active screen reserves the sidebar column and the title bar: every panel that is a direct child of the
+    // screen (Filament, Homing, Print Status...) is placed and sized inside the remaining area, so the sidebar
+    // and the title bar stay visible and usable on every screen. The title bar and the tab view cancel the
+    // insets with negative offsets and absolute sizes.
+    lv_obj_clear_flag(lv_scr_act(), LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_pad_left(lv_scr_act(), px(64), LV_PART_MAIN);
+    lv_obj_set_style_pad_top(lv_scr_act(), px(40), LV_PART_MAIN);
+
     lv_obj_clear_flag(title_bar, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_size(title_bar, LV_PCT(100), px(40));
-    lv_obj_set_pos(title_bar, 0, 0);
+    lv_obj_set_size(title_bar, px(800), px(40));
+    lv_obj_set_pos(title_bar, -px(64), -px(40));
     lv_obj_set_style_pad_all(title_bar, 0, LV_PART_MAIN);
     lv_obj_set_style_radius(title_bar, 0, LV_PART_MAIN);
     lv_obj_set_style_bg_color(title_bar, lv_color_hex(COLOR_CARD), LV_PART_MAIN);
@@ -118,14 +126,14 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
     lv_obj_set_style_bg_color(main_tab, screen_background, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(main_tab, LV_OPA_COVER, LV_PART_MAIN);
 
-    lv_obj_set_pos(tabview, 0, px(40));
-    lv_obj_set_width(tabview, LV_PCT(100));
+    lv_obj_set_pos(tabview, -px(64), 0);
+    lv_obj_set_width(tabview, px(800));
     lv_obj_set_height(tabview, lv_obj_get_height(lv_scr_act()) - px(40));
 
     // The console lives in a full-screen page below the title bar; Settings opens it.
     lv_obj_clear_flag(console_page, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_pos(console_page, 0, px(40));
-    lv_obj_set_size(console_page, LV_PCT(100), lv_obj_get_height(lv_scr_act()) - px(40));
+    lv_obj_set_pos(console_page, 0, 0);
+    lv_obj_set_size(console_page, LV_PCT(100), LV_PCT(100));
     lv_obj_set_style_pad_all(console_page, 0, LV_PART_MAIN);
     lv_obj_set_style_radius(console_page, 0, LV_PART_MAIN);
     lv_obj_set_style_border_width(console_page, 0, LV_PART_MAIN);
@@ -321,6 +329,7 @@ void MainPanel::create_panel() {
                       LV_EVENT_VALUE_CHANGED, this);
   lv_obj_add_event_cb(tabview, &MainPanel::_handle_tab_change_cb,
                       LV_EVENT_VALUE_CHANGED, this);
+  lv_obj_add_event_cb(tab_btns, &MainPanel::_handle_tab_click_cb, LV_EVENT_CLICKED, this);
 
   // Sidebar: dark column; the tab buttons stay as invisible touch areas and the icons and the active
   // highlight are drawn on top of them.
@@ -410,6 +419,15 @@ void MainPanel::handle_ledpanel_cb(lv_event_t *event) {
 
 void MainPanel::handle_tab_change_cb(lv_event_t *event) {
   if (lv_event_get_code(event) == LV_EVENT_VALUE_CHANGED) {
+    update_header();
+  }
+}
+
+// Touching the sidebar always brings the tab view back on top of any open panel.
+void MainPanel::handle_tab_click_cb(lv_event_t *event) {
+  if (lv_event_get_code(event) == LV_EVENT_CLICKED) {
+    lv_obj_add_flag(console_page, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_move_foreground(tabview);
     update_header();
   }
 }

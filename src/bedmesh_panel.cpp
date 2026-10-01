@@ -1,4 +1,5 @@
 #include "bedmesh_panel.h"
+#include "powerui.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
 
@@ -49,14 +50,14 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_clear_flag(top_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_flex_flow(top_cont, LV_FLEX_FLOW_ROW);
 
-  auto screen_width = lv_disp_get_physical_hor_res(NULL);
+  auto screen_width = powerui::overlay_width_px();
   if (screen_width < 800) {
     lv_obj_set_style_text_font(mesh_table, &lv_font_montserrat_8, LV_STATE_DEFAULT);
   } else {
     lv_obj_set_style_text_font(mesh_table, &lv_font_montserrat_10, LV_STATE_DEFAULT);
   }
   auto scale = (double)screen_width / 800.0;
-  auto hscale = (double)lv_disp_get_physical_ver_res(NULL) / 480.0;
+  auto hscale = powerui::overlay_height_scale();
   
   lv_obj_set_size(profile_cont, LV_PCT(50), 340 * hscale);
   lv_obj_set_style_pad_all(profile_cont, 0, 0);
@@ -187,7 +188,7 @@ void BedMeshPanel::refresh_views(json &bm) {
 
       // calculate cell width
       if (mesh.size() > 0 && mesh[0].size() > 0) {
-	auto scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
+	auto scale = powerui::overlay_width_scale();
 	int col_width = std::max(4, (int)(380 * scale / mesh[0].size()));
 	int cel_height = std::max(1, (int)(col_width / 2 - 8));
 

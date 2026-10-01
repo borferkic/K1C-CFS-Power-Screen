@@ -155,7 +155,10 @@ PowerScreen *PowerScreen::init(std::function<void(lv_color_t, lv_color_t)> hal_i
 #ifndef OS_ANDROID
   screen_saver = lv_obj_create(lv_scr_act());
 
-  lv_obj_set_size(screen_saver, LV_PCT(100), LV_PCT(100));
+  // The screen reserves a sidebar and title bar inset; the screen saver must cover all of it.
+  lv_obj_set_size(screen_saver, lv_disp_get_hor_res(NULL), lv_disp_get_ver_res(NULL));
+  lv_obj_set_pos(screen_saver, -lv_obj_get_style_pad_left(lv_scr_act(), LV_PART_MAIN),
+                 -lv_obj_get_style_pad_top(lv_scr_act(), LV_PART_MAIN));
   lv_obj_set_style_bg_opa(screen_saver, LV_OPA_100, 0);
   lv_obj_move_background(screen_saver);
 

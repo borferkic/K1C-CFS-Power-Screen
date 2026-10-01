@@ -17,6 +17,22 @@ lv_coord_t px(int design_px) {
   return static_cast<lv_coord_t>(std::lround(design_px * scale()));
 }
 
+lv_coord_t overlay_width_px() {
+  return lv_disp_get_physical_hor_res(NULL) - px(64);
+}
+
+lv_coord_t overlay_height_px() {
+  return lv_disp_get_physical_ver_res(NULL) - px(40);
+}
+
+double overlay_width_scale() {
+  return static_cast<double>(overlay_width_px()) / 800.0;
+}
+
+double overlay_height_scale() {
+  return static_cast<double>(overlay_height_px()) / 480.0;
+}
+
 lv_obj_t *plain(lv_obj_t *parent) {
   lv_obj_t *o = lv_obj_create(parent);
   lv_obj_remove_style_all(o);
