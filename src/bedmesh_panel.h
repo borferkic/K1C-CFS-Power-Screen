@@ -73,6 +73,8 @@ class BedMeshPanel : public NotifyConsumer {
   lv_obj_t *msgbox;
   lv_obj_t *input;
   lv_obj_t *kb;
+  lv_obj_t *mesh_stats_label = NULL;
+  lv_obj_t *mesh_profile_label = NULL;
   std::string active_profile;
   std::vector<std::vector<double>> mesh;
 };

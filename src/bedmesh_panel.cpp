@@ -135,6 +135,81 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
 
   lv_obj_move_background(prompt);
 
+  // PowerUI layout for the overlay area (736 x 440): heat map card, profiles card and an action row.
+  {
+    using namespace powerui;
+    lv_obj_set_layout(cont, 0);
+    lv_obj_set_style_radius(cont, 0, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(cont, lv_color_hex(COLOR_BG), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(cont, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_border_width(cont, 0, LV_PART_MAIN);
+
+    lv_obj_t *mesh_card = card(cont, 12, 12, 400, 320);
+    lv_obj_t *mesh_title = powerui::label(mesh_card, "Bed mesh", &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
+    lv_obj_set_pos(mesh_title, px(20), px(16));
+    mesh_profile_label = powerui::label(mesh_card, "", &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+    lv_obj_set_pos(mesh_profile_label, px(20), px(40));
+    mesh_stats_label = powerui::label(mesh_card, "", &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+    lv_obj_align(mesh_stats_label, LV_ALIGN_BOTTOM_LEFT, px(20), -px(16));
+
+    lv_obj_set_parent(mesh_table, mesh_card);
+    lv_obj_align(mesh_table, LV_ALIGN_TOP_MID, 0, px(68));
+    lv_obj_set_style_bg_opa(mesh_table, LV_OPA_TRANSP, LV_PART_MAIN);
+    lv_obj_set_style_border_width(mesh_table, 0, LV_PART_MAIN);
+    lv_obj_set_style_radius(mesh_table, px(3), LV_PART_ITEMS);
+    lv_obj_set_style_border_width(mesh_table, 1, LV_PART_ITEMS);
+    lv_obj_set_style_border_color(mesh_table, lv_color_hex(COLOR_CARD), LV_PART_ITEMS);
+    lv_obj_set_style_text_color(mesh_table, lv_color_hex(COLOR_FG), LV_PART_ITEMS);
+
+    lv_obj_t *profile_card = card(cont, 424, 12, 300, 320);
+    lv_obj_t *profile_title = powerui::label(profile_card, "Profiles", &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
+    lv_obj_set_pos(profile_title, px(20), px(16));
+    lv_obj_set_parent(profile_cont, profile_card);
+    lv_obj_set_size(profile_cont, px(276), px(256));
+    lv_obj_set_pos(profile_cont, px(10), px(48));
+    lv_obj_set_style_bg_opa(profile_cont, LV_OPA_TRANSP, LV_PART_MAIN);
+    lv_obj_set_style_border_width(profile_cont, 0, LV_PART_MAIN);
+    lv_obj_set_style_shadow_width(profile_cont, 0, LV_PART_MAIN);
+
+    for (lv_obj_t *table : {profile_table, profile_info}) {
+      lv_obj_set_style_bg_opa(table, LV_OPA_TRANSP, LV_PART_MAIN);
+      lv_obj_set_style_border_width(table, 0, LV_PART_MAIN);
+      lv_obj_set_style_bg_opa(table, LV_OPA_TRANSP, LV_PART_ITEMS);
+      lv_obj_set_style_text_color(table, lv_color_hex(COLOR_FG), LV_PART_ITEMS);
+      lv_obj_set_style_border_side(table, LV_BORDER_SIDE_BOTTOM, LV_PART_ITEMS);
+      lv_obj_set_style_border_width(table, 1, LV_PART_ITEMS);
+      lv_obj_set_style_border_color(table, lv_color_white(), LV_PART_ITEMS);
+      lv_obj_set_style_border_opa(table, LV_OPA_10, LV_PART_ITEMS);
+      lv_obj_set_style_pad_top(table, px(7), LV_PART_ITEMS);
+      lv_obj_set_style_pad_bottom(table, px(7), LV_PART_ITEMS);
+    }
+    lv_table_set_col_width(profile_table, 0, px(168));
+    lv_table_set_col_width(profile_table, 1, px(54));
+    lv_table_set_col_width(profile_table, 2, px(54));
+    lv_obj_set_height(profile_table, px(116));
+    lv_table_set_col_width(profile_info, 0, px(150));
+    lv_table_set_col_width(profile_info, 1, px(126));
+    lv_obj_set_height(profile_info, px(130));
+    lv_obj_set_style_text_font(profile_info, &lv_font_montserrat_12, LV_PART_ITEMS);
+
+    lv_obj_add_flag(top_cont, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(controls_cont, LV_OBJ_FLAG_HIDDEN);
+
+    // Action row: four slots of 169 px at y 344.
+    auto put = [this](ButtonContainer &button, int slot, int w, int h, int dy) {
+      lv_obj_set_parent(button.get_container(), cont);
+      button.set_fixed_size(powerui::px(w), powerui::px(h));
+      lv_obj_set_pos(button.get_container(), powerui::px(12 + slot * 181 + (169 - w) / 2), powerui::px(344 + dy));
+    };
+    put(calibrate_btn, 0, 169, 84, 0);
+    put(save_btn, 1, 169, 84, 0);
+    put(clear_btn, 2, 169, 84, 0);
+    put(back_btn, 3, 120, 44, 20);
+    style_button(calibrate_btn.get_container(), calibrate_btn.get_button(), ButtonKind::Soft);
+    style_button(save_btn.get_container(), save_btn.get_button(), ButtonKind::Outline);
+    style_button(clear_btn.get_container(), clear_btn.get_button(), ButtonKind::Destructive);
+  }
+
   ws.register_notify_update(this);
 }
 
@@ -186,10 +261,25 @@ void BedMeshPanel::refresh_views(json &bm) {
 
       mesh = mesh_json.template get<std::vector<std::vector<double>>>();
 
+      if (mesh_profile_label != NULL) {
+        lv_label_set_text(mesh_profile_label, active_profile.c_str());
+      }
+      if (mesh_stats_label != NULL && !mesh.empty()) {
+        double lowest = 1e9, highest = -1e9;
+        for (const auto &mesh_row : mesh) {
+          for (double value : mesh_row) {
+            lowest = std::min(lowest, value);
+            highest = std::max(highest, value);
+          }
+        }
+        lv_label_set_text(mesh_stats_label,
+                          fmt::format("Min {:.3f}   Max {:.3f}   Range {:.3f} mm", lowest, highest, highest - lowest).c_str());
+      }
+
       // calculate cell width
       if (mesh.size() > 0 && mesh[0].size() > 0) {
 	auto scale = powerui::overlay_width_scale();
-	int col_width = std::max(4, (int)(380 * scale / mesh[0].size()));
+	int col_width = std::max(4, (int)(370 * scale / mesh[0].size()));
 	int cel_height = std::max(1, (int)(col_width / 2 - 8));
 
 	lv_obj_set_style_pad_top(mesh_table, cel_height, LV_PART_ITEMS | LV_STATE_DEFAULT);
@@ -427,7 +517,7 @@ void BedMeshPanel::mesh_draw_cb(lv_event_t * e)
     uint32_t col = dsc->id - row * lv_table_get_col_cnt(obj);
 
     dsc->label_dsc->align = LV_TEXT_ALIGN_CENTER;
-    dsc->label_dsc->color = lv_palette_darken(LV_PALETTE_GREY, 3);
+    dsc->label_dsc->color = lv_color_hex(0xFAFAFA);
     
     // rows of the mesh is reversed
     int32_t reversed_row_idx = mesh.size() - row - 1;
@@ -435,21 +525,15 @@ void BedMeshPanel::mesh_draw_cb(lv_event_t * e)
     lv_color_t color = color_gradient(offset);
 
     dsc->rect_dsc->bg_color = color;
-    dsc->rect_dsc->bg_opa = LV_OPA_90;
+    dsc->rect_dsc->bg_opa = LV_OPA_COVER;
   }
 }
 
 static lv_color_t color_gradient(double offset)
 {
-  double red_max = 0.25;
-  uint32_t color = static_cast<uint32_t>(std::min(1.0, 1.0 - 1.0 / red_max * std::abs(offset)) * 255);
-  if (offset > 0) {
-    return lv_color_make(255, color, color);
-  }
-
-  if (offset < 0 ) {
-    return lv_color_make(color, color, 255);
-  }
-  
-  return lv_color_make(255, 255, 255);
+  const double full_scale = 0.25;  // mm of deviation that reaches the full color
+  const double t = std::min(1.0, std::abs(offset) / full_scale);
+  const lv_color_t neutral = lv_color_hex(0x3A3A3A);
+  const lv_color_t target = offset > 0 ? lv_color_hex(0xF87171) : lv_color_hex(0x60A5FA);
+  return lv_color_mix(target, neutral, static_cast<uint8_t>(t * 255));
 }
