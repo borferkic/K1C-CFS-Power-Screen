@@ -60,6 +60,23 @@ WifiPanel::WifiPanel(std::mutex &l)
   lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_add_flag(cont, LV_OBJ_FLAG_CLICK_FOCUSABLE | LV_OBJ_FLAG_CLICKABLE);
 
+  // "Scan again": a green pill in the free corner, right of the network list.
+  scan_btn = lv_btn_create(cont);
+  lv_obj_add_flag(scan_btn, LV_OBJ_FLAG_FLOATING);
+  lv_obj_set_size(scan_btn, powerui::px(180), powerui::px(48));
+  lv_obj_align(scan_btn, LV_ALIGN_BOTTOM_RIGHT, 0, 0);
+  lv_obj_set_style_bg_color(scan_btn, lv_color_hex(0x16A34A), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(scan_btn, lv_color_hex(0x15803D), LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_set_style_bg_opa(scan_btn, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_radius(scan_btn, powerui::px(10), LV_PART_MAIN);
+  lv_obj_set_style_shadow_width(scan_btn, 0, LV_PART_MAIN);
+  lv_obj_t *scan_label = lv_label_create(scan_btn);
+  lv_label_set_text(scan_label, LV_SYMBOL_REFRESH "  Scan again");
+  lv_obj_set_style_text_font(scan_label, &lv_font_montserrat_16, LV_PART_MAIN);
+  lv_obj_set_style_text_color(scan_label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_center(scan_label);
+  lv_obj_add_event_cb(scan_btn, &WifiPanel::_handle_scan, LV_EVENT_CLICKED, this);
+
   lv_obj_add_flag(spinner, LV_OBJ_FLAG_FLOATING);
   lv_obj_align(spinner, LV_ALIGN_CENTER, 0, 0);
 
@@ -192,6 +209,11 @@ void WifiPanel::foreground() {
   wpa_event.send_command("SCAN");
   lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
   powerui::overlay_open("Wi-Fi", [this]() { lv_obj_move_background(cont); });
+}
+
+void WifiPanel::scan() {
+  lv_obj_clear_flag(spinner, LV_OBJ_FLAG_HIDDEN);
+  wpa_event.send_command("SCAN");
 }
 
 void WifiPanel::handle_back_btn(lv_event_t *e) {

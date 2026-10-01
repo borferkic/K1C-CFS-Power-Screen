@@ -77,27 +77,31 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_set_size(files_cont, LV_PCT(100), LV_PCT(100));
   lv_obj_clear_flag(files_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_flex_flow(files_cont, LV_FLEX_FLOW_ROW);
-  lv_obj_set_style_pad_all(files_cont, 0, 0);
+  lv_obj_set_style_pad_all(files_cont, powerui::px(12), 0);
+  lv_obj_set_style_pad_column(files_cont, powerui::px(12), 0);
   lv_obj_set_style_radius(files_cont, 0, 0);
   lv_obj_set_style_border_width(files_cont, 0, 0);
   lv_obj_set_style_bg_color(files_cont, lv_color_hex(0x0A0A0A), 0);
   lv_obj_set_style_bg_opa(files_cont, LV_OPA_COVER, 0);
 
   // left side cont
-  lv_obj_set_size(left_cont, LV_PCT(50), LV_PCT(100));
+  lv_obj_set_size(left_cont, powerui::px(408), LV_PCT(100));
   lv_obj_clear_flag(left_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_flex_flow(left_cont, LV_FLEX_FLOW_COLUMN);
-  lv_obj_set_style_pad_all(left_cont, 0, 0);
-  lv_obj_set_style_bg_color(left_cont, lv_color_hex(0x0A0A0A), LV_PART_MAIN);
+  lv_obj_set_style_pad_all(left_cont, powerui::px(12), 0);
+  lv_obj_set_style_bg_color(left_cont, lv_color_hex(0x171717), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(left_cont, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_set_style_border_width(left_cont, 0, LV_PART_MAIN);
-  lv_obj_set_style_pad_row(left_cont, 0, LV_PART_MAIN);
+  lv_obj_set_style_border_width(left_cont, 1, LV_PART_MAIN);
+  lv_obj_set_style_border_color(left_cont, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_border_opa(left_cont, LV_OPA_10, LV_PART_MAIN);
+  lv_obj_set_style_radius(left_cont, powerui::px(14), LV_PART_MAIN);
+  lv_obj_set_style_pad_row(left_cont, powerui::px(8), LV_PART_MAIN);
 
   // file view buttons
   lv_obj_t * label = NULL;
   
   label = lv_label_create(refresh_btn);
-  lv_label_set_text(label, LV_SYMBOL_REFRESH " Reload");
+  lv_label_set_text(label, LV_SYMBOL_REFRESH);
   lv_obj_center(label);
 
   label = lv_label_create(modified_sort_btn);
@@ -122,16 +126,22 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_clear_flag(file_table_btns, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_flex_flow(file_table_btns, LV_FLEX_FLOW_ROW);
   // Keep the 4 px margins and gaps in the 400 px toolbar.
-  lv_obj_set_flex_align(file_table_btns, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_END);
+  lv_obj_set_flex_align(file_table_btns, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_style_pad_all(file_table_btns, 0, 0);
+  lv_obj_set_style_pad_column(file_table_btns, powerui::px(8), 0);
+  lv_obj_set_style_bg_opa(file_table_btns, LV_OPA_TRANSP, 0);
+  lv_obj_set_style_border_width(file_table_btns, 0, 0);
+  lv_obj_set_height(file_table_btns, powerui::px(40));
 
   lv_obj_t *sort_buttons[] = {refresh_btn, modified_sort_btn, az_sort_btn};
   for (lv_obj_t *sort_button : sort_buttons) {
-    lv_obj_set_size(sort_button, sort_button == modified_sort_btn ? 144 : 120, 38);
+    lv_obj_set_size(sort_button, sort_button == refresh_btn ? powerui::px(44) : (sort_button == modified_sort_btn ? powerui::px(110) : powerui::px(80)), powerui::px(36));
     lv_obj_set_style_pad_all(sort_button, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(sort_button, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(sort_button, lv_color_hex(0x16A34A), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(sort_button, lv_color_hex(0xFAFAFA), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(sort_button, lv_color_hex(0x262626), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(sort_button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(sort_button, lv_color_hex(0x15803D), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_shadow_width(sort_button, 0, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(sort_button, lv_color_hex(0x333333), LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_bg_opa(sort_button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_border_width(sort_button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(sort_button, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -141,17 +151,18 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   storage_row = lv_obj_create(left_cont);
   lv_obj_remove_style_all(storage_row);
   lv_obj_clear_flag(storage_row, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_size(storage_row, LV_PCT(100), 46);
-  lv_obj_set_style_pad_all(storage_row, 4, 0);
+  lv_obj_set_size(storage_row, LV_PCT(100), powerui::px(40));
+  lv_obj_set_style_pad_all(storage_row, 0, 0);
   lv_obj_set_style_pad_column(storage_row, 6, 0);
   lv_obj_set_flex_flow(storage_row, LV_FLEX_FLOW_ROW);
   auto make_storage_button = [this](const char *text) {
     lv_obj_t *button = lv_btn_create(storage_row);
     lv_obj_set_size(button, LV_PCT(49), LV_PCT(100));
-    lv_obj_set_style_radius(button, 8, LV_PART_MAIN);
+    lv_obj_set_style_radius(button, powerui::px(8), LV_PART_MAIN);
     lv_obj_set_style_shadow_width(button, 0, LV_PART_MAIN);
     lv_obj_set_style_border_width(button, 1, LV_PART_MAIN);
     lv_obj_t *button_label = lv_label_create(button);
+    lv_obj_set_style_text_font(button_label, &lv_font_montserrat_16, LV_PART_MAIN);
     lv_label_set_text(button_label, text);
     lv_obj_center(button_label);
     lv_obj_add_event_cb(button, &PrintPanel::_handle_btns, LV_EVENT_CLICKED, this);
@@ -165,29 +176,31 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_set_width(file_grid, LV_PCT(100));
   lv_obj_set_height(file_grid, LV_SIZE_CONTENT);
   lv_obj_set_flex_grow(file_grid, 1);
-  lv_obj_set_flex_flow(file_grid, LV_FLEX_FLOW_ROW_WRAP);
-  lv_obj_set_flex_align(file_grid, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
-  lv_obj_set_style_pad_all(file_grid, 8, LV_PART_MAIN);
-  lv_obj_set_style_pad_row(file_grid, 8, LV_PART_MAIN);
-  lv_obj_set_style_pad_column(file_grid, 8, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(file_grid, lv_color_hex(0x0A0A0A), LV_PART_MAIN);
-  lv_obj_set_style_bg_opa(file_grid, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_flex_flow(file_grid, LV_FLEX_FLOW_COLUMN);
+  lv_obj_set_flex_align(file_grid, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+  lv_obj_set_style_pad_all(file_grid, 0, LV_PART_MAIN);
+  lv_obj_set_style_pad_row(file_grid, powerui::px(4), LV_PART_MAIN);
+  lv_obj_set_style_pad_column(file_grid, 0, LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(file_grid, LV_OPA_TRANSP, LV_PART_MAIN);
   lv_obj_set_style_border_width(file_grid, 0, LV_PART_MAIN);
   lv_obj_set_style_radius(file_grid, 0, LV_PART_MAIN);
   lv_obj_set_scroll_dir(file_grid, LV_DIR_VER);
 
-  lv_obj_set_size(file_view, LV_PCT(50), LV_PCT(100));
+  lv_obj_set_size(file_view, powerui::px(292), LV_PCT(100));
   lv_obj_clear_flag(file_view, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_style_bg_color(file_view, lv_color_hex(0x0A0A0A), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(file_view, lv_color_hex(0x171717), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(file_view, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_set_style_border_width(file_view, 0, LV_PART_MAIN);
-  lv_obj_set_style_radius(file_view, 0, LV_PART_MAIN);
+  lv_obj_set_style_border_width(file_view, 1, LV_PART_MAIN);
+  lv_obj_set_style_border_color(file_view, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_border_opa(file_view, LV_OPA_10, LV_PART_MAIN);
+  lv_obj_set_style_radius(file_view, powerui::px(14), LV_PART_MAIN);
+  lv_obj_set_style_pad_all(file_view, powerui::px(12), LV_PART_MAIN);
 
-  static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(8), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+  static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(1), 96, LV_GRID_TEMPLATE_LAST};
   static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
   lv_obj_set_grid_dsc_array(file_view, grid_main_col_dsc, grid_main_row_dsc);
   lv_obj_set_grid_cell(file_panel.get_container(), LV_GRID_ALIGN_CENTER, 0, 3, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_style_bg_color(file_panel.get_container(), lv_color_hex(0x0A0A0A), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(file_panel.get_container(), LV_OPA_TRANSP, LV_PART_MAIN);
   lv_obj_set_style_border_width(file_panel.get_container(), 0, LV_PART_MAIN);
 
   lv_obj_set_grid_cell(print_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 3, LV_GRID_ALIGN_END, 1, 1);
@@ -215,7 +228,8 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
     lv_obj_set_style_radius(button, 12, LV_PART_MAIN);
     lv_obj_set_style_clip_corner(button, true, LV_PART_MAIN);
   }
-  lv_obj_set_width(print_btn.get_container(), file_action_width * 2);
+  lv_obj_set_width(print_btn.get_container(), LV_PCT(100));
+  lv_obj_set_height(print_btn.get_container(), 92);
   lv_obj_set_style_bg_color(print_btn.get_container(), file_button_green,
                             LV_PART_MAIN | LV_STATE_DEFAULT);
   lv_obj_set_style_bg_color(print_btn.get_container(), file_button_green_pressed,
@@ -449,34 +463,37 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
 
   auto create_card = [this](Tree *node, const std::string &path, bool directory) {
     lv_obj_t *card = lv_obj_create(file_grid);
-    lv_obj_set_width(card, LV_PCT(47));
-    lv_obj_set_height(card, 158);
+    lv_obj_set_width(card, LV_PCT(100));
+    lv_obj_set_height(card, powerui::px(56));
     lv_obj_clear_flag(card, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_add_flag(card, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_event_cb(card, &PrintPanel::_handle_file_card, LV_EVENT_CLICKED, this);
     lv_obj_add_event_cb(card, &PrintPanel::_handle_file_card, LV_EVENT_LONG_PRESSED, this);
-    lv_obj_set_style_bg_color(card, lv_color_hex(0x262626), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(card, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(card, lv_color_hex(0x333333), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_opa(card, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(card, lv_color_hex(0x262626), LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_bg_opa(card, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
-    lv_obj_set_style_border_width(card, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(card, 2, LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_color(card, lv_color_hex(0x262626), LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_opa(card, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_border_width(card, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_opa(card, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_color(card, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN | LV_STATE_CHECKED);
-    lv_obj_set_style_radius(card, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_all(card, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_row(card, 9, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_flex_flow(card, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_flex_align(card, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER,
-                          LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_border_opa(card, LV_OPA_50, LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_radius(card, powerui::px(10), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_all(card, powerui::px(8), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_column(card, powerui::px(12), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_flex_flow(card, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(card, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
     lv_obj_t *thumbnail_frame = lv_obj_create(card);
-    lv_obj_set_size(thumbnail_frame, 112, 112);
+    lv_obj_set_size(thumbnail_frame, powerui::px(40), powerui::px(40));
     lv_obj_clear_flag(thumbnail_frame, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_clear_flag(thumbnail_frame, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_style_bg_color(thumbnail_frame, lv_color_hex(0x262626), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(thumbnail_frame, lv_color_hex(0x0A0A0A), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(thumbnail_frame, LV_OPA_COVER, LV_PART_MAIN);
-    lv_obj_set_style_border_width(thumbnail_frame, 0, LV_PART_MAIN);
-    lv_obj_set_style_radius(thumbnail_frame, 6, LV_PART_MAIN);
+    lv_obj_set_style_border_width(thumbnail_frame, 1, LV_PART_MAIN);
+    lv_obj_set_style_border_color(thumbnail_frame, lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_border_opa(thumbnail_frame, LV_OPA_10, LV_PART_MAIN);
+    lv_obj_set_style_radius(thumbnail_frame, powerui::px(8), LV_PART_MAIN);
     lv_obj_set_style_pad_all(thumbnail_frame, 0, LV_PART_MAIN);
 
     lv_obj_t *thumbnail = lv_img_create(thumbnail_frame);
@@ -484,7 +501,7 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_clear_flag(thumbnail, LV_OBJ_FLAG_CLICKABLE);
     lv_img_set_src(thumbnail, directory ? LV_SYMBOL_DIRECTORY : LV_SYMBOL_IMAGE);
     lv_obj_set_size(thumbnail, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    lv_obj_set_style_text_font(thumbnail, &lv_font_montserrat_20, LV_PART_MAIN);
+    lv_obj_set_style_text_font(thumbnail, &lv_font_montserrat_16, LV_PART_MAIN);
     lv_obj_set_style_img_recolor(thumbnail,
                                  directory ? lv_color_hex(CREALITY_GREEN) : lv_color_white(),
                                  LV_PART_MAIN);
@@ -493,12 +510,11 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
 
     lv_obj_t *name_label = lv_label_create(card);
     lv_obj_clear_flag(name_label, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_set_width(name_label, LV_PCT(100));
-    lv_obj_set_height(name_label, lv_font_get_line_height(&lv_font_montserrat_14));
-    lv_label_set_long_mode(name_label, LV_LABEL_LONG_DOT);
+    lv_obj_set_flex_grow(name_label, 1);
+    lv_label_set_long_mode(name_label, LV_LABEL_LONG_CLIP);
     lv_label_set_text(name_label, node == NULL ? ".." : node->name.c_str());
-    lv_obj_set_style_text_align(name_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-    lv_obj_set_style_text_color(name_label, lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_text_align(name_label, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
+    lv_obj_set_style_text_color(name_label, lv_color_hex(0xFAFAFA), LV_PART_MAIN);
     lv_obj_set_style_text_font(name_label, &lv_font_montserrat_14, LV_PART_MAIN);
 
     file_cards.push_back({card, thumbnail, path, node, directory, ""});
@@ -712,7 +728,7 @@ void PrintPanel::update_file_card(const std::string &path, json &metadata) {
       lv_img_set_src(card.thumbnail, card.thumbnail_source.c_str());
       lv_obj_set_style_img_recolor_opa(card.thumbnail, LV_OPA_TRANSP, LV_PART_MAIN);
       lv_obj_set_size(card.thumbnail, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-      lv_img_set_zoom(card.thumbnail, LV_IMG_ZOOM_NONE);
+      lv_img_set_zoom(card.thumbnail, 100);  // fits the 40 px frame
       lv_obj_center(card.thumbnail);
       lv_obj_invalidate(card.thumbnail);
     }

@@ -67,6 +67,79 @@ ConsolePanel::ConsolePanel(KWebSocketClient &websocket_client, std::mutex &lock,
   lv_obj_add_flag(label, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_add_event_cb(label, &ConsolePanel::_handle_clear_input, LV_EVENT_CLICKED, this);
 
+  // ---- PowerUI look: dark page, log box, macro list card, input pill and a green Send button.
+  const lv_color_t bg = lv_color_hex(0x0A0A0A);
+  const lv_color_t card = lv_color_hex(0x171717);
+  const lv_color_t fg = lv_color_hex(0xFAFAFA);
+  const lv_color_t accent = lv_color_hex(0x4ADE80);
+  auto border = [](lv_obj_t *obj, lv_part_t part) {
+    lv_obj_set_style_border_width(obj, 1, part);
+    lv_obj_set_style_border_color(obj, lv_color_white(), part);
+    lv_obj_set_style_border_opa(obj, LV_OPA_10, part);
+  };
+
+  lv_obj_set_style_bg_color(console_cont, bg, LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(console_cont, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_border_width(console_cont, 0, LV_PART_MAIN);
+  lv_obj_set_style_pad_all(console_cont, 12, LV_PART_MAIN);
+  lv_obj_set_style_pad_row(console_cont, 12, LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(top_cont, LV_OPA_TRANSP, LV_PART_MAIN);
+  lv_obj_set_style_border_width(top_cont, 0, LV_PART_MAIN);
+  lv_obj_set_style_pad_column(top_cont, 12, LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(input_cont, LV_OPA_TRANSP, LV_PART_MAIN);
+  lv_obj_set_style_border_width(input_cont, 0, LV_PART_MAIN);
+  lv_obj_set_style_pad_column(input_cont, 12, LV_PART_MAIN);
+
+  lv_obj_set_size(output, LV_PCT(60), LV_PCT(100));
+  lv_obj_set_style_bg_color(output, bg, LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(output, LV_OPA_COVER, LV_PART_MAIN);
+  border(output, LV_PART_MAIN);
+  lv_obj_set_style_radius(output, 10, LV_PART_MAIN);
+  lv_obj_set_style_pad_all(output, 12, LV_PART_MAIN);
+  lv_obj_set_style_text_color(output, fg, LV_PART_MAIN);
+
+  lv_obj_set_size(macro_list, LV_PCT(40), LV_PCT(100));
+  lv_obj_set_style_bg_color(macro_list, card, LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(macro_list, LV_OPA_COVER, LV_PART_MAIN);
+  border(macro_list, LV_PART_MAIN);
+  lv_obj_set_style_radius(macro_list, 14, LV_PART_MAIN);
+  lv_obj_set_style_pad_all(macro_list, 6, LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(macro_list, LV_OPA_TRANSP, LV_PART_ITEMS);
+  lv_obj_set_style_text_color(macro_list, fg, LV_PART_ITEMS);
+  lv_obj_set_style_pad_ver(macro_list, 11, LV_PART_ITEMS);
+  lv_obj_set_style_pad_hor(macro_list, 10, LV_PART_ITEMS);
+  lv_obj_set_style_border_side(macro_list, LV_BORDER_SIDE_BOTTOM, LV_PART_ITEMS);
+  lv_obj_set_style_border_width(macro_list, 1, LV_PART_ITEMS);
+  lv_obj_set_style_border_color(macro_list, lv_color_white(), LV_PART_ITEMS);
+  lv_obj_set_style_border_opa(macro_list, LV_OPA_10, LV_PART_ITEMS);
+  lv_obj_set_style_bg_color(macro_list, lv_color_hex(0x262626), LV_PART_ITEMS | LV_STATE_PRESSED);
+  lv_obj_set_style_bg_opa(macro_list, LV_OPA_COVER, LV_PART_ITEMS | LV_STATE_PRESSED);
+
+  lv_obj_set_style_bg_color(input, card, LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(input, LV_OPA_COVER, LV_PART_MAIN);
+  border(input, LV_PART_MAIN);
+  lv_obj_set_style_border_color(input, accent, LV_PART_MAIN | LV_STATE_FOCUSED);
+  lv_obj_set_style_border_opa(input, LV_OPA_50, LV_PART_MAIN | LV_STATE_FOCUSED);
+  lv_obj_set_style_radius(input, 10, LV_PART_MAIN);
+  lv_obj_set_style_text_color(input, fg, LV_PART_MAIN);
+  lv_textarea_set_placeholder_text(input, "Send G-code...");
+  lv_obj_set_style_text_color(input, lv_color_hex(0xA1A1A1), LV_PART_TEXTAREA_PLACEHOLDER);
+
+  lv_obj_set_width(send_btn, 120);
+  lv_obj_set_style_bg_color(send_btn, lv_color_hex(0x16A34A), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(send_btn, lv_color_hex(0x15803D), LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_set_style_bg_opa(send_btn, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_radius(send_btn, 10, LV_PART_MAIN);
+  lv_obj_set_style_shadow_width(send_btn, 0, LV_PART_MAIN);
+  lv_label_set_text(send_btn_label, LV_SYMBOL_OK "  Send");
+  lv_obj_set_style_text_color(send_btn_label, lv_color_white(), LV_PART_MAIN);
+
+  lv_obj_set_style_bg_color(kb, card, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(kb, lv_color_hex(0x262626), LV_PART_ITEMS);
+  lv_obj_set_style_text_color(kb, fg, LV_PART_ITEMS);
+  lv_obj_set_style_radius(kb, 8, LV_PART_ITEMS);
+  lv_obj_set_style_border_width(kb, 0, LV_PART_ITEMS);
+
   // ws.register_gcode_resp([this](json& d) { this->handle_macro_response(d); });
   ws.register_method_callback("notify_gcode_response",
 			      "ConsolePanel",

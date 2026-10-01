@@ -22,6 +22,7 @@ class WifiPanel {
   void handle_wpa_event(const std::string &events);
   void handle_kb_input(lv_event_t *e);
   void connect(const char *);
+  void scan();
   bool find_current_network();
 
   static void _handle_back_btn(lv_event_t *event) {
@@ -34,6 +35,12 @@ class WifiPanel {
     panel->handle_callback(event);
   };
   
+  static void _handle_scan(lv_event_t *e) {
+    if (lv_event_get_code(e) == LV_EVENT_CLICKED) {
+      static_cast<WifiPanel*>(e->user_data)->scan();
+    }
+  };
+
   static void _handle_kb_input(lv_event_t *e) {
     WifiPanel *panel = (WifiPanel*)e->user_data;
     panel->handle_kb_input(e);
@@ -52,6 +59,7 @@ class WifiPanel {
   lv_obj_t *password_input;
   ButtonContainer back_btn;
   lv_obj_t *kb;
+  lv_obj_t *scan_btn = NULL;
   std::string selected_network;
   std::string cur_network;
   std::map<std::string, std::string> list_networks;

@@ -341,6 +341,120 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_grid_cell(pause_cancel_group, LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
   lv_obj_set_grid_cell(secondary_buttons_group, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
   
+  // ---- PowerUI layout: thumbnail and progress on the left, three category cards on the right, actions below.
+  {
+    using namespace powerui;
+    lv_obj_add_flag(title_bar, LV_OBJ_FLAG_HIDDEN);  // the main title bar shows "Print Status"
+    lv_obj_set_layout(status_cont, 0);                // drop the old grid
+    lv_obj_set_layout(detail_cont, 0);
+    lv_obj_set_style_bg_color(status_cont, lv_color_hex(COLOR_BG), LV_PART_MAIN);
+    lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(detail_cont, LV_OBJ_FLAG_HIDDEN);
+
+    // Left card: thumbnail, file name, status and progress.
+    lv_obj_t *left = card(status_cont, 12, 12, 272, 308);
+    lv_obj_move_to_index(left, 0);
+    lv_obj_set_parent(thumbnail_cont, left);
+    lv_obj_set_size(thumbnail_cont, px(248), px(150));
+    lv_obj_set_pos(thumbnail_cont, px(11), px(11));
+    lv_obj_set_style_bg_color(thumbnail_cont, lv_color_hex(COLOR_BG), LV_PART_MAIN);
+    lv_obj_set_style_radius(thumbnail_cont, px(10), LV_PART_MAIN);
+    lv_obj_set_style_border_width(thumbnail_cont, 1, LV_PART_MAIN);
+    lv_obj_set_style_border_color(thumbnail_cont, lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_border_opa(thumbnail_cont, LV_OPA_10, LV_PART_MAIN);
+    lv_obj_set_style_border_width(thumbnail, 0, LV_PART_MAIN);
+
+    lv_obj_set_parent(file_cont, left);
+    lv_obj_set_size(file_cont, px(248), px(28));
+    lv_obj_set_pos(file_cont, px(11), px(170));
+    lv_obj_set_style_bg_opa(file_cont, LV_OPA_TRANSP, LV_PART_MAIN);
+    lv_obj_set_style_border_width(file_cont, 0, LV_PART_MAIN);
+    lv_obj_set_style_text_font(file_label, &lv_font_montserrat_16, LV_PART_MAIN);
+
+    lv_obj_set_parent(pbar_cont, left);
+    lv_obj_set_size(pbar_cont, px(248), px(86));
+    lv_obj_set_pos(pbar_cont, px(11), px(206));
+    lv_obj_set_style_bg_opa(pbar_cont, LV_OPA_TRANSP, LV_PART_MAIN);
+    lv_obj_set_width(status_label, px(150));
+    lv_obj_set_style_text_align(status_label, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
+    lv_obj_set_style_text_font(status_label, &lv_font_montserrat_16, LV_PART_MAIN);
+    lv_obj_align(status_label, LV_ALIGN_TOP_LEFT, 0, px(4));
+    lv_obj_set_width(progress_label, px(90));
+    lv_obj_set_style_text_align(progress_label, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN);
+    lv_obj_set_style_text_font(progress_label, &lv_font_montserrat_24, LV_PART_MAIN);
+    lv_obj_set_height(progress_label, LV_SIZE_CONTENT);
+    lv_obj_align(progress_label, LV_ALIGN_TOP_RIGHT, 0, 0);
+    lv_obj_set_size(progress_bar, px(248), px(12));
+    lv_obj_align(progress_bar, LV_ALIGN_BOTTOM_MID, 0, -px(10));
+    lv_obj_set_style_bg_color(progress_bar, lv_color_hex(COLOR_SECONDARY), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(progress_bar, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_radius(progress_bar, LV_RADIUS_CIRCLE, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(progress_bar, lv_color_hex(COLOR_ACCENT), LV_PART_INDICATOR);
+    lv_obj_set_style_bg_opa(progress_bar, LV_OPA_COVER, LV_PART_INDICATOR);
+    lv_obj_set_style_radius(progress_bar, LV_RADIUS_CIRCLE, LV_PART_INDICATOR);
+
+    // Right: one card per category; every row is icon, name and value, so no tile has empty space.
+    struct Row { ImageLabel *item; const char *name; };
+    struct Category { const char *title; int y; int h; Row rows[3]; };
+    Category categories[3] = {
+      {"Temperature and cooling", 12, 96, {{&extruder_temp, "Extruder"}, {&bed_temp, "Bed"}, {&fan0, "Fans"}}},
+      {"Motion", 118, 96, {{&print_speed, "Speed"}, {&flow_rate, "Flow"}, {&z_offset, "Z offset"}}},
+      {"Progress", 224, 96, {{&layers, "Layer"}, {&elapsed, "Elapsed"}, {&time_left, "Remaining"}}},
+    };
+    for (const auto &category : categories) {
+      lv_obj_t *category_card = card(status_cont, 296, category.y, 428, category.h);
+      lv_obj_move_to_index(category_card, 0);
+      lv_obj_t *title = label(category_card, category.title, &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
+      lv_obj_set_pos(title, px(14), px(8));
+      for (int i = 0; i < 3; ++i) {
+        lv_obj_t *row = category.rows[i].item->get_container();
+        lv_obj_set_parent(row, category_card);
+        lv_obj_set_size(row, px(400), px(22));
+        lv_obj_set_pos(row, px(14), px(24 + i * 22));
+        lv_obj_set_style_bg_opa(row, LV_OPA_TRANSP, LV_PART_MAIN);
+        lv_obj_set_style_border_width(row, 0, LV_PART_MAIN);
+        lv_obj_set_style_pad_all(row, 0, LV_PART_MAIN);
+        lv_obj_t *row_icon = lv_obj_get_child(row, 0);
+        if (row_icon != NULL) {
+          lv_img_set_zoom(row_icon, 72);
+          lv_obj_align(row_icon, LV_ALIGN_LEFT_MID, 0, 0);
+        }
+        lv_obj_t *value = lv_obj_get_child(row, 1);
+        if (value != NULL) {
+          lv_obj_set_style_text_font(value, &lv_font_montserrat_16, LV_PART_MAIN);
+          lv_obj_set_style_text_color(value, lv_color_hex(COLOR_FG), LV_PART_MAIN);
+        }
+        lv_obj_t *name = label(row, category.rows[i].name, &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+        lv_obj_align(name, LV_ALIGN_LEFT_MID, px(34), 0);
+      }
+    }
+
+    // Actions: pause/resume and cancel on the left, tune and emergency stop on the right.
+    lv_obj_set_layout(buttons_cont, 0);
+    lv_obj_set_size(buttons_cont, px(712), px(96));
+    lv_obj_set_pos(buttons_cont, px(12), px(332));
+    lv_obj_set_style_bg_opa(buttons_cont, LV_OPA_TRANSP, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(buttons_cont, 0, LV_PART_MAIN);
+    lv_obj_set_size(pause_cancel_group, px(350), px(96));
+    lv_obj_set_pos(pause_cancel_group, 0, 0);
+    lv_obj_set_style_pad_left(pause_cancel_group, 0, LV_PART_MAIN);
+    lv_obj_set_style_pad_right(pause_cancel_group, 0, LV_PART_MAIN);
+    lv_obj_set_style_pad_column(pause_cancel_group, px(12), LV_PART_MAIN);
+    lv_obj_set_flex_align(pause_cancel_group, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+    lv_obj_set_size(secondary_buttons_group, px(350), px(96));
+    lv_obj_set_pos(secondary_buttons_group, px(362), 0);
+    lv_obj_set_style_pad_column(secondary_buttons_group, px(12), LV_PART_MAIN);
+    lv_obj_set_flex_align(secondary_buttons_group, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+    for (ButtonContainer *button : {&pause_btn, &resume_btn, &cancel_btn, &finetune_btn, &emergency_btn}) {
+      button->set_fixed_size(px(169), px(96));
+    }
+    style_button(pause_btn.get_container(), pause_btn.get_button(), ButtonKind::Outline);
+    style_button(resume_btn.get_container(), resume_btn.get_button(), ButtonKind::Soft);
+    style_button(cancel_btn.get_container(), cancel_btn.get_button(), ButtonKind::Outline);
+    style_button(finetune_btn.get_container(), finetune_btn.get_button(), ButtonKind::Outline);
+    style_button(emergency_btn.get_container(), emergency_btn.get_button(), ButtonKind::Destructive);
+  }
+
   ws.register_notify_update(this);
 }
 
