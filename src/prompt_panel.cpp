@@ -40,10 +40,20 @@ PromptPanel::PromptPanel(KWebSocketClient &websocket_client, std::mutex &lock, l
     // single column
 
     lv_obj_center(prompt_cont);
-    lv_obj_set_style_pad_all(prompt_cont, 5, 0);
-    lv_obj_set_style_radius(prompt_cont, 5, LV_PART_MAIN);
-    lv_obj_set_style_border_width(prompt_cont, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_color(prompt_cont, lv_palette_main(LV_PALETTE_GREY), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_all(prompt_cont, 16, 0);
+    lv_obj_set_style_radius(prompt_cont, 14, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(prompt_cont, lv_color_hex(0x171717), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(prompt_cont, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_border_width(prompt_cont, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(prompt_cont, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_opa(prompt_cont, LV_OPA_30, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(prompt_cont, 0, LV_PART_MAIN);
+    lv_obj_set_style_text_color(prompt_cont, lv_color_hex(0xFAFAFA), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(flex, LV_OPA_TRANSP, LV_PART_MAIN);
+    lv_obj_set_style_border_width(flex, 0, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(footer_cont, LV_OPA_TRANSP, LV_PART_MAIN);
+    lv_obj_set_style_border_width(footer_cont, 0, LV_PART_MAIN);
+    lv_label_set_recolor(header, true);
     lv_obj_set_style_max_height(prompt_cont, lv_pct(90), 0);
     lv_obj_set_style_max_width(prompt_cont, lv_pct(75), 0);
     lv_obj_set_style_min_height(prompt_cont, lv_pct(60), 0);
@@ -291,9 +301,9 @@ void PromptPanel::handle_macro_response(json &j) {
                     // Keep the 2x2 controls inside the K1C display margins.
                     lv_obj_set_style_pad_all(footer_cont, 0, 0);
                     // Leave a clear gap after the instruction and between both rows.
-                    lv_obj_set_style_pad_top(footer_cont, 30, 0);
-                    lv_obj_set_style_pad_row(footer_cont, 30, 0);
-                    lv_obj_set_style_pad_column(footer_cont, 6, 0);
+                    lv_obj_set_style_pad_top(footer_cont, 14, 0);
+                    lv_obj_set_style_pad_row(footer_cont, 12, 0);
+                    lv_obj_set_style_pad_column(footer_cont, 12, 0);
                 } else {
                     lv_obj_set_layout(footer_cont, LV_LAYOUT_FLEX);
                     lv_obj_set_flex_flow(footer_cont, LV_FLEX_FLOW_ROW_WRAP);
@@ -309,7 +319,7 @@ void PromptPanel::handle_macro_response(json &j) {
 
                 if (manual_filament_prompt) {
                     // The K1C needs extra vertical room for the second row.
-                    lv_obj_set_size(prompt_cont, lv_pct(76), lv_pct(82));
+                    lv_obj_set_size(prompt_cont, lv_pct(76), lv_pct(70));
                 } else {
                     lv_obj_set_size(prompt_cont, lv_pct(72), lv_pct(60));
                 }
@@ -317,7 +327,7 @@ void PromptPanel::handle_macro_response(json &j) {
 
                 // set header here
                 if (manual_filament_prompt) {
-                    lv_label_set_text(header, "MANUAL FILAMENT CHANGE\n--------------------------\nSELECT ONE OPTION TO PROCEED\n\n");
+                    lv_label_set_text(header, "Manual filament change\n#A1A1A1 Select an option to continue#");
                     lv_obj_set_height(header, LV_SIZE_CONTENT);
                 } else {
                     lv_label_set_text(header, prompt_header.c_str());
@@ -338,6 +348,7 @@ void PromptPanel::handle_macro_response(json &j) {
                 lv_obj_set_flex_grow(textfield, 1);
                 lv_obj_set_style_outline_pad(textfield, 0, 0);
                 lv_label_set_text(textfield, prompt_text.c_str());
+                lv_obj_set_style_text_color(textfield, lv_color_hex(0xFAFAFA), LV_PART_MAIN);
                 lv_obj_center(textfield);
 #ifdef DEBUG_LINES
                 lv_obj_set_style_border_width(textfield, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -406,7 +417,7 @@ void PromptPanel::handle_macro_response(json &j) {
                             // Keep CLOSE on the lower row, opposite STOP.
                             lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_CENTER, 2, 1,
                                                   LV_GRID_ALIGN_CENTER, 1, 1);
-                            lv_obj_set_size(btn, 135, 100);
+                            lv_obj_set_size(btn, 135, 88);
                         } else {
                             int button_column = 0;
                             int button_row = 0;
@@ -420,7 +431,7 @@ void PromptPanel::handle_macro_response(json &j) {
                             }
                             lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_CENTER, button_column, 1,
                                                   LV_GRID_ALIGN_CENTER, button_row, 1);
-                            lv_obj_set_size(btn, 135, 100);
+                            lv_obj_set_size(btn, 135, 88);
                         }
                         lv_obj_set_style_min_width(btn, 0, 0);
                         lv_obj_set_style_min_height(btn, 0, 0);
@@ -460,8 +471,10 @@ void PromptPanel::handle_macro_response(json &j) {
                     if (button_icon != NULL) {
                         lv_obj_t *icon = lv_img_create(btn);
                         lv_img_set_src(icon, button_icon);
-                        lv_obj_align(icon, LV_ALIGN_TOP_MID, 0, 2);
-                        lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, -6);
+                        lv_img_set_size_mode(icon, LV_IMG_SIZE_MODE_REAL);
+                        lv_img_set_zoom(icon, 128);  // 32 px, like the other button icons of the theme
+                        lv_obj_align(icon, LV_ALIGN_TOP_MID, 0, 14);
+                        lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, -12);
                     } else {
                         lv_obj_center(label);
                     }
@@ -472,26 +485,39 @@ void PromptPanel::handle_macro_response(json &j) {
                         unload_btn = btn;
                     }
 
-                    if (!prompt_button_type.compare("secondary")) {
-                        spdlog::debug("type secondary");
-                        lv_obj_add_style(btn, &style_btn_grey, 0);
-                    } else if (!prompt_button_type.compare("warning")) {
-                        spdlog::debug("type warning");
-                        lv_obj_add_style(btn, &style_btn_orange, 0);
-                    } else if (!prompt_button_type.compare("error")) {
-                        spdlog::debug("type error");
-                        lv_obj_add_style(btn, &style_btn_red, 0);
-                    } else if (!prompt_button_type.compare("info")) {
-                        spdlog::debug("type info");
-                        lv_obj_add_style(btn, &style_btn_blue, 0);
-                    } else if (!prompt_button_type.compare("primary")) {
-                        spdlog::debug("type primary");
-                        lv_obj_add_style(btn, &style_btn_blue, 0);
-                    } else if (!prompt_button_type.compare("success")) {
-                        lv_obj_add_style(btn, &style_btn_green, 0);
-                    } else { // info and primary as well
-                        spdlog::debug("type default");
-                        lv_obj_add_style(btn, &style_btn_dark_grey, 0);
+                    {
+                        // PowerUI kinds: success is the filled green action, error the destructive one, the rest are outlined.
+                        lv_color_t main_color = lv_color_hex(0xFAFAFA);
+                        lv_color_t bg = lv_color_hex(0x171717);
+                        lv_opa_t border_opa = LV_OPA_10;
+                        lv_color_t border = lv_color_white();
+                        lv_color_t pressed = lv_color_hex(0x262626);
+                        int border_width = 1;
+                        if (!prompt_button_type.compare("success")) {
+                            main_color = lv_color_white();
+                            bg = lv_color_hex(0x16A34A);
+                            pressed = lv_color_hex(0x15803D);
+                            border_width = 0;
+                        } else if (!prompt_button_type.compare("error")) {
+                            main_color = lv_color_hex(0xFF6467);
+                            border = main_color;
+                            border_opa = LV_OPA_40;
+                        }
+                        lv_obj_set_style_bg_color(btn, bg, LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_opa(btn, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
+                        lv_obj_set_style_bg_color(btn, pressed, LV_PART_MAIN | LV_STATE_PRESSED);
+                        lv_obj_set_style_radius(btn, 10, LV_PART_MAIN);
+                        lv_obj_set_style_shadow_width(btn, 0, LV_PART_MAIN);
+                        lv_obj_set_style_border_width(btn, border_width, LV_PART_MAIN);
+                        lv_obj_set_style_border_color(btn, border, LV_PART_MAIN);
+                        lv_obj_set_style_border_opa(btn, border_opa, LV_PART_MAIN);
+                        lv_obj_set_style_text_color(btn, main_color, LV_PART_MAIN);
+                        lv_obj_set_style_text_font(label, &lv_font_montserrat_16, LV_PART_MAIN);
+                        if (button_icon != NULL) {
+                            lv_obj_t *icon_obj = lv_obj_get_child(btn, lv_obj_get_child_cnt(btn) - 1);
+                            lv_obj_set_style_img_recolor(icon_obj, main_color, LV_PART_MAIN);
+                            lv_obj_set_style_img_recolor_opa(icon_obj, LV_OPA_COVER, LV_PART_MAIN);
+                        }
                     }
                     lv_obj_add_event_cb(btn, _handle_callback, LV_EVENT_PRESSED, this);
 

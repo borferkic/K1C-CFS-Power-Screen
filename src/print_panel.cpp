@@ -55,7 +55,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   , az_sort_btn(lv_btn_create(file_table_btns))
   , file_grid(lv_obj_create(left_cont))
   , file_view(lv_obj_create(files_cont))
-  , print_btn(file_view, &print, "Print", &PrintPanel::_handle_print_callback, this)
+  , print_btn(file_view, NULL, "Print", &PrintPanel::_handle_print_callback, this)
   , back_btn(file_view, &back, "Back", &PrintPanel::_handle_back_btn, this)
   , delete_context_cont(lv_obj_create(files_cont))
   , delete_context_menu(lv_obj_create(delete_context_cont))
@@ -105,11 +105,11 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_center(label);
 
   label = lv_label_create(modified_sort_btn);
-  lv_label_set_text(label, LV_SYMBOL_LIST " Modified");
+  lv_label_set_text(label, "Modified");
   lv_obj_center(label);
 
   label = lv_label_create(az_sort_btn);
-  lv_label_set_text(label, LV_SYMBOL_LIST " A-Z");
+  lv_label_set_text(label, "A-Z");
   lv_obj_center(label);
 
   lv_obj_add_event_cb(refresh_btn, &PrintPanel::_handle_btns, LV_EVENT_CLICKED, this);
@@ -135,7 +135,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
 
   lv_obj_t *sort_buttons[] = {refresh_btn, modified_sort_btn, az_sort_btn};
   for (lv_obj_t *sort_button : sort_buttons) {
-    lv_obj_set_size(sort_button, sort_button == refresh_btn ? powerui::px(44) : (sort_button == modified_sort_btn ? powerui::px(110) : powerui::px(80)), powerui::px(36));
+    lv_obj_set_size(sort_button, sort_button == refresh_btn ? powerui::px(36) : (sort_button == modified_sort_btn ? powerui::px(88) : powerui::px(70)), powerui::px(36));
     lv_obj_set_style_pad_all(sort_button, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(sort_button, lv_color_hex(0xFAFAFA), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(sort_button, lv_color_hex(0x262626), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -146,6 +146,20 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
     lv_obj_set_style_border_width(sort_button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(sort_button, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
   }
+
+  // Toolbar like the reference: [Modified][A-Z]   count   [refresh].
+  count_label = lv_label_create(file_table_btns);
+  lv_label_set_text(count_label, "");
+  lv_label_set_long_mode(count_label, LV_LABEL_LONG_CLIP);
+  lv_obj_set_flex_grow(count_label, 1);
+  lv_obj_set_style_text_align(count_label, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN);
+  lv_obj_set_style_text_color(count_label, lv_color_hex(0xA1A1A1), LV_PART_MAIN);
+  lv_obj_set_style_text_font(count_label, &lv_font_montserrat_12, LV_PART_MAIN);
+  lv_obj_move_to_index(modified_sort_btn, 0);
+  lv_obj_move_to_index(az_sort_btn, 1);
+  lv_obj_move_to_index(count_label, 2);
+  lv_obj_move_to_index(refresh_btn, 3);
+  update_sort_buttons();
 
   // Storage switch: Local / USB.
   storage_row = lv_obj_create(left_cont);
@@ -196,10 +210,10 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_set_style_radius(file_view, powerui::px(14), LV_PART_MAIN);
   lv_obj_set_style_pad_all(file_view, powerui::px(12), LV_PART_MAIN);
 
-  static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(1), 96, LV_GRID_TEMPLATE_LAST};
+  static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(1), 60, LV_GRID_TEMPLATE_LAST};
   static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
   lv_obj_set_grid_dsc_array(file_view, grid_main_col_dsc, grid_main_row_dsc);
-  lv_obj_set_grid_cell(file_panel.get_container(), LV_GRID_ALIGN_CENTER, 0, 3, LV_GRID_ALIGN_CENTER, 0, 1);
+  lv_obj_set_grid_cell(file_panel.get_container(), LV_GRID_ALIGN_STRETCH, 0, 3, LV_GRID_ALIGN_STRETCH, 0, 1);
   lv_obj_set_style_bg_opa(file_panel.get_container(), LV_OPA_TRANSP, LV_PART_MAIN);
   lv_obj_set_style_border_width(file_panel.get_container(), 0, LV_PART_MAIN);
 
@@ -228,8 +242,43 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
     lv_obj_set_style_radius(button, 12, LV_PART_MAIN);
     lv_obj_set_style_clip_corner(button, true, LV_PART_MAIN);
   }
-  lv_obj_set_width(print_btn.get_container(), LV_PCT(100));
-  lv_obj_set_height(print_btn.get_container(), 92);
+  action_row = lv_obj_create(file_view);
+  lv_obj_remove_style_all(action_row);
+  lv_obj_clear_flag(action_row, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_size(action_row, LV_PCT(100), powerui::px(56));
+  lv_obj_set_flex_flow(action_row, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(action_row, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_style_pad_column(action_row, powerui::px(12), 0);
+  lv_obj_set_grid_cell(action_row, LV_GRID_ALIGN_STRETCH, 0, 3, LV_GRID_ALIGN_END, 1, 1);
+
+  // Print: the word only, filled green (no icon).
+  lv_obj_set_parent(print_btn.get_container(), action_row);
+  print_btn.set_fixed_size(powerui::px(196), powerui::px(56));
+  lv_obj_set_style_bg_opa(print_btn.get_button(), LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_bg_opa(print_btn.get_button(), LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_set_style_border_width(print_btn.get_button(), 0, LV_PART_MAIN);
+  lv_obj_t *print_label = lv_obj_get_child(print_btn.get_container(), 1);
+  if (print_label != NULL) {
+    lv_obj_set_style_text_font(print_label, &lv_font_montserrat_20, LV_PART_MAIN);
+    lv_obj_set_style_text_color(print_label, lv_color_white(), LV_PART_MAIN);
+  }
+
+  delete_btn = lv_btn_create(action_row);
+  lv_obj_set_size(delete_btn, powerui::px(56), powerui::px(56));
+  lv_obj_set_style_bg_color(delete_btn, lv_color_hex(0x171717), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(delete_btn, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(delete_btn, lv_color_hex(0x262626), LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_set_style_border_width(delete_btn, 1, LV_PART_MAIN);
+  lv_obj_set_style_border_color(delete_btn, lv_color_hex(0xFF6467), LV_PART_MAIN);
+  lv_obj_set_style_border_opa(delete_btn, LV_OPA_40, LV_PART_MAIN);
+  lv_obj_set_style_radius(delete_btn, powerui::px(10), LV_PART_MAIN);
+  lv_obj_set_style_shadow_width(delete_btn, 0, LV_PART_MAIN);
+  lv_obj_t *delete_label = lv_label_create(delete_btn);
+  lv_label_set_text(delete_label, LV_SYMBOL_TRASH);
+  lv_obj_set_style_text_font(delete_label, &lv_font_montserrat_20, LV_PART_MAIN);
+  lv_obj_set_style_text_color(delete_label, lv_color_hex(0xFF6467), LV_PART_MAIN);
+  lv_obj_center(delete_label);
+  lv_obj_add_event_cb(delete_btn, &PrintPanel::_handle_btns, LV_EVENT_CLICKED, this);
   lv_obj_set_style_bg_color(print_btn.get_container(), file_button_green,
                             LV_PART_MAIN | LV_STATE_DEFAULT);
   lv_obj_set_style_bg_color(print_btn.get_container(), file_button_green_pressed,
@@ -447,6 +496,9 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
   delete_target = NULL;
   file_cards.clear();
   lv_obj_clean(file_grid);
+  sort_modified = (sort_type == SORTED_BY_MODIFIED);
+  update_sort_buttons();
+  lv_label_set_text(count_label, usb_missing ? "" : fmt::format("{} - {} files", usb_view ? "USB" : "Local", dir->children.size()).c_str());
 
   if (usb_missing) {
     cur_file = NULL;
@@ -508,16 +560,43 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_set_style_img_recolor_opa(thumbnail, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_center(thumbnail);
 
-    lv_obj_t *name_label = lv_label_create(card);
+    lv_obj_t *text_col = lv_obj_create(card);
+    lv_obj_remove_style_all(text_col);
+    lv_obj_clear_flag(text_col, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_clear_flag(text_col, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_height(text_col, LV_SIZE_CONTENT);
+    lv_obj_set_flex_grow(text_col, 1);
+    lv_obj_set_flex_flow(text_col, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_style_pad_row(text_col, 2, 0);
+
+    std::string display_name = node == NULL ? ".." : node->name;
+    const size_t extension = display_name.rfind(".gcode");
+    if (extension != std::string::npos && extension + 6 == display_name.size()) {
+      display_name.erase(extension);
+    }
+    lv_obj_t *name_label = lv_label_create(text_col);
     lv_obj_clear_flag(name_label, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_set_flex_grow(name_label, 1);
+    lv_obj_set_width(name_label, LV_PCT(100));
     lv_label_set_long_mode(name_label, LV_LABEL_LONG_CLIP);
-    lv_label_set_text(name_label, node == NULL ? ".." : node->name.c_str());
-    lv_obj_set_style_text_align(name_label, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
+    lv_label_set_text(name_label, display_name.c_str());
     lv_obj_set_style_text_color(name_label, lv_color_hex(0xFAFAFA), LV_PART_MAIN);
     lv_obj_set_style_text_font(name_label, &lv_font_montserrat_14, LV_PART_MAIN);
 
-    file_cards.push_back({card, thumbnail, path, node, directory, ""});
+    lv_obj_t *subtitle_label = lv_label_create(text_col);
+    lv_obj_clear_flag(subtitle_label, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_width(subtitle_label, LV_PCT(100));
+    lv_label_set_long_mode(subtitle_label, LV_LABEL_LONG_CLIP);
+    lv_label_set_text(subtitle_label, directory ? "Folder" : "");
+    lv_obj_set_style_text_color(subtitle_label, lv_color_hex(0xA1A1A1), LV_PART_MAIN);
+    lv_obj_set_style_text_font(subtitle_label, &lv_font_montserrat_12, LV_PART_MAIN);
+
+    lv_obj_t *chevron = lv_label_create(card);
+    lv_obj_clear_flag(chevron, LV_OBJ_FLAG_CLICKABLE);
+    lv_label_set_text(chevron, LV_SYMBOL_RIGHT);
+    lv_obj_set_style_text_color(chevron, lv_color_hex(0xA1A1A1), LV_PART_MAIN);
+    lv_obj_set_style_text_font(chevron, &lv_font_montserrat_14, LV_PART_MAIN);
+
+    file_cards.push_back({card, thumbnail, path, node, directory, "", subtitle_label});
     if (!directory && node->contains_metadata()) {
       update_file_card(path, node->metadata);
     }
@@ -721,6 +800,21 @@ void PrintPanel::update_file_card(const std::string &path, json &metadata) {
       continue;
     }
 
+    {
+      auto eta_json = metadata["/result/estimated_time"_json_pointer];
+      auto weight_json = metadata["/result/filament_weight_total"_json_pointer];
+      if (card.subtitle != NULL && !card.directory && eta_json.is_number()) {
+        std::string text = KUtils::eta_string(static_cast<int>(eta_json.template get<double>()));
+        const size_t seconds = text.rfind(' ');
+        if (seconds != std::string::npos && text.back() == 's' && text.find('m') != std::string::npos) {
+          text.erase(seconds);  // keep hours and minutes only
+        }
+        if (weight_json.is_number()) {
+          text += fmt::format(" - {:.0f} g", weight_json.template get<double>());
+        }
+        lv_label_set_text(card.subtitle, text.c_str());
+      }
+    }
     auto thumb_detail = KUtils::get_thumbnail(path, metadata, 96.0 / 300.0);
     if (!thumb_detail.first.empty()) {
       card.thumbnail_source = "A:" + thumb_detail.first;
@@ -809,6 +903,14 @@ void PrintPanel::handle_btns(lv_event_t *event) {
   lv_event_code_t code = lv_event_get_code(event);
   if (code == LV_EVENT_CLICKED) {
     lv_obj_t *btn = lv_event_get_current_target(event);
+
+    if (btn == delete_btn) {
+      if (cur_file != NULL) {
+        delete_target = cur_file;
+        show_delete_confirmation();
+      }
+      return;
+    }
 
     if (btn == delete_context_cont) {
       hide_delete_context();
@@ -944,5 +1046,19 @@ void PrintPanel::sync_usb_link() {
     }
   } catch (const std::exception &error) {
     spdlog::warn("USB link failed: {}", error.what());
+  }
+}
+
+void PrintPanel::update_sort_buttons() {
+  const lv_color_t accent = lv_color_hex(0x4ADE80);
+  lv_obj_t *buttons[2] = {modified_sort_btn, az_sort_btn};
+  for (int i = 0; i < 2; ++i) {
+    const bool selected = (i == 0) == sort_modified;
+    lv_obj_set_style_bg_color(buttons[i], selected ? accent : lv_color_hex(0x262626), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(buttons[i], selected ? LV_OPA_20 : LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_border_width(buttons[i], 1, LV_PART_MAIN);
+    lv_obj_set_style_border_color(buttons[i], selected ? accent : lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_border_opa(buttons[i], selected ? LV_OPA_50 : LV_OPA_TRANSP, LV_PART_MAIN);
+    lv_obj_set_style_text_color(buttons[i], selected ? accent : lv_color_hex(0xFAFAFA), LV_PART_MAIN);
   }
 }

@@ -23,6 +23,8 @@ class FilePanel {
   lv_obj_t *file_cont;
   lv_obj_t *thumbnail;
   lv_obj_t *fname_label;
+  lv_obj_t *fname_sub = NULL;
+  lv_obj_t *layers_value = NULL;
   lv_obj_t *detail_cont;
   lv_obj_t *print_time_value;
   lv_obj_t *filament_weight_value;

@@ -1,4 +1,5 @@
 #include "file_panel.h"
+#include <ctime>
 #include "powerui.h"
 #include "config.h"
 #include "state.h"
@@ -19,74 +20,74 @@ FilePanel::FilePanel(lv_obj_t *parent)
   , print_time_value(lv_label_create(detail_cont))
   , filament_weight_value(lv_label_create(detail_cont))
 {
+  using namespace powerui;
+  // PowerUI detail card: fixed preview frame, name, subtitle and three rows (print time, filament, layers).
   lv_obj_set_size(file_cont, LV_PCT(100), LV_PCT(100));
-  lv_obj_clear_flag(file_cont, LV_OBJ_FLAG_SCROLLABLE);  
-  lv_obj_align(file_cont, LV_ALIGN_CENTER, 0, 0);
-  lv_obj_set_width(fname_label, LV_PCT(90));
-  lv_label_set_long_mode(fname_label, LV_LABEL_LONG_SCROLL);
-  lv_obj_set_style_text_align(fname_label, LV_TEXT_ALIGN_CENTER, 0);
-
+  lv_obj_clear_flag(file_cont, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_layout(file_cont, 0);
   lv_obj_set_style_bg_opa(file_cont, LV_OPA_TRANSP, LV_PART_MAIN);
   lv_obj_set_style_border_width(file_cont, 0, LV_PART_MAIN);
   lv_obj_set_style_pad_all(file_cont, 0, LV_PART_MAIN);
-  lv_obj_set_style_text_align(fname_label, LV_TEXT_ALIGN_LEFT, 0);
-  lv_obj_set_style_text_color(fname_label, lv_color_hex(0xFAFAFA), 0);
-  lv_obj_set_style_text_font(fname_label, &lv_font_montserrat_16, 0);
+
+  lv_obj_t *preview = plain(file_cont);
+  lv_obj_set_size(preview, LV_PCT(100), px(168));
+  lv_obj_set_pos(preview, 0, 0);
+  lv_obj_set_style_bg_color(preview, lv_color_hex(0x0A0A0A), 0);
+  lv_obj_set_style_bg_opa(preview, LV_OPA_COVER, 0);
+  lv_obj_set_style_radius(preview, px(10), 0);
+  lv_obj_set_style_border_width(preview, 1, 0);
+  lv_obj_set_style_border_color(preview, lv_color_white(), 0);
+  lv_obj_set_style_border_opa(preview, LV_OPA_10, 0);
+  lv_obj_set_parent(thumbnail, preview);
+  lv_obj_center(thumbnail);
+  lv_obj_set_style_border_width(thumbnail, 0, LV_PART_MAIN);
+  lv_obj_set_style_pad_all(thumbnail, 0, LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(thumbnail, LV_OPA_TRANSP, LV_PART_MAIN);
+
   lv_obj_set_width(fname_label, LV_PCT(100));
+  lv_label_set_long_mode(fname_label, LV_LABEL_LONG_CLIP);
+  lv_obj_set_pos(fname_label, 0, px(176));
+  lv_obj_set_style_text_align(fname_label, LV_TEXT_ALIGN_LEFT, 0);
+  lv_obj_set_style_text_color(fname_label, lv_color_hex(COLOR_FG), 0);
+  lv_obj_set_style_text_font(fname_label, &lv_font_montserrat_16, 0);
 
-  lv_obj_set_style_bg_color(thumbnail, lv_color_hex(0x0A0A0A), LV_PART_MAIN);
-  lv_obj_set_style_bg_opa(thumbnail, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_set_style_border_width(thumbnail, 1, LV_PART_MAIN);
-  lv_obj_set_style_border_color(thumbnail, lv_color_white(), LV_PART_MAIN);
-  lv_obj_set_style_border_opa(thumbnail, LV_OPA_10, LV_PART_MAIN);
-  lv_obj_set_style_radius(thumbnail, 10, LV_PART_MAIN);
-  lv_obj_set_style_pad_all(thumbnail, 8, LV_PART_MAIN);
+  fname_sub = lv_label_create(file_cont);
+  lv_label_set_text(fname_sub, "");
+  lv_obj_set_width(fname_sub, LV_PCT(100));
+  lv_label_set_long_mode(fname_sub, LV_LABEL_LONG_CLIP);
+  lv_obj_set_pos(fname_sub, 0, px(198));
+  lv_obj_set_style_text_color(fname_sub, lv_color_hex(COLOR_MUTED), 0);
+  lv_obj_set_style_text_font(fname_sub, &lv_font_montserrat_12, 0);
 
-  static lv_coord_t grid_main_row_dsc[] = {
-    LV_GRID_FR(7), LV_GRID_CONTENT, LV_GRID_FR(3), LV_GRID_TEMPLATE_LAST
-  };
-  static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
-
-  lv_obj_set_grid_dsc_array(file_cont, grid_main_col_dsc, grid_main_row_dsc);
-
-  lv_obj_set_grid_cell(thumbnail, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(fname_label, LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 1, 1);
-  lv_obj_set_width(detail_cont, LV_PCT(100));
-  lv_obj_set_height(detail_cont, LV_SIZE_CONTENT);
-  lv_obj_set_grid_cell(detail_cont, LV_GRID_ALIGN_STRETCH, 0, 1,
-                       LV_GRID_ALIGN_CENTER, 2, 1);
-  lv_obj_set_style_translate_y(detail_cont, -8, LV_PART_MAIN);
+  layers_value = lv_label_create(detail_cont);
+  lv_obj_set_layout(detail_cont, 0);
+  lv_obj_clear_flag(detail_cont, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_size(detail_cont, LV_PCT(100), px(102));
+  lv_obj_set_pos(detail_cont, 0, px(222));
   lv_obj_set_style_bg_opa(detail_cont, LV_OPA_TRANSP, LV_PART_MAIN);
   lv_obj_set_style_border_width(detail_cont, 0, LV_PART_MAIN);
-
-  lv_obj_clear_flag(detail_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_style_pad_all(detail_cont, 0, LV_PART_MAIN);
-  lv_obj_set_style_pad_row(detail_cont, 4, LV_PART_MAIN);
-  static lv_coord_t detail_row_dsc[] = {
-    LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST
-  };
-  static lv_coord_t detail_col_dsc[] = {LV_GRID_CONTENT, LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
-  lv_obj_set_grid_dsc_array(detail_cont, detail_col_dsc, detail_row_dsc);
 
-  const char *titles[] = {"Print time", "Filament"};
-  lv_obj_t *values[] = {print_time_value, filament_weight_value};
-  for (uint32_t i = 0; i < 2; ++i) {
-    lv_obj_t *title = lv_label_create(detail_cont);
-    lv_label_set_text(title, titles[i]);
-    lv_obj_set_style_text_color(title, lv_color_hex(0xA1A1A1), LV_PART_MAIN);
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_14, LV_PART_MAIN);
-    lv_obj_set_style_text_align(title, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
-    lv_obj_set_grid_cell(title, LV_GRID_ALIGN_START, 0, 1,
-                         LV_GRID_ALIGN_CENTER, i, 1);
+  const char *titles[] = {"Print time", "Filament", "Layers"};
+  lv_obj_t *values[] = {print_time_value, filament_weight_value, layers_value};
+  for (int i = 0; i < 3; ++i) {
+    if (i > 0) {
+      lv_obj_t *line = plain(detail_cont);
+      lv_obj_set_size(line, LV_PCT(100), 1);
+      lv_obj_set_pos(line, 0, px(i * 34));
+      lv_obj_set_style_bg_color(line, lv_color_white(), 0);
+      lv_obj_set_style_bg_opa(line, LV_OPA_10, 0);
+    }
+    lv_obj_t *title = label(detail_cont, titles[i], &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+    lv_obj_align(title, LV_ALIGN_TOP_LEFT, 0, px(i * 34 + 8));
 
     lv_label_set_text(values[i], "(unknown)");
-    lv_obj_set_style_text_color(values[i], lv_color_hex(0xFAFAFA), LV_PART_MAIN);
-    lv_obj_set_style_text_font(values[i], &lv_font_montserrat_16, LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(values[i], LV_OPA_TRANSP, LV_PART_MAIN);
+    lv_obj_set_width(values[i], px(150));
+    lv_label_set_long_mode(values[i], LV_LABEL_LONG_CLIP);
+    lv_obj_set_style_text_color(values[i], lv_color_hex(COLOR_FG), LV_PART_MAIN);
+    lv_obj_set_style_text_font(values[i], &lv_font_montserrat_14, LV_PART_MAIN);
     lv_obj_set_style_text_align(values[i], LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN);
-    lv_obj_set_width(values[i], LV_PCT(100));
-    lv_obj_set_grid_cell(values[i], LV_GRID_ALIGN_END, 1, 1,
-                         LV_GRID_ALIGN_CENTER, i, 1);
+    lv_obj_align(values[i], LV_ALIGN_TOP_RIGHT, 0, px(i * 34 + 8));
   }
 }
 
@@ -104,7 +105,12 @@ void FilePanel::refresh_view(json &j, const std::string &gcode_path) {
   double fweight = v.is_number() ? v.template get<double>() : -1.0;
 
   auto filename = fs::path(gcode_path).filename();
-  lv_label_set_text(fname_label, filename.string().c_str());
+  std::string shown_name = filename.string();
+  const size_t extension = shown_name.rfind(".gcode");
+  if (extension != std::string::npos && extension + 6 == shown_name.size()) {
+    shown_name.erase(extension);
+  }
+  lv_label_set_text(fname_label, shown_name.c_str());
   
   const std::string print_time = eta > 0 ? KUtils::eta_string(eta) : "(unknown)";
   const std::string filament_weight = fweight > 0
@@ -112,6 +118,22 @@ void FilePanel::refresh_view(json &j, const std::string &gcode_path) {
     : "(unknown)";
   lv_label_set_text(print_time_value, print_time.c_str());
   lv_label_set_text(filament_weight_value, filament_weight.c_str());
+  auto layers = j["/result/layer_count"_json_pointer];
+  lv_label_set_text(layers_value, layers.is_number() ? fmt::format("{}", layers.template get<int>()).c_str() : "(unknown)");
+
+  std::string sub;
+  auto type = j["/result/filament_type"_json_pointer];
+  if (type.is_string() && !type.template get<std::string>().empty()) {
+    sub = type.template get<std::string>();
+  }
+  auto modified = j["/result/modified"_json_pointer];
+  if (modified.is_number()) {
+    const std::time_t stamp = static_cast<std::time_t>(modified.template get<double>());
+    char date[16] = {};
+    std::strftime(date, sizeof(date), "%b %d", std::localtime(&stamp));
+    sub += std::string(sub.empty() ? "" : " - ") + "modified " + date;
+  }
+  lv_label_set_text(fname_sub, sub.c_str());
 
   auto width_scale = powerui::overlay_width_scale();
   auto thumb_detail = KUtils::get_thumbnail(gcode_path, j, width_scale);
@@ -119,7 +141,8 @@ void FilePanel::refresh_view(json &j, const std::string &gcode_path) {
   if (fullpath.length() > 0) {
     auto screen_width = powerui::overlay_width_px();
     size_t thumb_width = thumb_detail.second > 0 ? thumb_detail.second : 300;
-    uint32_t normalized_thumb_scale = ((0.29 * (double)screen_width) / (double)thumb_width) * 256;
+    (void)screen_width;
+    uint32_t normalized_thumb_scale = (150.0 / (double)thumb_width) * 256;
     thumbnail_source = "A:" + fullpath;
     lv_img_set_src(thumbnail, thumbnail_source.c_str());
     lv_img_set_zoom(thumbnail, normalized_thumb_scale);

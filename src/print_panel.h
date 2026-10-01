@@ -60,6 +60,7 @@ class PrintPanel : public NotifyConsumer {
     Tree *node;
     bool directory;
     std::string thumbnail_source;
+    lv_obj_t *subtitle = NULL;
   };
 
   void show_dir(Tree *dir, uint32_t sort_type);
@@ -67,6 +68,7 @@ class PrintPanel : public NotifyConsumer {
   void sync_usb_link();
   void set_storage(bool usb);
   void update_storage_buttons();
+  void update_sort_buttons();
   void show_file_detail(Tree *f);
   void handle_file_card(lv_event_t *event);
   void request_file_metadata(Tree *file);
@@ -97,6 +99,10 @@ class PrintPanel : public NotifyConsumer {
   lv_obj_t *refresh_btn;
   lv_obj_t *modified_sort_btn;
   lv_obj_t *az_sort_btn;
+  lv_obj_t *count_label = NULL;
+  lv_obj_t *delete_btn = NULL;
+  lv_obj_t *action_row = NULL;
+  bool sort_modified = true;
   
   lv_obj_t *file_grid;
   lv_obj_t *file_view;
