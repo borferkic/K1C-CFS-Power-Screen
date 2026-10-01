@@ -47,6 +47,7 @@ DEFINES			+= -D POWERSCREEN_ROTATE
 endif
 
 CSRCS 			+= $(wildcard $(LVGL_DIR)/assets/zbolt/*.c)
+CSRCS			+= $(wildcard $(LVGL_DIR)/assets/powerui/*.c)
 DEFINES			+= -D ZBOLT
 
 ifdef POWERSCREEN_VERSION

@@ -4,6 +4,8 @@
 #include "utils.h"
 #include "spdlog/spdlog.h"
 
+#include <cmath>
+
 
 LV_IMG_DECLARE(extruder);
 LV_IMG_DECLARE(speed_up_img);
@@ -114,6 +116,11 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   , extruder_target(-1)
   , heater_bed_target(-1)
 {
+  mini_print_status.set_actions(
+    [this]() { ws.send_jsonrpc("printer.print.pause"); },
+    [this]() { ws.send_jsonrpc("printer.print.resume"); },
+    [this]() { cancel_btn.handle_prompt(); });
+
   lv_obj_move_background(status_cont);
   lv_obj_clear_flag(status_cont, LV_OBJ_FLAG_SCROLLABLE);  
   lv_obj_set_size(status_cont, LV_PCT(100), LV_PCT(100));
@@ -427,7 +434,7 @@ void PrintStatusPanel::init(json &fans) {
     mini_print_status.update_status(pstatus);
   } else {
     update_status_label("ready");
-    mini_print_status.show();
+    mini_print_status.hide();
   }
   
 }
@@ -447,6 +454,7 @@ void PrintStatusPanel::populate() {
         ? display_name
         : display_name.substr(0, extension);
       lv_label_set_text(file_label, name_without_extension.c_str());
+      mini_print_status.update_name(name_without_extension);
       lv_obj_clear_flag(file_cont, LV_OBJ_FLAG_HIDDEN);
 
       json fname_input = {{"filename", fname }};
@@ -480,6 +488,14 @@ void PrintStatusPanel::populate() {
   if (!v.is_null()) {
     z_offset.update_label(fmt::format("{:.5} mm", v.template get<double>()).c_str());
   }
+
+  v = s->get_data("/printer_state/gcode_move/speed_factor"_json_pointer);
+  if (!v.is_null()) {
+    mini_print_status.update_speed(static_cast<int>(std::lround(v.template get<double>() * 100)));
+  }
+
+  json &print_info = s->get_data("/printer_state/print_stats/info"_json_pointer);
+  update_layers(print_info);
 }
 
 void PrintStatusPanel::handle_metadata(const std::string &gcode_file, json &j) {
@@ -500,6 +516,12 @@ void PrintStatusPanel::handle_metadata(const std::string &gcode_file, json &j) {
 
   current_file = j["/result"_json_pointer];
 
+  auto material = j["/result/filament_type"_json_pointer];
+  if (material.is_string()) {
+    std::lock_guard<std::mutex> lock(lv_lock);
+    mini_print_status.update_material(material.template get<std::string>());
+  }
+
   auto width_scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
   auto thumb_detail = KUtils::get_thumbnail(gcode_file, j, width_scale);
   std::string fullpath = thumb_detail.first;
@@ -511,7 +533,6 @@ void PrintStatusPanel::handle_metadata(const std::string &gcode_file, json &j) {
     uint32_t normalized_thumb_scale = ((double)PREVIEW_SIZE / (double)thumb_detail.second) * 256;
     lv_img_set_src(thumbnail, img_path.c_str());
     lv_img_set_zoom(thumbnail, normalized_thumb_scale);
-    mini_print_status.update_img(img_path, thumb_detail.second);
   }
 }
 
@@ -579,6 +600,11 @@ void PrintStatusPanel::consume(json &j) {
   v = j["/params/0/gcode_move/homing_origin/2"_json_pointer];
   if (!v.is_null()) {
     z_offset.update_label(fmt::format("{:.5} mm", v.template get<double>()).c_str());
+  }
+
+  v = j["/params/0/gcode_move/speed_factor"_json_pointer];
+  if (!v.is_null()) {
+    mini_print_status.update_speed(static_cast<int>(std::lround(v.template get<double>() * 100)));
   }
 
   std::vector<std::string> values;
@@ -712,17 +738,20 @@ void PrintStatusPanel::update_time_progress(uint32_t time_passed) {
     if (remaining < 0) {
       // XXX: better estimate
       time_left.update_label("...");
+      mini_print_status.update_eta_unknown();
     } else {
       auto eta_str = KUtils::eta_string(remaining);
       time_left.update_label(eta_str.c_str());
-      mini_print_status.update_eta(eta_str);
+      mini_print_status.update_eta(static_cast<uint32_t>(remaining));
     }
 
     elapsed.update_label(KUtils::eta_string(time_passed).c_str());
+    mini_print_status.update_elapsed(time_passed);
 }
 
 void PrintStatusPanel::update_layers(json &info) {
   layers.update_label(fmt::format("{} / {}", current_layer(info), max_layer(info)).c_str());
+  mini_print_status.update_layer(current_layer(info), max_layer(info));
 }
 
 int PrintStatusPanel::max_layer(json &info) {

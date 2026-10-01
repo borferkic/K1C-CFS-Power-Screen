@@ -3,7 +3,8 @@
 
 #include "websocket_client.h"
 #include "notify_consumer.h"
-#include "sensor_container.h"
+#include "temp_card.h"
+#include "status_icons.h"
 #include "button_container.h"
 #include "square_button.h"
 #include "wide_button.h"
@@ -37,7 +38,9 @@ class MainPanel : public NotifyConsumer {
   void subscribe();
   PrinterTunePanel& get_tune_panel();
   void enable_spoolman();
-  
+  // The file picker is not reachable from the Home screen anymore; kept for the screen that will host it.
+  void open_files();
+
   void create_panel();
   void create_sensors(json &temp_sensors);
   void create_fans(json &temp_fans);
@@ -46,19 +49,9 @@ class MainPanel : public NotifyConsumer {
   void handle_extrude_cb(lv_event_t *event);
   void handle_fanpanel_cb(lv_event_t *event);
   void handle_ledpanel_cb(lv_event_t *event);
-  void handle_print_cb(lv_event_t *event);
   void handle_tab_change_cb(lv_event_t *event);
+  void handle_view_toggle_cb(lv_event_t *event);
 
-  lv_obj_t *create_button(lv_obj_t *parent,
-			  const void *btn_img,
-			  const char* text,
-			  lv_event_cb_t cb);
-
-  lv_obj_t *create_heater_info(lv_obj_t *parent,
-			       const void *heater_img,
-			       const char* text,
-			       lv_color_t color);
-  
   static void _handle_homing_cb(lv_event_t *event) {
     MainPanel *panel = (MainPanel*)event->user_data;
     panel->handle_homing_cb(event);
@@ -79,31 +72,52 @@ class MainPanel : public NotifyConsumer {
     panel->handle_ledpanel_cb(event);
   };
 
-  static void _handle_print_cb(lv_event_t *event) {
-    MainPanel *panel = (MainPanel*)event->user_data;
-    panel->handle_print_cb(event);
-  };
-
   static void _handle_tab_change_cb(lv_event_t *event) {
     MainPanel *panel = (MainPanel*)event->user_data;
     panel->handle_tab_change_cb(event);
   };
 
+  static void _handle_view_toggle_cb(lv_event_t *event) {
+    MainPanel *panel = (MainPanel*)event->user_data;
+    panel->handle_view_toggle_cb(event);
+  };
+
   private:
+  // Quick action button of the Home screen (icon above a label).
+  struct QuickButton {
+    lv_obj_t *btn = NULL;
+    lv_obj_t *icon = NULL;
+    lv_obj_t *label = NULL;
+  };
+
   void create_main(lv_obj_t *parent);
+  QuickButton create_quick_button(lv_obj_t *parent, int x, int y, int w, int h,
+				  const lv_img_dsc_t *icon, const char *text, lv_event_cb_t cb);
+  void set_quick_active(QuickButton &button, bool active, const char *text);
+  void create_chart_card(lv_obj_t *parent);
+  void set_home_view(bool print_view);
   void update_header();
   void update_nav_indicator();
   void update_clock();
+  void update_filament_state(json &root, const std::string &prefix);
+  void poll_network();
   static void _update_clock_cb(lv_timer_t *timer) {
     MainPanel *panel = static_cast<MainPanel *>(timer->user_data);
     panel->update_clock();
+  }
+  static void _poll_network_cb(lv_timer_t *timer) {
+    MainPanel *panel = static_cast<MainPanel *>(timer->user_data);
+    panel->poll_network();
   }
   KWebSocketClient &ws;
   HomingPanel homing_panel;
   FanPanel fan_panel;
   LedPanel led_panel;
   lv_obj_t *tabview;
-  lv_obj_t *nav_indicators[4];
+  lv_obj_t *nav_highlight;
+  lv_obj_t *nav_icons[4];
+  lv_coord_t nav_tile_top[4];
+  lv_coord_t nav_tile_x;
   lv_obj_t *main_tab;
   lv_obj_t *printertune_tab;
   lv_obj_t *console_tab;
@@ -113,7 +127,11 @@ class MainPanel : public NotifyConsumer {
   lv_obj_t *title_bar;
   lv_obj_t *title_label;
   lv_obj_t *time_label;
+  lv_obj_t *logo;
   lv_timer_t *clock_timer;
+  lv_timer_t *network_timer;
+  std::unique_ptr<StatusIcons> status_icons;
+  std::map<std::string, bool> filament_state;
   lv_obj_t *main_cont;
   PrintStatusPanel print_status_panel;
   PrintPanel print_panel;
@@ -122,18 +140,18 @@ class MainPanel : public NotifyConsumer {
   ExtruderPanel extruder_panel;
   PromptPanel prompt_panel;
   SpoolmanPanel &spoolman_panel;
-  
-  lv_style_t style;
 
-  lv_obj_t *temp_cont;
+  lv_obj_t *chart_card;
+  lv_obj_t *chart_toggle;
+  lv_obj_t *chart_badge;
   lv_obj_t *temp_chart;
+  bool print_view;
 
-  std::map<std::string, std::shared_ptr<SensorContainer>> sensors;
-  
-  SquareButton homing_btn;
-  SquareButton extrude_btn;
-  SquareButton action_btn;
-  SquareButton led_btn;
-  WideButton print_btn;
+  std::map<std::string, std::shared_ptr<TempCard>> sensors;
+
+  QuickButton homing_btn;
+  QuickButton extrude_btn;
+  QuickButton action_btn;
+  QuickButton led_btn;
 };
 #endif // __MAIN_PANEL_H__

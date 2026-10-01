@@ -1,73 +1,155 @@
 #include "mini_print_status.h"
+#include "powerui.h"
 #include "spdlog/spdlog.h"
 
+using namespace powerui;
+
+LV_FONT_DECLARE(powerui_font_number_88);
+LV_IMG_DECLARE(clock_img);
+LV_IMG_DECLARE(pause_img);
+LV_IMG_DECLARE(resume);
+LV_IMG_DECLARE(cancel);
+
+namespace {
+// Content area of the card is 366 x 374 design px (408 x 416 card, 20 padding, 1 border).
+constexpr int CONTENT_W = 366;
+
+lv_obj_t *action_button(lv_obj_t *parent, int x, int y, int w, int h, uint32_t bg, uint32_t border,
+                        lv_opa_t border_opa) {
+  lv_obj_t *btn = plain(parent);
+  lv_obj_add_flag(btn, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_set_pos(btn, px(x), px(y));
+  lv_obj_set_size(btn, px(w), px(h));
+  lv_obj_set_style_radius(btn, px(10), 0);
+  lv_obj_set_style_bg_color(btn, lv_color_hex(bg), 0);
+  lv_obj_set_style_bg_opa(btn, LV_OPA_COVER, 0);
+  lv_obj_set_style_border_width(btn, 1, 0);
+  lv_obj_set_style_border_color(btn, lv_color_hex(border), 0);
+  lv_obj_set_style_border_opa(btn, border_opa, 0);
+  lv_obj_set_style_bg_color(btn, lv_color_hex(COLOR_SECONDARY), LV_STATE_PRESSED);
+  lv_obj_set_style_opa(btn, LV_OPA_40, LV_STATE_DISABLED);
+  lv_obj_set_flex_flow(btn, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(btn, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_style_pad_column(btn, px(10), 0);
+  return btn;
+}
+} // namespace
+
 MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
-					 lv_event_cb_t cb,
-					 void* user_data)
-  : cont(lv_obj_create(parent))
-  , progress_label_cont(lv_obj_create(cont))
-  , progress_label(lv_label_create(progress_label_cont))
-  , progress_label_bold(lv_label_create(progress_label_cont))
-  , thumb(lv_img_create(cont))
-  , status_label(lv_label_create(cont))
+				 lv_event_cb_t cb,
+				 void* user_data)
+  : cont(card(parent, 12, 12, 408, 416))
+  , title_label(NULL)
+  , subtitle_label(NULL)
+  , toggle(NULL)
+  , state_badge(NULL)
+  , number_label(NULL)
+  , percent_label(NULL)
+  , eta_label(NULL)
+  , progress_bar(NULL)
+  , elapsed_value(NULL)
+  , layer_value(NULL)
+  , speed_value(NULL)
+  , pause_btn(NULL)
+  , pause_icon(NULL)
+  , pause_label(NULL)
+  , stop_btn(NULL)
   , status("n/a")
-  , eta("...")
+  , active(false)
 {
   lv_obj_add_flag(cont, LV_OBJ_FLAG_HIDDEN);
-  lv_color_t cur_bg = lv_obj_get_style_bg_color(cont, 0);
-  lv_color_t mixed = lv_color_mix(lv_palette_main(LV_PALETTE_GREY),
-				  cur_bg, LV_OPA_10);
-  
-  lv_obj_set_style_bg_color(cont, mixed, 0);  
-  lv_obj_set_style_bg_opa(cont, LV_OPA_COVER, 0);
-  lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_ROW);
-  lv_obj_set_flex_align(cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-
-  auto scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
-
-  
-  lv_obj_set_size(cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-  lv_obj_set_style_pad_top(cont, 2, 0);
-  lv_obj_set_style_pad_bottom(cont, 2, 0);
-  lv_obj_set_style_pad_left(cont, 4, 0);
-  lv_obj_set_style_pad_right(cont, 4, 0);
-  
-  lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_ROW);
-  
-  lv_obj_set_style_border_width(cont, 2, 0);
-  lv_obj_set_style_border_color(cont, lv_color_hex(0x4CAF50), 0);
-  lv_obj_set_style_border_opa(cont, LV_OPA_COVER, 0);
-  lv_obj_set_style_radius(cont, 4, 0);
-  
-  lv_obj_add_flag(cont, LV_OBJ_FLAG_FLOATING);
-  lv_obj_align(cont, LV_ALIGN_TOP_LEFT, 0, -14 * scale);
+  lv_obj_set_style_pad_all(cont, px(20), 0);
   lv_obj_add_flag(cont, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_add_event_cb(cont, cb, LV_EVENT_CLICKED, user_data);
 
-  lv_label_set_text(status_label, fmt::format("ETA: {}\nStatus: {}", eta, status).c_str());
+  const lv_color_t fg = lv_color_hex(COLOR_FG);
+  const lv_color_t muted = lv_color_hex(COLOR_MUTED);
 
-  auto progress_label_height = lv_font_get_line_height(&lv_font_montserrat_16);
-  auto progress_label_pad_top = static_cast<lv_coord_t>(
-    (40 * scale - progress_label_height) / 2);
-  lv_obj_set_size(progress_label_cont, 40 * scale, 40 * scale);
-  lv_obj_clear_flag(progress_label_cont, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_style_pad_all(progress_label_cont, 0, 0);
-  lv_obj_set_style_bg_opa(progress_label_cont, LV_OPA_TRANSP, 0);
-  lv_obj_set_style_border_width(progress_label_cont, 0, 0);
+  // Header: file name + subtitle on the left, state badge and view toggle on the right.
+  title_label = label(cont, "No active print", &lv_font_montserrat_16, fg);
+  lv_obj_set_width(title_label, px(190));
+  lv_label_set_long_mode(title_label, LV_LABEL_LONG_DOT);
+  lv_obj_align(title_label, LV_ALIGN_TOP_LEFT, 0, 0);
 
-  for (auto label : {progress_label, progress_label_bold}) {
-    lv_label_set_text(label, "0%");
-    lv_obj_set_size(label, 40 * scale, 40 * scale);
-    lv_obj_set_style_pad_top(label, progress_label_pad_top, 0);
-    lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
-    lv_obj_set_style_text_color(label, lv_color_white(), 0);
-    lv_obj_set_style_text_font(label, &lv_font_montserrat_16, 0);
+  subtitle_label = label(cont, "Ready", &lv_font_montserrat_14, muted);
+  lv_obj_set_width(subtitle_label, px(190));
+  lv_label_set_long_mode(subtitle_label, LV_LABEL_LONG_DOT);
+  lv_obj_align(subtitle_label, LV_ALIGN_TOP_LEFT, 0, px(23));
+
+  toggle = view_toggle(cont, NULL, NULL);
+  lv_obj_align(toggle, LV_ALIGN_TOP_RIGHT, 0, 0);
+
+  state_badge = badge(cont, "Idle", muted);
+  lv_obj_update_layout(toggle);
+  lv_obj_align_to(state_badge, toggle, LV_ALIGN_OUT_LEFT_MID, -px(8), 0);
+
+  // Progress: big number, percent sign, ETA and bar.
+  number_label = label(cont, "0", &powerui_font_number_88, fg);
+  lv_obj_align(number_label, LV_ALIGN_TOP_LEFT, 0, px(78));
+
+  percent_label = label(cont, "%", &lv_font_montserrat_40, muted);
+
+  lv_obj_t *eta_icon = icon(cont, &clock_img, 14, muted);
+  lv_obj_align(eta_icon, LV_ALIGN_TOP_RIGHT, -px(34), px(96));
+  lv_obj_t *eta_text = label(cont, "ETA", &lv_font_montserrat_14, muted);
+  lv_obj_align(eta_text, LV_ALIGN_TOP_RIGHT, 0, px(94));
+
+  eta_label = label(cont, "...", &lv_font_montserrat_24, fg);
+  lv_obj_align(eta_label, LV_ALIGN_TOP_RIGHT, 0, px(114));
+
+  progress_bar = lv_bar_create(cont);
+  lv_bar_set_range(progress_bar, 0, 100);
+  lv_obj_set_size(progress_bar, px(CONTENT_W), px(8));
+  lv_obj_align(progress_bar, LV_ALIGN_TOP_LEFT, 0, px(160));
+  lv_obj_set_style_radius(progress_bar, px(4), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(progress_bar, lv_color_hex(COLOR_SECONDARY), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(progress_bar, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_radius(progress_bar, px(4), LV_PART_INDICATOR);
+  lv_obj_set_style_bg_color(progress_bar, lv_color_hex(COLOR_ACCENT), LV_PART_INDICATOR);
+  lv_obj_set_style_bg_opa(progress_bar, LV_OPA_COVER, LV_PART_INDICATOR);
+
+  // Statistics box: Elapsed / Layer / Speed.
+  lv_obj_t *stats = plain(cont);
+  lv_obj_set_size(stats, px(CONTENT_W), px(68));
+  lv_obj_align(stats, LV_ALIGN_TOP_LEFT, 0, px(210));
+  lv_obj_set_style_radius(stats, px(10), 0);
+  lv_obj_set_style_border_width(stats, 1, 0);
+  lv_obj_set_style_border_color(stats, lv_color_white(), 0);
+  lv_obj_set_style_border_opa(stats, LV_OPA_10, 0);
+
+  const char *stat_names[3] = {"Elapsed", "Layer", "Speed"};
+  lv_obj_t **stat_values[3] = {&elapsed_value, &layer_value, &speed_value};
+  const char *stat_defaults[3] = {"0s", "0 / 0", "100%"};
+  for (int i = 0; i < 3; ++i) {
+    const int cell_x = i * (CONTENT_W - 2) / 3;
+    lv_obj_t *name_label = label(stats, stat_names[i], &lv_font_montserrat_12, muted);
+    lv_obj_set_pos(name_label, px(cell_x + 15), px(12));
+    *stat_values[i] = label(stats, stat_defaults[i], &lv_font_montserrat_18, fg);
+    lv_obj_set_pos(*stat_values[i], px(cell_x + 15), px(31));
+    if (i > 0) {
+      lv_obj_t *sep = plain(stats);
+      lv_obj_set_size(sep, 1, px(66));
+      lv_obj_set_pos(sep, px(cell_x), 0);
+      lv_obj_set_style_bg_color(sep, lv_color_white(), 0);
+      lv_obj_set_style_bg_opa(sep, LV_OPA_10, 0);
+    }
   }
-  lv_obj_align(progress_label, LV_ALIGN_CENTER, 0, 0);
-  lv_obj_align(progress_label_bold, LV_ALIGN_CENTER, 1, 0);
 
-  lv_img_set_size_mode(thumb, LV_IMG_SIZE_MODE_REAL);
-  
+  // Actions: Pause/Resume and Stop.
+  const int btn_w = (CONTENT_W - 12) / 2;
+  pause_btn = action_button(cont, 0, 314, btn_w, 60, COLOR_SECONDARY, 0xFFFFFF, LV_OPA_10);
+  pause_icon = icon(pause_btn, &pause_img, 24, fg);
+  pause_label = label(pause_btn, "Pause", &lv_font_montserrat_16, fg);
+  lv_obj_add_event_cb(pause_btn, &MiniPrintStatus::_handle_action, LV_EVENT_CLICKED, this);
+
+  stop_btn = action_button(cont, btn_w + 12, 314, btn_w, 60, COLOR_CARD, COLOR_DESTRUCTIVE, LV_OPA_40);
+  icon(stop_btn, &cancel, 22, lv_color_hex(COLOR_DESTRUCTIVE));
+  label(stop_btn, "Stop", &lv_font_montserrat_16, lv_color_hex(COLOR_DESTRUCTIVE));
+  lv_obj_add_event_cb(stop_btn, &MiniPrintStatus::_handle_action, LV_EVENT_CLICKED, this);
+
+  lv_obj_add_state(pause_btn, LV_STATE_DISABLED);
+  lv_obj_add_state(stop_btn, LV_STATE_DISABLED);
+  update_progress(0);
 }
 
 MiniPrintStatus::~MiniPrintStatus() {
@@ -77,54 +159,179 @@ MiniPrintStatus::~MiniPrintStatus() {
   }
 }
 
-
 void MiniPrintStatus::show() {
-  lv_obj_clear_flag(cont, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_move_foreground(cont);
+  if (!active) {
+    active = true;
+    if (state_callback) {
+      state_callback(true);
+    }
+  }
 }
 
 void MiniPrintStatus::hide() {
-  lv_obj_add_flag(cont, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_move_background(cont);
+  if (active) {
+    active = false;
+    if (state_callback) {
+      state_callback(false);
+    }
+  }
+}
+
+bool MiniPrintStatus::is_active() const {
+  return active;
 }
 
 lv_obj_t *MiniPrintStatus::get_container() {
   return cont;
 }
 
-void MiniPrintStatus::update_eta(std::string &eta_str) {
-  eta = eta_str;
-  lv_label_set_text(status_label, fmt::format("ETA: {}\nStatus: {}", eta, status).c_str());
+lv_obj_t *MiniPrintStatus::get_toggle() {
+  return toggle;
+}
+
+void MiniPrintStatus::set_state_callback(std::function<void(bool)> callback) {
+  state_callback = callback;
+}
+
+void MiniPrintStatus::set_status_callback(std::function<void(const char *, lv_color_t)> callback) {
+  status_callback = callback;
+}
+
+void MiniPrintStatus::set_actions(std::function<void()> pause, std::function<void()> resume, std::function<void()> stop) {
+  pause_action = pause;
+  resume_action = resume;
+  stop_action = stop;
+}
+
+void MiniPrintStatus::handle_action(lv_event_t *event) {
+  lv_obj_t *target = lv_event_get_target(event);
+  if (target == pause_btn) {
+    if (status == "paused" && resume_action) {
+      resume_action();
+    } else if (status != "paused" && pause_action) {
+      pause_action();
+    }
+  } else if (target == stop_btn && stop_action) {
+    stop_action();
+  }
+}
+
+// Compact duration: "7h 06m", "5m 12s" or "42s".
+static std::string compact_duration(uint32_t seconds) {
+  const uint32_t h = seconds / 3600;
+  const uint32_t m = (seconds % 3600) / 60;
+  const uint32_t s = seconds % 60;
+  if (h > 0) {
+    return fmt::format("{}h {:02}m", h, m);
+  }
+  if (m > 0) {
+    return fmt::format("{}m {:02}s", m, s);
+  }
+  return fmt::format("{}s", s);
+}
+
+void MiniPrintStatus::update_eta(uint32_t remaining_seconds) {
+  lv_label_set_text(eta_label, compact_duration(remaining_seconds).c_str());
+}
+
+void MiniPrintStatus::refresh_subtitle() {
+  std::string text = "Ready";
+  if (status == "printing") {
+    text = "Print in progress";
+  } else if (status == "paused") {
+    text = "Paused";
+  } else if (status == "complete") {
+    text = "Print complete";
+  } else if (status == "cancelled") {
+    text = "Print cancelled";
+  } else if (status == "error") {
+    text = "Print error";
+  }
+  if (!material.empty() && (status == "printing" || status == "paused")) {
+    text += " - " + material;
+  }
+  lv_label_set_text(subtitle_label, text.c_str());
 }
 
 void MiniPrintStatus::update_status(std::string &status_str) {
   status = status_str;
-  lv_label_set_text(status_label, fmt::format("ETA: {}\nStatus: {}", eta, status).c_str());
+  refresh_subtitle();
+
+  const char *badge_text = "Idle";
+  lv_color_t dot = lv_color_hex(COLOR_MUTED);
+  if (status == "printing") {
+    badge_text = "Printing";
+    dot = lv_color_hex(COLOR_ACCENT);
+  } else if (status == "paused") {
+    badge_text = "Paused";
+    dot = lv_color_hex(COLOR_WARNING);
+  } else if (status == "complete") {
+    badge_text = "Complete";
+    dot = lv_color_hex(COLOR_ACCENT);
+  } else if (status == "cancelled" || status == "error") {
+    badge_text = status == "error" ? "Error" : "Cancelled";
+    dot = lv_color_hex(COLOR_DESTRUCTIVE);
+  }
+  badge_set(state_badge, badge_text, dot);
+  lv_obj_update_layout(state_badge);
+  if (status_callback) {
+    status_callback(badge_text, dot);
+  }
+  lv_obj_align_to(state_badge, toggle, LV_ALIGN_OUT_LEFT_MID, -px(8), 0);
+
+  const bool running = status == "printing" || status == "paused";
+  if (running) {
+    lv_obj_clear_state(pause_btn, LV_STATE_DISABLED);
+    lv_obj_clear_state(stop_btn, LV_STATE_DISABLED);
+  } else {
+    lv_obj_add_state(pause_btn, LV_STATE_DISABLED);
+    lv_obj_add_state(stop_btn, LV_STATE_DISABLED);
+  }
+
+  const bool paused = status == "paused";
+  lv_label_set_text(pause_label, paused ? "Resume" : "Pause");
+  lv_img_set_src(lv_obj_get_child(pause_icon, 0), paused ? &resume : &pause_img);
 }
 
 void MiniPrintStatus::update_progress(int p) {
-  auto progress_text = fmt::format("{}%", p);
-  lv_label_set_text(progress_label, progress_text.c_str());
-  lv_label_set_text(progress_label_bold, progress_text.c_str());
+  lv_label_set_text(number_label, fmt::format("{}", p).c_str());
+  lv_bar_set_value(progress_bar, p, LV_ANIM_OFF);
+  lv_obj_update_layout(number_label);
+  lv_obj_align_to(percent_label, number_label, LV_ALIGN_OUT_RIGHT_BOTTOM, px(4), px(-6));
 }
 
-void MiniPrintStatus::update_img(const std::string &img_path, size_t twidth) {
-  auto screen_width = lv_disp_get_physical_hor_res(NULL);
-  uint32_t normalized_thumb_scale = ((0.05 * (double)screen_width) / (double)twidth) * 256;
-  lv_img_set_zoom(thumb, normalized_thumb_scale);  
-  lv_img_set_src(thumb, img_path.c_str());
+void MiniPrintStatus::update_name(const std::string &name) {
+  lv_label_set_text(title_label, name.c_str());
+}
+
+void MiniPrintStatus::update_material(const std::string &material_str) {
+  material = material_str;
+  refresh_subtitle();
+}
+
+void MiniPrintStatus::update_eta_unknown() {
+  lv_label_set_text(eta_label, "...");
+}
+
+void MiniPrintStatus::update_elapsed(uint32_t elapsed_seconds) {
+  lv_label_set_text(elapsed_value, compact_duration(elapsed_seconds).c_str());
+}
+
+void MiniPrintStatus::update_layer(int current, int total) {
+  lv_label_set_text(layer_value, fmt::format("{} / {}", current, total).c_str());
+}
+
+void MiniPrintStatus::update_speed(int percent) {
+  lv_label_set_text(speed_value, fmt::format("{}%", percent).c_str());
 }
 
 void MiniPrintStatus::reset() {
-  lv_label_set_text(progress_label, "0%");
-  lv_label_set_text(progress_label_bold, "0%");
-
-  // free src
-  lv_img_set_src(thumb, NULL);
-  // hack to color in empty space.
-  ((lv_img_t*)thumb)->src_type = LV_IMG_SRC_SYMBOL;
-
-  eta = "...";
-  status = "n/a";  
+  update_progress(0);
+  lv_label_set_text(eta_label, "...");
+  lv_label_set_text(elapsed_value, "0s");
+  lv_label_set_text(layer_value, "0 / 0");
+  lv_label_set_text(title_label, "No active print");
+  material.clear();
+  std::string idle_status = "n/a";
+  update_status(idle_status);
 }
-
