@@ -1,5 +1,6 @@
 #include "finetune_panel.h"
 #include "powerui.h"
+#include "button_container.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
 #include "config.h"
@@ -49,7 +50,7 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   , multipler_selector(panel_cont, "Multipler Step (%)",
 		       {"1", "5", "10", "25", ""}, 0, 40, 15, &FineTunePanel::_handle_callback, this)
   , z_offset(values_cont, &home_z, 150, 100, 25, "0.0 mm")
-  , pa(values_cont, &pa_plus_img, 150, 100, 25, "0.0 mm/s")
+  , pa(values_cont, &pa_plus_img, 150, 100, 25, "0.000")
   , speed_factor(values_cont, &speed_up_img, 150, 100, 25 ,"100%")
   , flow_factor(values_cont, &flow_up_img, 150, 100, 25, "100%")
 {
@@ -83,92 +84,76 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   update_clock();
   clock_timer = lv_timer_create(&FineTunePanel::_update_clock_cb, 1000, this);
 
-  lv_obj_set_size(values_cont, 150, 300);
-  lv_obj_clear_flag(values_cont, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_style_pad_all(values_cont, 0, 0);
-  lv_obj_set_style_pad_row(values_cont, 20, 0);
-  lv_obj_set_flex_flow(values_cont, LV_FLEX_FLOW_COLUMN);
-  lv_obj_set_flex_align(values_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  // ---- PowerUI layout: four metric cards (value, up / down, reset) and two step selectors.
+  using namespace powerui;
+  lv_obj_add_flag(title_bar, LV_OBJ_FLAG_HIDDEN);  // the main title bar shows "Fine Tune"
+  lv_obj_set_style_bg_color(panel_cont, lv_color_hex(COLOR_BG), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(panel_cont, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_border_width(panel_cont, 0, LV_PART_MAIN);
+  lv_obj_add_flag(values_cont, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
 
-  for (lv_obj_t *display : {z_offset.get_container(), pa.get_container(),
-                            speed_factor.get_container(), flow_factor.get_container()}) {
-    lv_obj_set_size(display, 150, 60);
-    lv_obj_set_style_border_width(display, 2, LV_PART_MAIN);
-    lv_obj_set_style_border_color(display, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
-  }
-
-  auto style_button_background = [](ButtonContainer &button) {
-    lv_obj_t *container = button.get_container();
-    lv_obj_set_style_bg_color(container, lv_color_hex(0x262626), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(container, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(container, lv_color_hex(0x333333), LV_PART_MAIN | LV_STATE_PRESSED);
-    lv_obj_set_style_bg_opa(container, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
-    lv_obj_set_style_radius(container, 12, LV_PART_MAIN);
-    lv_obj_set_style_border_width(container, 0, LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(button.get_button(), LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(button.get_button(), LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_PRESSED);
+  struct Metric {
+    ImageLabel *value;
+    ButtonContainer *up;
+    ButtonContainer *down;
+    ButtonContainer *reset;
   };
+  Metric metrics[4] = {{&z_offset, &zup_btn, &zdown_btn, &zreset_btn},
+                       {&pa, &paup_btn, &padown_btn, &pareset_btn},
+                       {&speed_factor, &speed_up_btn, &speed_down_btn, &speed_reset_btn},
+                       {&flow_factor, &flow_up_btn, &flow_down_btn, &flow_reset_btn}};
+  for (int c = 0; c < 4; ++c) {
+    const int x0 = 12 + c * 181;
+    lv_obj_t *metric_card = card(panel_cont, x0, 12, 169, 270);
+    lv_obj_move_to_index(metric_card, 0);
 
-  for (ButtonContainer *button : {&zreset_btn, &zup_btn, &zdown_btn,
-                                  &pareset_btn, &paup_btn, &padown_btn,
-                                  &speed_reset_btn, &speed_up_btn, &speed_down_btn,
-                                  &flow_reset_btn, &flow_up_btn, &flow_down_btn,
-                                  &back_btn}) {
-    style_button_background(*button);
+    lv_obj_t *value = metrics[c].value->get_container();
+    lv_obj_set_parent(value, metric_card);
+    lv_obj_set_size(value, px(145), px(56));
+    lv_obj_set_pos(value, px(11), px(10));
+    lv_obj_set_style_bg_opa(value, LV_OPA_TRANSP, LV_PART_MAIN);
+    lv_obj_set_style_border_width(value, 0, LV_PART_MAIN);
+    lv_obj_t *value_label = lv_obj_get_child(value, 1);
+    if (value_label != NULL) {
+      lv_obj_set_style_text_font(value_label, &lv_font_montserrat_20, LV_PART_MAIN);
+      lv_obj_set_style_text_color(value_label, lv_color_hex(COLOR_FG), LV_PART_MAIN);
+    }
+
+    for (ButtonContainer *button : {metrics[c].up, metrics[c].down}) {
+      button->set_fixed_size(px(70), px(84));
+      style_button(button->get_container(), button->get_button(), ButtonKind::Outline);
+    }
+    metrics[c].reset->set_fixed_size(px(145), px(88));
+    style_button(metrics[c].reset->get_container(), metrics[c].reset->get_button(), ButtonKind::Soft);
+    lv_obj_set_pos(metrics[c].up->get_container(), px(x0 + 12), px(12 + 76));
+    lv_obj_set_pos(metrics[c].down->get_container(), px(x0 + 12 + 75), px(12 + 76));
+    lv_obj_set_pos(metrics[c].reset->get_container(), px(x0 + 12), px(12 + 168));
   }
 
-  for (ButtonContainer *button : {&zreset_btn, &pareset_btn, &speed_reset_btn, &flow_reset_btn}) {
-    lv_obj_set_style_bg_color(button->get_container(), lv_color_hex(0x16A34A),
-                              LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(button->get_container(), lv_color_hex(0x15803D),
-                              LV_PART_MAIN | LV_STATE_PRESSED);
+  // Step selectors in two cards at the bottom.
+  struct StepCard { Selector *selector; int x; const char *title; };
+  StepCard steps[2] = {{&zoffset_selector, 12, "Z (mm) / PA step"}, {&multipler_selector, 374, "Multiplier step (%)"}};
+  for (const auto &step : steps) {
+    lv_obj_t *step_card = card(panel_cont, step.x, 294, 350, 134);
+    lv_obj_move_to_index(step_card, 0);
+    lv_obj_t *selector = step.selector->get_container();
+    lv_obj_set_parent(selector, step_card);
+    lv_obj_set_size(selector, px(322), px(100));
+    lv_obj_set_pos(selector, px(14), px(12));
+    lv_obj_set_flex_align(selector, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+    lv_obj_set_style_pad_row(selector, px(14), 0);
+    lv_obj_set_style_bg_opa(selector, LV_OPA_TRANSP, LV_PART_MAIN);
+    lv_obj_set_style_border_width(selector, 0, LV_PART_MAIN);
+    lv_obj_t *selector_label = step.selector->get_label();
+    lv_label_set_text(selector_label, step.title);
+    lv_obj_set_style_text_align(selector_label, LV_TEXT_ALIGN_LEFT, 0);
+    lv_obj_set_style_text_color(selector_label, lv_color_hex(COLOR_MUTED), 0);
+    lv_obj_set_style_text_font(selector_label, &lv_font_montserrat_14, 0);
+    lv_obj_t *btnm = step.selector->get_selector();
+    lv_obj_set_size(btnm, px(322), px(56));
+    style_segmented(btnm);
   }
-
-  for (ButtonContainer *button : {&zreset_btn, &zup_btn, &zdown_btn,
-                                  &pareset_btn, &paup_btn, &padown_btn,
-                                  &speed_reset_btn, &speed_up_btn, &speed_down_btn,
-                                  &flow_reset_btn, &flow_up_btn, &flow_down_btn}) {
-    button->set_fixed_size(130, 100);
-  }
-  back_btn.set_fixed_size(130, 100);
-
-  static lv_coord_t grid_main_row_dsc[] = {32, LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), 120,
-    LV_GRID_TEMPLATE_LAST};
-  static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1),
-    LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
-
-  lv_obj_set_style_pad_row(panel_cont, 5, LV_PART_MAIN);
-  lv_obj_set_grid_dsc_array(panel_cont, grid_main_col_dsc, grid_main_row_dsc);
-
-  // col 1
-  lv_obj_set_grid_cell(zreset_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-  lv_obj_set_grid_cell(zup_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 2, 1);
-  lv_obj_set_grid_cell(zdown_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 3, 1);
-  lv_obj_set_grid_cell(zoffset_selector.get_container(), LV_GRID_ALIGN_CENTER, 0, 2, LV_GRID_ALIGN_CENTER, 4, 1);
-
-  // col 2
-  lv_obj_set_grid_cell(pareset_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-  lv_obj_set_grid_cell(paup_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 2, 1);
-  lv_obj_set_grid_cell(padown_btn.get_container(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 3, 1);
-  
-  // col 3
-  lv_obj_set_grid_cell(speed_reset_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-  lv_obj_set_grid_cell(speed_up_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 2, 1);
-  lv_obj_set_grid_cell(speed_down_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 3, 1);
-  lv_obj_set_grid_cell(multipler_selector.get_container(), LV_GRID_ALIGN_CENTER, 2, 2, LV_GRID_ALIGN_CENTER, 4, 1);
-
-  // col 4
-  lv_obj_set_grid_cell(flow_reset_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-  lv_obj_set_grid_cell(flow_up_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 2, 1);
-  lv_obj_set_grid_cell(flow_down_btn.get_container(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 3, 1);
-
-  // col 5
-  lv_obj_set_grid_cell(values_cont, LV_GRID_ALIGN_START, 4, 1, LV_GRID_ALIGN_START, 1, 3);
-  lv_obj_set_grid_cell(back_btn.get_container(), LV_GRID_ALIGN_CENTER, 4, 1, LV_GRID_ALIGN_CENTER, 4, 1);
-  lv_obj_set_style_translate_y(values_cont, 15, LV_PART_MAIN);
-
-  lv_obj_set_style_translate_x(zoffset_selector.get_container(), -15, LV_PART_MAIN);
-  lv_obj_set_style_translate_x(multipler_selector.get_container(), -15, LV_PART_MAIN);
 
   ws.register_notify_update(this);
 }
@@ -204,7 +189,7 @@ void FineTunePanel::foreground() {
   v = State::get_instance()->get_data(
 		"/printer_state/extruder/pressure_advance"_json_pointer);
   if (!v.is_null()) {
-    pa.update_label(fmt::format("{:.5} mm/s", v.template get<double>()).c_str());
+    pa.update_label(fmt::format("{:.3f}", v.template get<double>()).c_str());
   }
 
   v = State::get_instance()->get_data(
@@ -248,7 +233,7 @@ void FineTunePanel::consume(json &j) {
 
   v = j["/params/0/extruder/pressure_advance"_json_pointer];
   if (!v.is_null()) {
-    pa.update_label(fmt::format("{:.5} mm/s", v.template get<double>()).c_str());
+    pa.update_label(fmt::format("{:.3f}", v.template get<double>()).c_str());
   }
 
   v = j["/params/0/gcode_move/speed_factor"_json_pointer];

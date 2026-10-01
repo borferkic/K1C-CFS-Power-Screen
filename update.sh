@@ -138,6 +138,25 @@ if [ -f $CUSTOM_UPGRADE_SCRIPT ]; then
     $CUSTOM_UPGRADE_SCRIPT
 fi
 
+## keep the Klipper macros and helper scripts of PowerScreen in sync with the package
+KLIPPER_CFG_DIR=/usr/data/printer_data/config/PowerScreen
+if [ -d "$KLIPPER_CFG_DIR" ] && [ -d "$POWERSCREEN_DIR/scripts" ]; then
+    CFG_CHANGED=false
+    for cfg in "$POWERSCREEN_DIR"/scripts/*.cfg; do
+        [ -f "$cfg" ] || continue
+        if ! cmp -s "$cfg" "$KLIPPER_CFG_DIR/$(basename "$cfg")"; then
+            cp "$cfg" "$KLIPPER_CFG_DIR/"
+            CFG_CHANGED=true
+        fi
+    done
+    mkdir -p "$KLIPPER_CFG_DIR/scripts"
+    cp "$POWERSCREEN_DIR"/scripts/*.py "$KLIPPER_CFG_DIR/scripts/" 2>/dev/null
+    if [ "$CFG_CHANGED" = "true" ] && [ -x /etc/init.d/S55klipper_service ]; then
+        echo "Macros changed, restarting Klipper"
+        /etc/init.d/S55klipper_service restart &> /dev/null
+    fi
+fi
+
 set_moonraker_channel "$CHANNEL"
 
 echo "Updated PowerScreen to version $latest_version"

@@ -14,7 +14,7 @@ LV_IMG_DECLARE(unload_filament_img);
 LV_IMG_DECLARE(load_filament_img);
 LV_IMG_DECLARE(filament_img);
 LV_IMG_DECLARE(extruder);
-LV_IMG_DECLARE(cooldown_img);
+LV_IMG_DECLARE(ui_snowflake_img);
 
 ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
 			     std::mutex &lock,
@@ -40,7 +40,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   , leftside_btns_cont(lv_obj_create(panel_cont))
   , load_btn(leftside_btns_cont, &load_filament_img, "LOAD", &ExtruderPanel::_handle_callback, this)
   , unload_btn(leftside_btns_cont, &unload_filament_img, "UNLOAD", &ExtruderPanel::_handle_callback, this)
-  , cooldown_btn(leftside_btns_cont, &cooldown_img, "COOL", &ExtruderPanel::_handle_callback, this)
+  , cooldown_btn(leftside_btns_cont, &ui_snowflake_img, "FREEZE", &ExtruderPanel::_handle_callback, this)
   , manual_change_btn(leftside_btns_cont, NULL, "MANUAL\nCOLOR", &ExtruderPanel::_handle_callback, this)
   , spoolman_btn(rightside_btns_cont, NULL, "CFS", &ExtruderPanel::_handle_callback, this)
   , extrude_btn(rightside_btns_cont, &extrude_img, "EXTRUDE", &ExtruderPanel::_handle_callback, this)
