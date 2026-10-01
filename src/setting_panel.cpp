@@ -17,6 +17,7 @@ LV_IMG_DECLARE(update_img);
 LV_IMG_DECLARE(info_img);
 
 LV_IMG_DECLARE(print);
+LV_IMG_DECLARE(ui_console_img);
 
 SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent, SpoolmanPanel &sm)
   : ws(c)
@@ -34,6 +35,7 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
   , powerscreen_restart_btn(cont, &refresh_img, "Restart PowerScreen", &SettingPanel::_handle_callback, this)
   , powerscreen_update_btn(cont, &update_img, "Update PowerScreen", &SettingPanel::_handle_callback, this)
   , printer_select_btn(cont, &print, "Printers", &SettingPanel::_handle_callback, this)
+  , console_btn(cont, &ui_console_img, "Console", &SettingPanel::_handle_callback, this)
   , confirm_overlay(NULL)
   , confirm_label(NULL)
   , confirm_cancel_btn(NULL)
@@ -64,7 +66,9 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
   lv_obj_set_grid_cell(spoolman_btn.get_button(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 2, 1);
   lv_obj_set_grid_cell(powerscreen_restart_btn.get_button(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
   lv_obj_set_grid_cell(powerscreen_update_btn.get_button(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(printer_select_btn.get_button(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
+  // The Console takes the slot of Printers (this build only targets the K1C, which has a single printer).
+  lv_obj_add_flag(printer_select_btn.get_button(), LV_OBJ_FLAG_HIDDEN);
+  lv_obj_set_grid_cell(console_btn.get_button(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
 
   create_confirm_overlay();
 }
@@ -125,11 +129,20 @@ void SettingPanel::handle_callback(lv_event_t *event) {
     } else if (btn == powerscreen_update_btn.get_button()) {
       spdlog::trace("update powerscreen pressed");
       sysinfo_panel.start_update();
+    } else if (btn == console_btn.get_button()) {
+      spdlog::trace("setting console pressed");
+      if (console_callback) {
+        console_callback();
+      }
     } else if (btn == printer_select_btn.get_button()) {
       spdlog::trace("setting printers pressed");
       printer_select_panel.foreground();
     }
   }
+}
+
+void SettingPanel::set_console_callback(std::function<void()> callback) {
+  console_callback = callback;
 }
 
 void SettingPanel::enable_spoolman() {

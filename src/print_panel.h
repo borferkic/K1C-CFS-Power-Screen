@@ -14,7 +14,7 @@
 
 class PrintPanel : public NotifyConsumer {
  public:
-  PrintPanel(KWebSocketClient &ws, std::mutex &lv_lock, PrintStatusPanel &ps);
+  PrintPanel(KWebSocketClient &ws, std::mutex &lv_lock, PrintStatusPanel &ps, lv_obj_t *parent);
   ~PrintPanel();
 
   void consume(json &data);

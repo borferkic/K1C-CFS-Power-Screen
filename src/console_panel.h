@@ -4,6 +4,7 @@
 #include "websocket_client.h"
 #include "lvgl/lvgl.h"
 
+#include <functional>
 #include <mutex>
 #include <list>
 
@@ -20,6 +21,8 @@ class ConsolePanel {
   void handle_macro_response(json &d);
   void handle_send_macro(lv_event_t *e);
   void handle_clear_input(lv_event_t *e);
+  void set_back_callback(std::function<void()> callback);
+  void handle_back(lv_event_t *e);
 
   static void _handle_kb_input(lv_event_t *e) {
     ConsolePanel *panel = (ConsolePanel*)e->user_data;
@@ -34,6 +37,11 @@ class ConsolePanel {
   static void _handle_send_macro(lv_event_t *e) {
     ConsolePanel *panel = (ConsolePanel*)e->user_data;
     panel->handle_send_macro(e);
+  };
+
+  static void _handle_back(lv_event_t *e) {
+    ConsolePanel *panel = (ConsolePanel*)e->user_data;
+    panel->handle_back(e);
   };
 
   static void _handle_clear_input(lv_event_t *e) {
@@ -53,6 +61,7 @@ class ConsolePanel {
   lv_obj_t *kb;
   std::list<std::string> all_macros;
   std::list<std::string> history;
+  std::function<void()> back_callback;
 };
 
 #endif // __CONSOLE_PANEL_H__

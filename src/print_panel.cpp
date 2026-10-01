@@ -14,10 +14,10 @@ constexpr uint32_t CREALITY_GREEN = 0x4CAF50;
 #define SORTED_BY_NAME 1 << 0
 #define SORTED_BY_MODIFIED  1 << 1
 
-PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatusPanel &ps)
+PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatusPanel &ps, lv_obj_t *parent)
   : NotifyConsumer(lock)
   , ws(websocket)
-  , files_cont(lv_obj_create(lv_scr_act()))
+  , files_cont(lv_obj_create(parent))
   , prompt_cont(lv_obj_create(lv_scr_act()))
   , msgbox(lv_obj_create(prompt_cont))
   , job_btn(lv_btn_create(msgbox))
@@ -48,19 +48,22 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   , sorted_by(SORTED_BY_MODIFIED)
 {
   spdlog::trace("building print panel");
-  lv_obj_move_background(files_cont);
-
+  // The file picker is the Files tab: it fills the tab page, so the Back button is not needed.
   lv_obj_set_size(files_cont, LV_PCT(100), LV_PCT(100));
   lv_obj_clear_flag(files_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_flex_flow(files_cont, LV_FLEX_FLOW_ROW);
   lv_obj_set_style_pad_all(files_cont, 0, 0);
+  lv_obj_set_style_radius(files_cont, 0, 0);
+  lv_obj_set_style_border_width(files_cont, 0, 0);
+  lv_obj_set_style_bg_color(files_cont, lv_color_hex(0x0A0A0A), 0);
+  lv_obj_set_style_bg_opa(files_cont, LV_OPA_COVER, 0);
 
   // left side cont
   lv_obj_set_size(left_cont, LV_PCT(50), LV_PCT(100));
   lv_obj_clear_flag(left_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_flex_flow(left_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_style_pad_all(left_cont, 0, 0);
-  lv_obj_set_style_bg_color(left_cont, lv_palette_darken(LV_PALETTE_GREY, 4), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(left_cont, lv_color_hex(0x0A0A0A), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(left_cont, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_width(left_cont, 0, LV_PART_MAIN);
   lv_obj_set_style_pad_row(left_cont, 0, LV_PART_MAIN);
@@ -86,7 +89,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   
   lv_obj_set_size(file_table_btns, LV_PCT(100), LV_SIZE_CONTENT);
   lv_obj_set_style_pad_all(file_table_btns, 4, 0);
-  lv_obj_set_style_bg_color(file_table_btns, lv_palette_darken(LV_PALETTE_GREY, 4), 0);
+  lv_obj_set_style_bg_color(file_table_btns, lv_color_hex(0x0A0A0A), 0);
   lv_obj_set_style_bg_opa(file_table_btns, LV_OPA_COVER, 0);
   lv_obj_set_style_border_width(file_table_btns, 0, 0);
   lv_obj_set_style_radius(file_table_btns, 0, 0);
@@ -117,7 +120,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_set_style_pad_all(file_grid, 8, LV_PART_MAIN);
   lv_obj_set_style_pad_row(file_grid, 8, LV_PART_MAIN);
   lv_obj_set_style_pad_column(file_grid, 8, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(file_grid, lv_palette_darken(LV_PALETTE_GREY, 4), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(file_grid, lv_color_hex(0x0A0A0A), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(file_grid, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_width(file_grid, 0, LV_PART_MAIN);
   lv_obj_set_style_radius(file_grid, 0, LV_PART_MAIN);
@@ -125,14 +128,21 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
 
   lv_obj_set_size(file_view, LV_PCT(50), LV_PCT(100));
   lv_obj_clear_flag(file_view, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_style_bg_color(file_view, lv_color_hex(0x0A0A0A), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(file_view, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_border_width(file_view, 0, LV_PART_MAIN);
+  lv_obj_set_style_radius(file_view, 0, LV_PART_MAIN);
 
   static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(8), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
   static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
   lv_obj_set_grid_dsc_array(file_view, grid_main_col_dsc, grid_main_row_dsc);
   lv_obj_set_grid_cell(file_panel.get_container(), LV_GRID_ALIGN_CENTER, 0, 3, LV_GRID_ALIGN_CENTER, 0, 1);
+  lv_obj_set_style_bg_color(file_panel.get_container(), lv_color_hex(0x0A0A0A), LV_PART_MAIN);
+  lv_obj_set_style_border_width(file_panel.get_container(), 0, LV_PART_MAIN);
 
-  lv_obj_set_grid_cell(print_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 2, LV_GRID_ALIGN_END, 1, 1);
+  lv_obj_set_grid_cell(print_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 3, LV_GRID_ALIGN_END, 1, 1);
   lv_obj_set_grid_cell(back_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_END, 1, 1);
+  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
 
   lv_obj_move_foreground(back_btn.get_container());
   lv_obj_move_foreground(print_btn.get_container());

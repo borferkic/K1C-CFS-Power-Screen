@@ -49,6 +49,16 @@ ConsolePanel::ConsolePanel(KWebSocketClient &websocket_client, std::mutex &lock,
   lv_obj_center(send_btn_label);
   lv_obj_add_event_cb(send_btn , &ConsolePanel::_handle_send_macro, LV_EVENT_CLICKED, this);
 
+  // The console is opened from Settings: a Back button leads to the previous screen.
+  lv_obj_t *back_btn = lv_btn_create(input_cont);
+  lv_obj_set_style_text_font(back_btn, &lv_font_montserrat_16, LV_STATE_DEFAULT);
+  lv_obj_set_width(back_btn, 100);
+  lv_obj_t *back_btn_label = lv_label_create(back_btn);
+  lv_label_set_text(back_btn_label, LV_SYMBOL_LEFT " Back");
+  lv_obj_center(back_btn_label);
+  lv_obj_move_to_index(back_btn, 0);
+  lv_obj_add_event_cb(back_btn, &ConsolePanel::_handle_back, LV_EVENT_CLICKED, this);
+
   lv_obj_add_flag(kb, LV_OBJ_FLAG_HIDDEN);
   lv_obj_set_style_text_font(kb, &lv_font_montserrat_16, LV_STATE_DEFAULT);
   lv_obj_add_event_cb(input, &ConsolePanel::_handle_kb_input, LV_EVENT_ALL, this);
@@ -77,6 +87,17 @@ ConsolePanel::~ConsolePanel() {
   if (console_cont != NULL) {
     lv_obj_del(console_cont);
     console_cont = NULL;
+  }
+}
+
+void ConsolePanel::set_back_callback(std::function<void()> callback) {
+  back_callback = callback;
+}
+
+void ConsolePanel::handle_back(lv_event_t *e) {
+  (void)e;
+  if (back_callback) {
+    back_callback();
   }
 }
 

@@ -40,6 +40,7 @@ class MainPanel : public NotifyConsumer {
   void enable_spoolman();
   // The file picker is not reachable from the Home screen anymore; kept for the screen that will host it.
   void open_files();
+  void open_console();
 
   void create_panel();
   void create_sensors(json &temp_sensors);
@@ -120,7 +121,8 @@ class MainPanel : public NotifyConsumer {
   lv_coord_t nav_tile_x;
   lv_obj_t *main_tab;
   lv_obj_t *printertune_tab;
-  lv_obj_t *console_tab;
+  lv_obj_t *files_tab;
+  lv_obj_t *console_page;
   ConsolePanel console_panel;
   lv_obj_t *setting_tab;
   SettingPanel setting_panel;

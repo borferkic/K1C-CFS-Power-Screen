@@ -21,7 +21,7 @@ LV_IMG_DECLARE(chamber);
 LV_IMG_DECLARE(ui_logo);
 LV_IMG_DECLARE(ui_icon_house);
 LV_IMG_DECLARE(ui_icon_sliders);
-LV_IMG_DECLARE(ui_icon_terminal);
+LV_IMG_DECLARE(ui_icon_folder);
 LV_IMG_DECLARE(ui_icon_settings);
 
 #define CONSOLE_SYMBOL "\xF3\xB0\x86\x8D"
@@ -50,8 +50,9 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   , nav_tile_x(0)
   , main_tab(lv_tabview_add_tab(tabview, HOME_SYMBOL))
   , printertune_tab(lv_tabview_add_tab(tabview, TUNE_SYMBOL))
-  , console_tab(lv_tabview_add_tab(tabview, CONSOLE_SYMBOL))
-  , console_panel(ws, lock, console_tab)
+  , files_tab(lv_tabview_add_tab(tabview, CONSOLE_SYMBOL))
+  , console_page(lv_obj_create(lv_scr_act()))
+  , console_panel(ws, lock, console_page)
   , setting_tab(lv_tabview_add_tab(tabview, SETTING_SYMBOL))
   , setting_panel(websocket, lock, setting_tab, sm)
   , title_bar(lv_obj_create(lv_scr_act()))
@@ -62,7 +63,7 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   , network_timer(NULL)
   , main_cont(lv_obj_create(main_tab))
   , print_status_panel(websocket, lock, main_cont)
-  , print_panel(ws, lock, print_status_panel)
+  , print_panel(ws, lock, print_status_panel, files_tab)
   , printertune_panel(ws, lock, printertune_tab, print_status_panel.get_finetune_panel())
   , numpad(Numpad(main_cont))
   , extruder_panel(ws, lock, numpad, sm)
@@ -121,6 +122,22 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
     lv_obj_set_width(tabview, LV_PCT(100));
     lv_obj_set_height(tabview, lv_obj_get_height(lv_scr_act()) - px(40));
 
+    // The console lives in a full-screen page below the title bar; Settings opens it.
+    lv_obj_clear_flag(console_page, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_pos(console_page, 0, px(40));
+    lv_obj_set_size(console_page, LV_PCT(100), lv_obj_get_height(lv_scr_act()) - px(40));
+    lv_obj_set_style_pad_all(console_page, 0, LV_PART_MAIN);
+    lv_obj_set_style_radius(console_page, 0, LV_PART_MAIN);
+    lv_obj_set_style_border_width(console_page, 0, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(console_page, screen_background, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(console_page, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_add_flag(console_page, LV_OBJ_FLAG_HIDDEN);
+    console_panel.set_back_callback([this]() {
+      lv_obj_add_flag(console_page, LV_OBJ_FLAG_HIDDEN);
+      update_header();
+    });
+    setting_panel.set_console_callback([this]() { open_console(); });
+
     ws.register_notify_update(this);
     led_panel.set_state_callback([this](bool active) {
       set_quick_active(led_btn, active, active ? "LED On" : "LED Off");
@@ -128,6 +145,7 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   print_status_panel.set_back_home_callback([this]() {
     print_panel.background();
     lv_tabview_set_act(tabview, 0, LV_ANIM_OFF);
+    update_header();
   });
 }
 
@@ -161,7 +179,18 @@ PrinterTunePanel& MainPanel::get_tune_panel() {
 }
 
 void MainPanel::open_files() {
+  lv_tabview_set_act(tabview, 2, LV_ANIM_OFF);
   print_panel.foreground();
+  update_header();
+}
+
+void MainPanel::open_console() {
+  lv_obj_clear_flag(console_page, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_move_foreground(console_page);
+  lv_obj_move_foreground(title_bar);
+  lv_label_set_text(title_label, "Console");
+  lv_obj_add_flag(logo, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_clear_flag(title_label, LV_OBJ_FLAG_HIDDEN);
 }
 
 void MainPanel::update_filament_state(json &root, const std::string &prefix) {
@@ -331,7 +360,7 @@ void MainPanel::create_panel() {
   lv_obj_set_style_bg_color(nav_highlight, lv_color_hex(COLOR_SECONDARY), 0);
   lv_obj_set_style_bg_opa(nav_highlight, LV_OPA_COVER, 0);
 
-  const lv_img_dsc_t *nav_sources[4] = {&ui_icon_house, &ui_icon_sliders, &ui_icon_terminal, &ui_icon_settings};
+  const lv_img_dsc_t *nav_sources[4] = {&ui_icon_house, &ui_icon_sliders, &ui_icon_folder, &ui_icon_settings};
   for (int tab_index = 0; tab_index < 4; ++tab_index) {
     nav_tile_top[tab_index] = px(8) + gap / 2 + tab_index * (tile + gap);
     nav_icons[tab_index] = icon(tab_btns, nav_sources[tab_index], 22, lv_color_hex(COLOR_MUTED));
@@ -340,7 +369,8 @@ void MainPanel::create_panel() {
 
   lv_obj_set_style_pad_all(main_tab, 0, 0);
   lv_obj_clear_flag(main_tab, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_style_pad_all(console_tab, 0, 0);
+  lv_obj_set_style_pad_all(files_tab, 0, 0);
+  lv_obj_clear_flag(files_tab, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_style_pad_all(printertune_tab, 0, 0);
   lv_obj_set_style_pad_all(setting_tab, 0, 0);
 
@@ -543,7 +573,7 @@ void MainPanel::update_header() {
       title = "Calibrations";
       break;
     case 2:
-      title = "Console";
+      title = "Files";
       break;
     case 3:
       title = "Settings";
