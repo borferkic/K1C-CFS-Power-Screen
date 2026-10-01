@@ -195,16 +195,15 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
     lv_obj_add_flag(top_cont, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(controls_cont, LV_OBJ_FLAG_HIDDEN);
 
-    // Action row: four slots of 169 px at y 344.
-    auto put = [this](ButtonContainer &button, int slot, int w, int h, int dy) {
+    // Action row: three buttons across the full width at y 344.
+    auto put = [this](ButtonContainer &button, int x, int w) {
       lv_obj_set_parent(button.get_container(), cont);
-      button.set_fixed_size(powerui::px(w), powerui::px(h));
-      lv_obj_set_pos(button.get_container(), powerui::px(12 + slot * 181 + (169 - w) / 2), powerui::px(344 + dy));
+      button.set_fixed_size(powerui::px(w), powerui::px(84));
+      lv_obj_set_pos(button.get_container(), powerui::px(x), powerui::px(344));
     };
-    put(calibrate_btn, 0, 169, 84, 0);
-    put(save_btn, 1, 169, 84, 0);
-    put(clear_btn, 2, 169, 84, 0);
-    put(back_btn, 3, 120, 44, 20);
+    put(calibrate_btn, 12, 229);
+    put(save_btn, 253, 230);
+    put(clear_btn, 494, 229);
     style_button(calibrate_btn.get_container(), calibrate_btn.get_button(), ButtonKind::Soft);
     style_button(save_btn.get_container(), save_btn.get_button(), ButtonKind::Outline);
     style_button(clear_btn.get_container(), clear_btn.get_button(), ButtonKind::Destructive);
@@ -397,6 +396,8 @@ void BedMeshPanel::foreground() {
   refresh_views(bm);
   
   lv_obj_move_foreground(cont);
+  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
+  powerui::overlay_open("Bed Mesh", [this]() { lv_obj_move_background(cont); });
 }
 
 void BedMeshPanel::handle_callback(lv_event_t *event) {

@@ -3,6 +3,8 @@
 
 #include "lvgl/lvgl.h"
 
+// Standard menu tile (Calibrations, Settings): icon tile top-left, optional status pill top-right,
+// title and subtitle bottom-left. The tile stretches to its grid cell.
 class SquareButton {
  public:
   SquareButton(lv_obj_t *parent,
@@ -16,15 +18,20 @@ class SquareButton {
   void set_icon_color(lv_color_t color);
   void set_background_visible(bool visible);
   void set_subtitle(const char *text);
+  void set_pill(const char *text, lv_color_t dot);
+  void hide_pill();
   void set_active(bool active, lv_color_t active_color);
   void disable();
   void enable();
 
  private:
   lv_obj_t *button;
+  lv_obj_t *icon_tile;
   lv_obj_t *icon;
+  lv_obj_t *text_cont;
   lv_obj_t *label;
   lv_obj_t *subtitle = NULL;
+  lv_obj_t *pill = NULL;
   lv_color_t icon_color;
   lv_color_t text_color;
 };

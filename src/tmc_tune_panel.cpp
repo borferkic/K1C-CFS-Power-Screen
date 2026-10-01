@@ -1,4 +1,5 @@
 #include "tmc_tune_panel.h"
+#include "powerui.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
 
@@ -319,6 +320,8 @@ void TmcTunePanel::init(json &j, fs::path &kp) {
 
 void TmcTunePanel::foreground() {
   lv_obj_move_foreground(cont);
+  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
+  powerui::overlay_open("TMC Autotune", [this]() { lv_obj_move_background(cont); });
 }
 
 void TmcTunePanel::background() {

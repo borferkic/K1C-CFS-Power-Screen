@@ -5,7 +5,31 @@
 #include "utils.h"
 #include "spdlog/spdlog.h"
 
+#include <experimental/filesystem>
+#include <fstream>
 #include <map>
+#include <sstream>
+
+namespace fs = std::experimental::filesystem;
+
+namespace {
+const char *USB_DIR_NAME = "usb";  // same link name the installer creates (gcodes/usb)
+
+// Mount point of the first mounted USB drive (/dev/sd*), or empty when there is none.
+std::string usb_mount_point() {
+  std::ifstream mounts("/proc/mounts");
+  std::string line;
+  while (std::getline(mounts, line)) {
+    std::istringstream fields(line);
+    std::string device, mount_point;
+    fields >> device >> mount_point;
+    if (device.rfind("/dev/sd", 0) == 0) {
+      return mount_point;
+    }
+  }
+  return "";
+}
+}
 
 LV_IMG_DECLARE(print);
 LV_IMG_DECLARE(back);
@@ -112,6 +136,31 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
     lv_obj_set_style_border_width(sort_button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(sort_button, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
   }
+
+  // Storage switch: Local / USB.
+  storage_row = lv_obj_create(left_cont);
+  lv_obj_remove_style_all(storage_row);
+  lv_obj_clear_flag(storage_row, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_size(storage_row, LV_PCT(100), 46);
+  lv_obj_set_style_pad_all(storage_row, 4, 0);
+  lv_obj_set_style_pad_column(storage_row, 6, 0);
+  lv_obj_set_flex_flow(storage_row, LV_FLEX_FLOW_ROW);
+  auto make_storage_button = [this](const char *text) {
+    lv_obj_t *button = lv_btn_create(storage_row);
+    lv_obj_set_size(button, LV_PCT(49), LV_PCT(100));
+    lv_obj_set_style_radius(button, 8, LV_PART_MAIN);
+    lv_obj_set_style_shadow_width(button, 0, LV_PART_MAIN);
+    lv_obj_set_style_border_width(button, 1, LV_PART_MAIN);
+    lv_obj_t *button_label = lv_label_create(button);
+    lv_label_set_text(button_label, text);
+    lv_obj_center(button_label);
+    lv_obj_add_event_cb(button, &PrintPanel::_handle_btns, LV_EVENT_CLICKED, this);
+    return button;
+  };
+  local_btn = make_storage_button("Local");
+  usb_btn = make_storage_button("USB");
+  update_storage_buttons();
+  lv_obj_move_to_index(storage_row, 0);
 
   lv_obj_set_width(file_grid, LV_PCT(100));
   lv_obj_set_height(file_grid, LV_SIZE_CONTENT);
@@ -327,6 +376,7 @@ void PrintPanel::consume(json &j) {
 }
 
 void PrintPanel::subscribe() {
+  sync_usb_link();
   ws.send_jsonrpc("server.files.list", R"({"root":"gcodes"})"_json, [this](json &d) {
     std::lock_guard<std::mutex> lock(lv_lock);
     std::string cur_path = cur_dir->full_path;
@@ -342,6 +392,20 @@ void PrintPanel::subscribe() {
     Tree *dir = root.find_path(KUtils::split(cur_path, '/'));
     // need to simply this using the directory endpoint
     cur_dir = dir;
+
+    // Local shows everything except the USB folder; USB shows only that folder.
+    Tree *usb_node = root.get_child(USB_DIR_NAME);
+    usb_missing = usb_view && usb_node == NULL;
+    if (usb_view) {
+      if (usb_node != NULL && (cur_dir == NULL || cur_dir == &root)) {
+        cur_dir = usb_node;
+      }
+    } else if (cur_dir == NULL || (cur_path.rfind(USB_DIR_NAME, 0) == 0)) {
+      cur_dir = &root;
+    }
+    if (cur_dir == NULL) {
+      cur_dir = &root;
+    }
     this->populate_files(d);
   });
 }
@@ -368,8 +432,20 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
   hide_delete_confirmation();
   delete_target = NULL;
   file_cards.clear();
-  file_cards.reserve(dir->children.size());
   lv_obj_clean(file_grid);
+
+  if (usb_missing) {
+    cur_file = NULL;
+    lv_obj_t *message = lv_label_create(file_grid);
+    lv_label_set_text(message, "No USB drive detected");
+    lv_obj_set_style_text_color(message, lv_color_hex(0xA1A1A1), LV_PART_MAIN);
+    lv_obj_set_style_text_font(message, &lv_font_montserrat_16, LV_PART_MAIN);
+    lv_obj_set_width(message, LV_PCT(100));
+    lv_obj_set_style_text_align(message, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+    lv_obj_set_style_pad_top(message, 40, LV_PART_MAIN);
+    return;
+  }
+  file_cards.reserve(dir->children.size());
 
   auto create_card = [this](Tree *node, const std::string &path, bool directory) {
     lv_obj_t *card = lv_obj_create(file_grid);
@@ -457,6 +533,9 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
 
   sorted_by = (sorted_by ^ sort_type) & sort_type;
   for (const auto &c : sorted_files) {
+    if (!usb_view && dir == &root && c.name == USB_DIR_NAME) {
+      continue;  // the USB link is only shown in the USB view
+    }
     Tree *node = dir->get_child(c.name);
     if (node != NULL) {
       create_card(node, node->full_path, !node->is_leaf());
@@ -778,7 +857,11 @@ void PrintPanel::handle_btns(lv_event_t *event) {
       }
     }
 
-    if (btn == refresh_btn) {
+    if (btn == local_btn) {
+      set_storage(false);
+    } else if (btn == usb_btn) {
+      set_storage(true);
+    } else if (btn == refresh_btn) {
       subscribe();
       
     } else if (btn == modified_sort_btn) {
@@ -787,5 +870,63 @@ void PrintPanel::handle_btns(lv_event_t *event) {
     } else if (btn == az_sort_btn) {
       show_dir(cur_dir, SORTED_BY_NAME);
     }
+  }
+}
+
+
+void PrintPanel::update_storage_buttons() {
+  const lv_color_t accent = lv_color_hex(0x4ADE80);
+  lv_obj_t *buttons[2] = {local_btn, usb_btn};
+  for (int i = 0; i < 2; ++i) {
+    const bool selected = (i == 1) == usb_view;
+    lv_obj_set_style_bg_color(buttons[i], selected ? accent : lv_color_hex(0x262626), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(buttons[i], selected ? LV_OPA_20 : LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_border_color(buttons[i], selected ? accent : lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_border_opa(buttons[i], selected ? LV_OPA_50 : LV_OPA_10, LV_PART_MAIN);
+    lv_obj_set_style_text_color(buttons[i], selected ? accent : lv_color_white(), LV_PART_MAIN);
+  }
+}
+
+void PrintPanel::set_storage(bool usb) {
+  usb_view = usb;
+  cur_dir = &root;
+  update_storage_buttons();
+  subscribe();
+}
+
+// Make the USB drive visible to Moonraker: a "USB" link inside the gcodes folder pointing to the mounted drive.
+// The link is removed when the drive is not mounted.
+void PrintPanel::sync_usb_link() {
+  try {
+    const std::string gcodes = KUtils::get_root_path("gcodes");
+    if (gcodes.empty()) {
+      return;
+    }
+    const fs::path link = fs::path(gcodes) / USB_DIR_NAME;
+    const std::string mount = usb_mount_point();
+
+    std::error_code ec;
+    const bool link_exists = fs::is_symlink(fs::symlink_status(link, ec));
+    if (mount.empty()) {
+      if (link_exists) {
+        fs::remove(link, ec);
+      }
+      return;
+    }
+
+    if (link_exists && fs::read_symlink(link, ec) == fs::path(mount)) {
+      return;
+    }
+    if (link_exists) {
+      fs::remove(link, ec);
+    }
+    fs::create_directory_symlink(fs::path(mount), link, ec);
+    if (ec) {
+      spdlog::warn("could not link the USB drive {} into {}: {}", mount, link.string(), ec.message());
+    } else {
+      spdlog::debug("linked USB drive {} as {}", mount, link.string());
+    }
+  } catch (const std::exception &error) {
+    spdlog::warn("USB link failed: {}", error.what());
   }
 }

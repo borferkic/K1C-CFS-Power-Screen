@@ -202,6 +202,7 @@ if [ -f "$POWERSCREEN_UPDATE_CONFIG" ] && [ -f "$K1_CONFIG_DIR/moonraker.conf" ]
         printf "\n[include powerscreen-update.conf]\n" >> "$K1_CONFIG_DIR/moonraker.conf"
         echo "Registered PowerScreen in Moonraker Update Manager"
     fi
+    RESTART_MOONRAKER=true
 fi
 
 ## allow Moonraker to restart PowerScreen after an Update Manager upgrade
@@ -297,6 +298,12 @@ if [ "$confirm" = "y" -o "$confirm" = "Y" ]; then
     /etc/init.d/S55klipper_service restart
 else
     printf "${red}Some PowerScreen functionality won't work until Klipper is restarted. ${white}\n"
+fi
+
+## Moonraker only reads its [include] files at startup, so restart it to show PowerScreen in Fluidd
+if [ "$RESTART_MOONRAKER" = true ] && [ -x /etc/init.d/S56moonraker_service ]; then
+    echo "Restarting Moonraker to load the PowerScreen updater"
+    /etc/init.d/S56moonraker_service restart &> /dev/null
 fi
 
 echo "Stopping Creality screen and services"

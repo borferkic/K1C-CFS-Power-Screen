@@ -22,7 +22,10 @@
 #include "spoolman_panel.h"
 #include "lvgl/lvgl.h"
 
+#include <functional>
 #include <mutex>
+#include <string>
+#include <vector>
 #include <map>
 #include <memory>
 
@@ -53,6 +56,7 @@ class MainPanel : public NotifyConsumer {
   void handle_tab_change_cb(lv_event_t *event);
   void handle_view_toggle_cb(lv_event_t *event);
   void handle_tab_click_cb(lv_event_t *event);
+  void handle_back_click_cb(lv_event_t *event);
 
   static void _handle_homing_cb(lv_event_t *event) {
     MainPanel *panel = (MainPanel*)event->user_data;
@@ -77,6 +81,11 @@ class MainPanel : public NotifyConsumer {
   static void _handle_tab_change_cb(lv_event_t *event) {
     MainPanel *panel = (MainPanel*)event->user_data;
     panel->handle_tab_change_cb(event);
+  };
+
+  static void _handle_back_click_cb(lv_event_t *event) {
+    MainPanel *panel = (MainPanel*)event->user_data;
+    panel->handle_back_click_cb(event);
   };
 
   static void _handle_tab_click_cb(lv_event_t *event) {
@@ -104,6 +113,8 @@ class MainPanel : public NotifyConsumer {
   void create_chart_card(lv_obj_t *parent);
   void set_home_view(bool print_view);
   void update_header();
+  void set_title(const char *text);
+  void push_overlay(const std::string &title, std::function<void()> back);
   void update_nav_indicator();
   void update_clock();
   void update_filament_state(json &root, const std::string &prefix);
@@ -136,6 +147,13 @@ class MainPanel : public NotifyConsumer {
   lv_obj_t *title_label;
   lv_obj_t *time_label;
   lv_obj_t *logo;
+  lv_obj_t *title_label_bold;
+  lv_obj_t *back_pill;
+  struct Overlay {
+    std::string title;
+    std::function<void()> back;
+  };
+  std::vector<Overlay> overlays;
   lv_timer_t *clock_timer;
   lv_timer_t *network_timer;
   std::unique_ptr<StatusIcons> status_icons;

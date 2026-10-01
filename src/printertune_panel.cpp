@@ -1,4 +1,6 @@
 #include "printertune_panel.h"
+
+LV_IMG_DECLARE(ui_console_img);
 #include "state.h"
 #include "spdlog/spdlog.h"
 
@@ -36,12 +38,23 @@ PrinterTunePanel::PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t 
   , bedmesh_btn(cont, &bedmesh_img, "Bed Mesh", &PrinterTunePanel::_handle_callback, this)
   , finetune_btn(cont, &fine_tune_img, "Fine Tune", &PrinterTunePanel::_handle_callback, this)
   , inputshaper_btn(cont, &inputshaper_img, "Input Shaper", &PrinterTunePanel::_handle_callback, this)
-  , belts_calibration_btn(cont, &inputshaper_img, "Belts/Shake", &PrinterTunePanel::_handle_callback, this)
+  , belts_calibration_btn(cont, &inputshaper_img, "Belts / Shake", &PrinterTunePanel::_handle_callback, this)
   , limits_btn(cont, &limit_img, "Limits", &PrinterTunePanel::_handle_callback, this)
   , tmc_tune_btn(cont, &motor_img, "TMC Autotune", &PrinterTunePanel::_handle_callback, this)
   , tmc_status_btn(cont, &chart_img, "TMC Metrics", &PrinterTunePanel::_handle_callback, this)
   , power_devices_btn(cont, &print, "Power Devices", &PrinterTunePanel::_handle_callback, this)
+  , console_btn(cont, &ui_console_img, "Console", &PrinterTunePanel::_handle_callback, this)
 {
+  bedmesh_btn.set_subtitle("Probe the bed surface");
+  finetune_btn.set_subtitle("Z, speed, flow and PA");
+  inputshaper_btn.set_subtitle("Resonance and shapers");
+  belts_calibration_btn.set_subtitle("Belt tension and shake");
+  limits_btn.set_subtitle("Velocity and acceleration");
+  tmc_tune_btn.set_subtitle("Motor driver tuning");
+  tmc_status_btn.set_subtitle("Stepper driver statistics");
+  power_devices_btn.set_subtitle("Printer power outlets");
+  console_btn.set_subtitle("G-code and macros");
+
   lv_obj_move_background(cont);
 
   lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
@@ -49,12 +62,14 @@ PrinterTunePanel::PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t 
 
   tmc_tune_btn.disable();
 
-  static lv_coord_t grid_main_row_dsc[] = {20, 150, 150, LV_GRID_TEMPLATE_LAST};
+  static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
   static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1),
       LV_GRID_TEMPLATE_LAST};
 
   lv_obj_set_grid_dsc_array(cont, grid_main_col_dsc, grid_main_row_dsc);
-  lv_obj_set_style_pad_row(cont, 20, LV_PART_MAIN);
+  lv_obj_set_style_pad_all(cont, 12, LV_PART_MAIN);
+  lv_obj_set_style_pad_row(cont, 12, LV_PART_MAIN);
+  lv_obj_set_style_pad_column(cont, 12, LV_PART_MAIN);
 
   relayout();
 }
@@ -69,6 +84,7 @@ void PrinterTunePanel::relayout() {
     {&tmc_tune_btn, tmc_tune_available},
     {&tmc_status_btn, tmc_status_available},
     {&power_devices_btn, power_devices_available},
+    {&console_btn, true},
   };
 
   int slot = 0;
@@ -79,8 +95,8 @@ void PrinterTunePanel::relayout() {
       continue;
     }
     lv_obj_clear_flag(btn, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_CENTER, slot % 4, 1,
-                         LV_GRID_ALIGN_START, 1 + slot / 4, 1);
+    lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_STRETCH, slot % 4, 1,
+                         LV_GRID_ALIGN_STRETCH, slot / 4, 1);
     slot++;
   }
   spdlog::debug("calibrations: {} buttons (tmc_tune={}, tmc_status={}, power={})",
@@ -182,6 +198,11 @@ void PrinterTunePanel::handle_callback(lv_event_t *event) {
     } else if (btn == tmc_status_btn.get_button()) {
       spdlog::trace("tmc metrics pressed");
       tmc_status_panel.foreground();
+    } else if (btn == console_btn.get_button()) {
+      spdlog::trace("console pressed");
+      if (console_callback) {
+        console_callback();
+      }
     } else if (btn == power_devices_btn.get_button()) {
       spdlog::trace("power devices pressed");
       power_panel.foreground();

@@ -1,4 +1,5 @@
 #include "finetune_panel.h"
+#include "powerui.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
 #include "config.h"
@@ -44,7 +45,7 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   , flow_down_btn(panel_cont, &flow_down_img, "Flow-", &FineTunePanel::_handle_flow, this)
   , back_btn(panel_cont, &back, "Back", &FineTunePanel::_handle_callback, this)
   , zoffset_selector(panel_cont, "Z (mm) - PA (mm/s)",
-		     {"0.01", "0.05", "0.10", ""}, 0, 30, 15, &FineTunePanel::_handle_callback, this)
+		     {"0.01", "0.025", "0.05", "0.10", ""}, 0, 30, 15, &FineTunePanel::_handle_callback, this)
   , multipler_selector(panel_cont, "Multipler Step (%)",
 		       {"1", "5", "10", "25", ""}, 0, 40, 15, &FineTunePanel::_handle_callback, this)
   , z_offset(values_cont, &home_z, 150, 100, 25, "0.0 mm")
@@ -234,6 +235,8 @@ void FineTunePanel::foreground() {
   }
   
   lv_obj_move_foreground(panel_cont);
+  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
+  powerui::overlay_open("Fine Tune", [this]() { lv_obj_move_background(panel_cont); });
 }
 
 void FineTunePanel::consume(json &j) {

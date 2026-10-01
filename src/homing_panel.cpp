@@ -13,6 +13,7 @@ LV_IMG_DECLARE(arrow_up);
 LV_IMG_DECLARE(arrow_right);
 LV_IMG_DECLARE(arrow_down);
 LV_IMG_DECLARE(home);
+LV_IMG_DECLARE(home_z);
 LV_IMG_DECLARE(back);
 LV_IMG_DECLARE(z_closer);
 LV_IMG_DECLARE(z_farther);
@@ -35,6 +36,7 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   , y_up_btn(motion_top_cont, &arrow_up, "Y+", &HomingPanel::_handle_callback, this)
   , home_xy_btn(motion_top_cont, &home, "Home XY", &HomingPanel::_handle_callback, this)
   , z_down_btn(motion_top_cont, &z_farther, "Z-", &HomingPanel::_handle_callback, this)
+  , home_z_btn(motion_top_cont, &home_z, "Home Z", &HomingPanel::_handle_callback, this)
   , x_down_btn(motion_bottom_cont, &arrow_left, "X-", &HomingPanel::_handle_callback, this)
   , y_down_btn(motion_bottom_cont, &arrow_down, "Y-", &HomingPanel::_handle_callback, this)
   , x_up_btn(motion_bottom_cont, &arrow_right, "X+", &HomingPanel::_handle_callback, this)
@@ -88,20 +90,21 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   place(y_down_btn, xy_card, cx + (cw + cg), cy + 2 * (ch + cg), cw, ch);
 
   // Z column.
-  place(z_up_btn, z_card, 12, 12, 102, 155);
-  place(z_down_btn, z_card, 12, 175, 102, 155);
+  place(z_up_btn, z_card, 12, 12, 102, 100);
+  place(home_z_btn, z_card, 12, 120, 102, 100);
+  place(z_down_btn, z_card, 12, 228, 102, 100);
 
   // Actions: Home All, Motor Off, Emergency Stop and the Back pill.
-  place(home_all_btn, actions_card, 12, 12, 202, 84);
-  place(motoroff_btn, actions_card, 12, 102, 202, 84);
-  place(emergency_btn, actions_card, 12, 192, 202, 84);
-  place(back_btn, actions_card, 53, 282, 120, 44);
+  place(home_all_btn, actions_card, 12, 12, 202, 100);
+  place(motoroff_btn, actions_card, 12, 120, 202, 100);
+  place(emergency_btn, actions_card, 12, 228, 202, 100);
 
   for (ButtonContainer *button : {&y_up_btn, &x_down_btn, &x_up_btn, &y_down_btn, &z_up_btn, &z_down_btn, &motoroff_btn}) {
     style_button(button->get_container(), button->get_button(), ButtonKind::Outline);
   }
   style_button(home_xy_btn.get_container(), home_xy_btn.get_button(), ButtonKind::Soft);
   style_button(home_all_btn.get_container(), home_all_btn.get_button(), ButtonKind::Soft);
+  style_button(home_z_btn.get_container(), home_z_btn.get_button(), ButtonKind::Soft);
   style_button(emergency_btn.get_container(), emergency_btn.get_button(), ButtonKind::Destructive);
 
   // Move distance bar: label on the left, segmented selector on the right.
@@ -217,6 +220,8 @@ void HomingPanel::foreground() {
   }
 
   lv_obj_move_foreground(homing_cont);
+  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
+  powerui::overlay_open("Movement", [this]() { lv_obj_move_background(homing_cont); });
 }
 
 void HomingPanel::update_clock() {
@@ -271,6 +276,11 @@ void HomingPanel::handle_callback(lv_event_t *event) {
   else if (btn == z_down_btn.get_container()) {
     spdlog::debug("z down pressed");
     move_op = fmt::format("G0 Z-{} F1200", distance);
+
+  }
+  else if (btn == home_z_btn.get_container()) {
+    spdlog::debug("home z pressed");
+    ws.gcode_script("G28 Z");
 
   }
   else if (btn == emergency_btn.get_container()) {

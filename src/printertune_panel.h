@@ -12,6 +12,7 @@
 #include "square_button.h"
 #include "lvgl/lvgl.h"
 
+#include <functional>
 #include <mutex>
 class PrinterTunePanel {
  public:
@@ -25,6 +26,7 @@ class PrinterTunePanel {
   // Receives the machine.device_power.devices response (websocket thread).
   void set_power_devices(json &j);
   void handle_callback(lv_event_t *event);
+  void set_console_callback(std::function<void()> callback) { console_callback = callback; }
 
   static void _handle_callback(lv_event_t *event) {
     PrinterTunePanel *panel = (PrinterTunePanel*)event->user_data;
@@ -53,6 +55,8 @@ class PrinterTunePanel {
   SquareButton tmc_tune_btn;
   SquareButton tmc_status_btn;
   SquareButton power_devices_btn;
+  SquareButton console_btn;
+  std::function<void()> console_callback;
 
   // Place in the grid only the buttons the printer supports.
   void relayout();

@@ -25,7 +25,6 @@ class SettingPanel {
 
   lv_obj_t *get_container();
   void enable_spoolman();
-  void set_console_callback(std::function<void()> callback);
 
   void handle_callback(lv_event_t *event);
 
@@ -53,8 +52,6 @@ class SettingPanel {
   SquareButton powerscreen_restart_btn;
   SquareButton powerscreen_update_btn;
   SquareButton printer_select_btn;
-  SquareButton console_btn;
-  std::function<void()> console_callback;
 
   // Confirmation before restarting Klipper or the firmware.
   lv_obj_t *confirm_overlay;

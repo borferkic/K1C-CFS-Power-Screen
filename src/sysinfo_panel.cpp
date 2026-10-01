@@ -7,6 +7,7 @@
 #include "subprocess.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cstdio>
 #include <ctime>
 #include <fstream>
@@ -113,6 +114,77 @@ lv_obj_t *create_row_label(lv_obj_t *row, const char *text) {
 }
 }
 
+namespace {
+constexpr const char *BACKLIGHT_FILE = "/sys/class/backlight/backlight_pwm0/brightness";
+
+// First "a.b.c.d" number found in a file's first 4 KB ("" when none).
+std::string find_dotted_version(const std::string &path) {
+  std::ifstream in(path);
+  if (!in) {
+    return "";
+  }
+  std::string text(4096, '\0');
+  in.read(&text[0], text.size());
+  text.resize(static_cast<size_t>(in.gcount()));
+  for (size_t i = 0; i < text.size(); ++i) {
+    size_t j = i;
+    int groups = 0;
+    while (j < text.size() && isdigit(static_cast<unsigned char>(text[j]))) {
+      while (j < text.size() && isdigit(static_cast<unsigned char>(text[j]))) {
+        ++j;
+      }
+      ++groups;
+      if (groups < 4 && j + 1 < text.size() && text[j] == '.' && isdigit(static_cast<unsigned char>(text[j + 1]))) {
+        ++j;
+      } else {
+        break;
+      }
+    }
+    if (groups == 4) {
+      return text.substr(i, j - i);
+    }
+    if (j > i) {
+      i = j;
+    }
+  }
+  return "";
+}
+
+// Creality firmware version of the K1C.
+std::string k1c_firmware_version() {
+  const char *candidates[] = {
+    "/usr/data/creality/userdata/config/system_version.json",
+    "/usr/data/creality/userdata/config/system_config.json",
+    "/usr/data/creality/userdata/version",
+    "/etc/version",
+  };
+  for (const char *path : candidates) {
+    const std::string version = find_dotted_version(path);
+    if (!version.empty()) {
+      return version;
+    }
+  }
+  return "unknown";
+}
+
+// Backlight brightness 0-100 (the K1C PWM backlight driver is configured with max_brightness=100).
+void write_backlight(int percent) {
+  std::ofstream out(BACKLIGHT_FILE);
+  if (out) {
+    out << std::max(5, std::min(100, percent));
+  }
+}
+
+int read_backlight() {
+  std::ifstream in(BACKLIGHT_FILE);
+  int value = 0;
+  if (in && (in >> value)) {
+    return std::max(5, std::min(100, value));
+  }
+  return 100;
+}
+}
+
 std::vector<std::string> SysInfoPanel::log_levels = {
   "trace",
   "debug",
@@ -185,6 +257,13 @@ SysInfoPanel::SysInfoPanel()
   , update_exit_code(0)
 {
   Config *conf = Config::get_instance();
+
+  {
+    const auto &saved = conf->get_json("/display_brightness");
+    if (saved.is_number_integer()) {
+      write_backlight(saved.get<int>());
+    }
+  }
 
   style_screen_object(cont);
   lv_obj_set_size(cont, LV_PCT(100), LV_PCT(100));
@@ -426,6 +505,18 @@ void SysInfoPanel::foreground() {
   update_clock();
   refresh_network();
   show_tab(false);
+  check_script_update();
+  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
+  powerui::overlay_open("System", [this]() { lv_obj_move_background(cont); });
+}
+
+void SysInfoPanel::open_power_update() {
+  lv_obj_move_foreground(cont);
+  update_clock();
+  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
+  show_tab(false);
+  power_update_direct = true;
+  show_tab(true);
 }
 
 void SysInfoPanel::create_tabs() {
@@ -448,140 +539,253 @@ void SysInfoPanel::create_tabs() {
   lv_obj_set_parent(brand_label, general_page);
   lv_obj_set_parent(version_label, general_page);
 
-  // ---- System page (PowerUI): network card, printer photo card, preferences card.
+  // ---- System page (PowerUI): printer photo and system versions on the left; network and preferences on the right.
   using namespace powerui;
   lv_obj_add_flag(title_bar, LV_OBJ_FLAG_HIDDEN);  // the main title bar replaces the panel's own one
 
-  lv_obj_set_size(network_card, px(272), px(76));
-  lv_obj_set_pos(network_card, px(12), px(12));
-  lv_obj_add_flag(network_title_label, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_t *network_tile = plain(network_card);
-  lv_obj_set_size(network_tile, px(48), px(48));
-  lv_obj_set_pos(network_tile, px(14), px(13));
-  lv_obj_set_style_radius(network_tile, px(10), 0);
-  lv_obj_set_style_bg_color(network_tile, lv_color_hex(COLOR_SECONDARY), 0);
-  lv_obj_set_style_bg_opa(network_tile, LV_OPA_COVER, 0);
-  lv_obj_t *network_icon = icon(network_tile, &network_img, 30, lv_color_hex(COLOR_ACCENT));
-  lv_obj_center(network_icon);
-  lv_obj_set_pos(network_name_label, px(74), px(14));
-  lv_obj_set_width(network_name_label, px(180));
-  lv_obj_set_style_text_font(network_name_label, &lv_font_montserrat_16, LV_PART_MAIN);
-  lv_obj_set_pos(network_ip_label, px(74), px(40));
-  lv_obj_set_width(network_ip_label, px(180));
-  lv_obj_set_style_text_font(network_ip_label, &lv_font_montserrat_12, LV_PART_MAIN);
-
+  // Left column: printer photo card and the system information card.
   lv_obj_t *printer_card = lv_obj_create(general_page);
   style_card(printer_card);
-  lv_obj_set_size(printer_card, px(272), px(272));
-  lv_obj_set_pos(printer_card, px(12), px(100));
+  lv_obj_set_size(printer_card, px(350), px(224));
+  lv_obj_set_pos(printer_card, px(12), px(12));
   lv_obj_set_parent(printer_img, printer_card);
-  lv_img_set_zoom(printer_img, 150);
-  lv_obj_align(printer_img, LV_ALIGN_CENTER, 0, -px(14));
-  lv_obj_t *printer_name = label(printer_card, "Creality K1C", &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
-  lv_obj_align(printer_name, LV_ALIGN_BOTTOM_MID, 0, -px(14));
+  lv_img_set_zoom(printer_img, 110);
+  lv_obj_align(printer_img, LV_ALIGN_CENTER, 0, -px(20));
+  lv_obj_t *printer_name = label(printer_card, "Creality K1C", &lv_font_montserrat_18, lv_color_hex(COLOR_FG));
+  lv_obj_align(printer_name, LV_ALIGN_BOTTOM_MID, 0, -px(32));
+  lv_obj_t *printer_info = label(printer_card, "CoreXY  220 x 220 x 250 mm", &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
+  lv_obj_align(printer_info, LV_ALIGN_BOTTOM_MID, 0, -px(12));
 
-  lv_obj_set_size(controls_card, px(428), px(360));
-  lv_obj_set_pos(controls_card, px(296), px(12));
-  lv_obj_t *prefs_title = label(controls_card, "Preferences", &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
-  lv_obj_set_pos(prefs_title, px(22), px(14));
-
-  lv_obj_t *pref_rows[4] = {disp_sleep_cont, estop_toggle_cont, z_icon_toggle_cont, ll_cont};
-  for (int i = 0; i < 4; ++i) {
-    lv_obj_set_pos(pref_rows[i], 0, px(48 + i * 62));
-    lv_obj_set_height(pref_rows[i], px(62));
-    lv_obj_t *row_label = lv_obj_get_child(pref_rows[i], 0);
-    if (row_label != NULL) {
-      lv_obj_set_style_translate_y(row_label, 0, LV_PART_MAIN);
-    }
-  }
+  lv_obj_t *info_card = lv_obj_create(general_page);
+  style_card(info_card);
+  lv_obj_set_size(info_card, px(350), px(180));
+  lv_obj_set_pos(info_card, px(12), px(248));
+  lv_obj_t *info_title = label(info_card, "System", &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
+  lv_obj_set_pos(info_title, px(20), px(14));
+  const char *info_names[5] = {"PowerScreen", "CFS Power Script", "Klipper", "Moonraker", "K1C Firmware"};
   for (int i = 0; i < 5; ++i) {
+    lv_obj_t *name = label(info_card, info_names[i], &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+    lv_obj_set_pos(name, px(20), px(44 + i * 26));
+    lv_obj_t *value = label(info_card, "...", &lv_font_montserrat_14, lv_color_hex(COLOR_FG));
+    lv_obj_set_width(value, px(170));
+    lv_label_set_long_mode(value, LV_LABEL_LONG_DOT);
+    lv_obj_set_style_text_align(value, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN);
+    lv_obj_set_pos(value, px(350 - 20 - 170), px(44 + i * 26));
+    sys_value_labels[i] = value;
+  }
+  lv_label_set_text(sys_value_labels[0], split_version(installed_version()).first.c_str());
+  lv_label_set_text(sys_value_labels[4], k1c_firmware_version().c_str());
+
+  // Right column: network card (opens Wi-Fi).
+  lv_obj_set_size(network_card, px(350), px(110));
+  lv_obj_set_pos(network_card, px(374), px(12));
+  lv_obj_add_flag(network_card, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_set_style_bg_color(network_card, lv_color_hex(COLOR_SECONDARY), LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_add_event_cb(network_card, &SysInfoPanel::_handle_callback, LV_EVENT_CLICKED, this);
+  lv_obj_add_flag(network_title_label, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_t *network_tile = plain(network_card);
+  lv_obj_set_size(network_tile, px(60), px(60));
+  lv_obj_set_pos(network_tile, px(18), px(25));
+  lv_obj_set_style_radius(network_tile, px(12), 0);
+  lv_obj_set_style_bg_color(network_tile, lv_color_hex(COLOR_SECONDARY), 0);
+  lv_obj_set_style_bg_opa(network_tile, LV_OPA_COVER, 0);
+  lv_obj_t *network_icon = icon(network_tile, &network_img, 36, lv_color_hex(COLOR_ACCENT));
+  lv_obj_center(network_icon);
+  lv_obj_set_pos(network_name_label, px(92), px(22));
+  lv_obj_set_width(network_name_label, px(220));
+  lv_obj_set_height(network_name_label, LV_SIZE_CONTENT);
+  lv_obj_set_style_text_font(network_name_label, &lv_font_montserrat_18, LV_PART_MAIN);
+  lv_obj_set_pos(network_ip_label, px(92), px(50));
+  lv_obj_set_width(network_ip_label, px(220));
+  lv_obj_set_height(network_ip_label, LV_SIZE_CONTENT);
+  lv_obj_set_style_text_font(network_ip_label, &lv_font_montserrat_14, LV_PART_MAIN);
+  lv_obj_t *network_hint = label(network_card, "Tap to open Wi-Fi", &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
+  lv_obj_set_pos(network_hint, px(92), px(76));
+  lv_obj_t *network_chevron = label(network_card, LV_SYMBOL_RIGHT, &lv_font_montserrat_16, lv_color_hex(COLOR_MUTED));
+  lv_obj_align(network_chevron, LV_ALIGN_RIGHT_MID, -px(18), 0);
+
+  // Right column: preferences card.
+  lv_obj_set_size(controls_card, px(350), px(294));
+  lv_obj_set_pos(controls_card, px(374), px(134));
+  lv_obj_t *prefs_title = label(controls_card, "Preferences", &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
+  lv_obj_set_pos(prefs_title, px(20), px(14));
+
+  lv_obj_add_flag(z_icon_toggle_cont, LV_OBJ_FLAG_HIDDEN);  // "Invert Z icon" is no longer offered
+  lv_obj_add_flag(channel_cont, LV_OBJ_FLAG_HIDDEN);
+  struct PrefRow { lv_obj_t *row; lv_obj_t *control; int y; };
+  PrefRow pref_rows[3] = {{disp_sleep_cont, display_sleep_dd, 46}, {estop_toggle_cont, prompt_estop_toggle, 182}, {ll_cont, loglevel_dd, 234}};
+  for (const auto &pref : pref_rows) {
+    lv_obj_set_size(pref.row, LV_PCT(100), px(52));
+    lv_obj_set_pos(pref.row, 0, px(pref.y));
+    lv_obj_t *row_label = lv_obj_get_child(pref.row, 0);
+    if (row_label != NULL) {
+      lv_obj_set_style_text_font(row_label, &lv_font_montserrat_16, LV_PART_MAIN);
+      lv_obj_set_style_translate_y(row_label, 0, LV_PART_MAIN);
+      lv_obj_align(row_label, LV_ALIGN_LEFT_MID, px(20), 0);
+    }
+    lv_obj_align(pref.control, LV_ALIGN_RIGHT_MID, -px(16), 0);
+  }
+  lv_obj_set_size(display_sleep_dd, px(130), px(40));
+  lv_obj_set_size(loglevel_dd, px(130), px(40));
+
+  // Brightness: label, percentage and a slider (backlight 5-100 %).
+  lv_obj_t *brightness_label = label(controls_card, "Brightness", &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
+  lv_obj_set_pos(brightness_label, px(20), px(98 + 14));
+  brightness_value = label(controls_card, "100%", &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+  lv_obj_align(brightness_value, LV_ALIGN_TOP_RIGHT, -px(20), px(98 + 16));
+  brightness_slider = lv_slider_create(controls_card);
+  lv_slider_set_range(brightness_slider, 5, 100);
+  lv_obj_set_size(brightness_slider, px(310), px(16));
+  lv_obj_set_pos(brightness_slider, px(20), px(98 + 52));
+  lv_obj_set_style_bg_color(brightness_slider, lv_color_hex(COLOR_SECONDARY), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(brightness_slider, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(brightness_slider, lv_color_hex(COLOR_ACCENT), LV_PART_INDICATOR);
+  lv_obj_set_style_bg_opa(brightness_slider, LV_OPA_COVER, LV_PART_INDICATOR);
+  lv_obj_set_style_bg_color(brightness_slider, lv_color_hex(COLOR_FG), LV_PART_KNOB);
+  lv_obj_set_style_bg_opa(brightness_slider, LV_OPA_COVER, LV_PART_KNOB);
+  lv_obj_set_style_pad_all(brightness_slider, px(6), LV_PART_KNOB);
+  {
+    const int current = read_backlight();
+    lv_slider_set_value(brightness_slider, current, LV_ANIM_OFF);
+    lv_label_set_text(brightness_value, fmt::format("{}%", current).c_str());
+  }
+  lv_obj_add_event_cb(brightness_slider, &SysInfoPanel::_handle_brightness, LV_EVENT_VALUE_CHANGED, this);
+  lv_obj_add_event_cb(brightness_slider, &SysInfoPanel::_handle_brightness, LV_EVENT_RELEASED, this);
+
+  for (int y : {46, 98, 182, 234}) {
     lv_obj_t *line = plain(controls_card);
     lv_obj_set_size(line, LV_PCT(100), 1);
-    lv_obj_set_pos(line, 0, px(48 + i * 62));
+    lv_obj_set_pos(line, 0, px(y));
     lv_obj_set_style_bg_color(line, lv_color_white(), 0);
     lv_obj_set_style_bg_opa(line, LV_OPA_10, 0);
   }
 
-  // About row: opens the About page (version, channel and updates).
-  about_row = lv_obj_create(controls_card);
-  style_screen_object(about_row);
-  lv_obj_add_flag(about_row, LV_OBJ_FLAG_CLICKABLE);
-  lv_obj_set_size(about_row, LV_PCT(100), px(62));
-  lv_obj_set_pos(about_row, 0, px(48 + 4 * 62));
-  lv_obj_set_style_bg_color(about_row, lv_color_hex(COLOR_SECONDARY), LV_PART_MAIN | LV_STATE_PRESSED);
-  lv_obj_set_style_bg_opa(about_row, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
-  lv_obj_t *about_label = create_row_label(about_row, "About");
-  lv_obj_set_style_translate_y(about_label, 0, LV_PART_MAIN);
-  const std::string about_text = fmt::format("{}  " LV_SYMBOL_RIGHT, split_version(installed_version()).first);
-  lv_obj_t *about_value = label(about_row, about_text.c_str(), &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
-  lv_obj_align(about_value, LV_ALIGN_RIGHT_MID, -px(22), 0);
-  lv_obj_add_event_cb(about_row, &SysInfoPanel::_handle_callback, LV_EVENT_CLICKED, this);
-
   lv_obj_add_flag(brand_label, LV_OBJ_FLAG_HIDDEN);
   lv_obj_add_flag(version_label, LV_OBJ_FLAG_HIDDEN);
 
-  // ---- About page (PowerUI): version, channel, update status and button, credits.
-  lv_obj_t *card = lv_obj_create(updates_page);
-  style_card(card);
-  lv_obj_set_size(card, px(712), px(296));
-  lv_obj_set_pos(card, px(12), px(12));
+  // ---- Power Update page (PowerUI): K1C photo and credits on the left; PowerScreen and CFS Power Script cards on the right.
+  auto make_update_button = [this](lv_obj_t *parent, const char *text) {
+    lv_obj_t *button = lv_btn_create(parent);
+    lv_obj_clear_flag(button, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_size(button, px(376), px(48));
+    lv_obj_set_style_bg_color(button, lv_color_hex(0x16A34A), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(button, lv_color_hex(0x15803D), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(button, lv_color_hex(0x262626), LV_PART_MAIN | LV_STATE_DISABLED);
+    lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DISABLED);
+    lv_obj_set_style_border_width(button, 0, LV_PART_MAIN);
+    lv_obj_set_style_shadow_width(button, 0, LV_PART_MAIN);
+    lv_obj_set_style_radius(button, px(10), LV_PART_MAIN);
+    lv_obj_t *button_label = label(button, text, &lv_font_montserrat_16, lv_color_white());
+    lv_obj_center(button_label);
+    return button;
+  };
+  // Title, big version and build suffix. Returns nothing; the labels are handed back through the out pointers.
+  auto make_version_block = [this](lv_obj_t *parent, const char *title, lv_obj_t **version_out, lv_obj_t **suffix_out,
+                                   const std::string &base, const std::string &suffix) {
+    lv_obj_t *t = lv_label_create(parent);
+    lv_label_set_text(t, title);
+    lv_obj_set_style_text_color(t, lv_color_hex(COLOR_MUTED), LV_PART_MAIN);
+    lv_obj_set_style_text_font(t, &lv_font_montserrat_14, LV_PART_MAIN);
+    lv_obj_set_pos(t, px(20), px(14));
+    lv_obj_t *v = lv_label_create(parent);
+    lv_label_set_text(v, base.c_str());
+    lv_label_set_long_mode(v, LV_LABEL_LONG_CLIP);
+    lv_obj_set_width(v, px(260));
+    lv_obj_set_style_text_color(v, lv_color_hex(COLOR_FG), LV_PART_MAIN);
+    lv_obj_set_style_text_font(v, &lv_font_montserrat_40, LV_PART_MAIN);
+    lv_obj_set_pos(v, px(20), px(34));
+    lv_obj_t *sfx = lv_label_create(parent);
+    lv_label_set_text(sfx, suffix.c_str());
+    lv_label_set_long_mode(sfx, LV_LABEL_LONG_CLIP);
+    lv_obj_set_width(sfx, px(360));
+    lv_obj_set_style_text_color(sfx, lv_color_hex(COLOR_MUTED), LV_PART_MAIN);
+    lv_obj_set_style_text_font(sfx, &lv_font_montserrat_12, LV_PART_MAIN);
+    lv_obj_set_pos(sfx, px(22), px(88));
+    *version_out = v;
+    *suffix_out = sfx;
+  };
+  // Status text in the top-right corner of a card.
+  auto make_status = [](lv_obj_t *parent, lv_obj_t *existing) {
+    lv_obj_t *status = existing != NULL ? existing : lv_label_create(parent);
+    if (existing != NULL) {
+      lv_obj_set_parent(status, parent);
+    }
+    lv_label_set_text(status, "");
+    lv_label_set_long_mode(status, LV_LABEL_LONG_DOT);
+    lv_obj_set_width(status, px(250));
+    lv_obj_set_style_text_align(status, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN);
+    lv_obj_set_style_text_color(status, lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_text_font(status, &lv_font_montserrat_14, LV_PART_MAIN);
+    lv_obj_align(status, LV_ALIGN_TOP_RIGHT, -px(18), px(14));
+    return status;
+  };
 
-  lv_obj_t *installed_title = lv_label_create(card);
-  lv_label_set_text(installed_title, "POWERSCREEN");
-  lv_obj_set_style_text_color(installed_title, lv_color_hex(COLOR_MUTED), LV_PART_MAIN);
-  lv_obj_set_style_text_font(installed_title, &lv_font_montserrat_14, LV_PART_MAIN);
-  lv_obj_set_pos(installed_title, px(20), px(16));
-
-  const auto parts = split_version(installed_version());
-  updates_version_label = lv_label_create(card);
-  lv_label_set_text(updates_version_label, parts.first.c_str());
-  lv_label_set_long_mode(updates_version_label, LV_LABEL_LONG_CLIP);
-  lv_obj_set_width(updates_version_label, px(672));
-  lv_obj_set_style_text_color(updates_version_label, lv_color_hex(COLOR_FG), LV_PART_MAIN);
-  lv_obj_set_style_text_font(updates_version_label, &lv_font_montserrat_40, LV_PART_MAIN);
-  lv_obj_set_pos(updates_version_label, px(20), px(38));
-
-  version_suffix_label = lv_label_create(card);
-  lv_label_set_text(version_suffix_label, parts.second.c_str());
-  lv_label_set_long_mode(version_suffix_label, LV_LABEL_LONG_CLIP);
-  lv_obj_set_width(version_suffix_label, px(672));
-  lv_obj_set_style_text_color(version_suffix_label, lv_color_hex(COLOR_MUTED), LV_PART_MAIN);
-  lv_obj_set_style_text_font(version_suffix_label, &lv_font_montserrat_14, LV_PART_MAIN);
-  lv_obj_set_pos(version_suffix_label, px(22), px(96));
-
-  lv_obj_set_parent(channel_cont, card);
-  lv_obj_set_pos(channel_cont, 0, px(128));
-  lv_obj_set_height(channel_cont, px(56));
-  lv_obj_t *channel_label = lv_obj_get_child(channel_cont, 0);
-  if (channel_label != NULL) {
-    lv_obj_set_style_translate_y(channel_label, 0, LV_PART_MAIN);
-  }
-  lv_obj_t *channel_line = plain(card);
-  lv_obj_set_size(channel_line, LV_PCT(100), 1);
-  lv_obj_set_pos(channel_line, 0, px(128));
-  lv_obj_set_style_bg_color(channel_line, lv_color_white(), 0);
-  lv_obj_set_style_bg_opa(channel_line, LV_OPA_10, 0);
-
-  lv_obj_set_parent(update_status, card);
-  lv_label_set_long_mode(update_status, LV_LABEL_LONG_WRAP);
-  lv_obj_set_width(update_status, px(672));
-  lv_obj_set_pos(update_status, px(20), px(196));
-
-  lv_obj_set_parent(update_button, card);
-  lv_obj_set_size(update_button, px(672), px(52));
-  lv_obj_set_pos(update_button, px(20), px(232));
-  lv_obj_set_style_radius(update_button, px(10), LV_PART_MAIN);
+  // Left column: printer photo and credits.
+  lv_obj_t *photo_card = lv_obj_create(updates_page);
+  style_card(photo_card);
+  lv_obj_set_size(photo_card, px(292), px(296));
+  lv_obj_set_pos(photo_card, px(12), px(12));
+  lv_obj_t *photo = lv_img_create(photo_card);
+  lv_img_set_src(photo, &device);
+  lv_img_set_zoom(photo, 150);
+  lv_obj_align(photo, LV_ALIGN_CENTER, 0, -px(22));
+  lv_obj_t *photo_name = label(photo_card, "Creality K1C", &lv_font_montserrat_18, lv_color_hex(COLOR_FG));
+  lv_obj_align(photo_name, LV_ALIGN_BOTTOM_MID, 0, -px(32));
+  lv_obj_t *photo_info = label(photo_card, "CoreXY  220 x 220 x 250 mm", &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
+  lv_obj_align(photo_info, LV_ALIGN_BOTTOM_MID, 0, -px(10));
 
   lv_obj_t *credits = lv_obj_create(updates_page);
   style_card(credits);
-  lv_obj_set_size(credits, px(712), px(52));
+  lv_obj_set_size(credits, px(292), px(108));
   lv_obj_set_pos(credits, px(12), px(320));
   lv_obj_set_parent(brand_label, credits);
   lv_obj_clear_flag(brand_label, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_set_pos(brand_label, px(20), px(14));
+  lv_label_set_text(brand_label, "Developed by Boris SdK");
   lv_obj_set_style_text_font(brand_label, &lv_font_montserrat_16, LV_PART_MAIN);
-  lv_obj_t *theme_label = label(credits, "PowerUI 2026", &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
-  lv_obj_align(theme_label, LV_ALIGN_RIGHT_MID, -px(20), 0);
+  lv_obj_align(brand_label, LV_ALIGN_CENTER, 0, -px(10));
+  lv_obj_t *theme_label = label(credits, "PowerUI 2026", &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
+  lv_obj_align(theme_label, LV_ALIGN_CENTER, 0, px(14));
+
+  // PowerScreen card.
+  lv_obj_t *card = lv_obj_create(updates_page);
+  style_card(card);
+  lv_obj_set_size(card, px(408), px(226));
+  lv_obj_set_pos(card, px(316), px(12));
+  const auto parts = split_version(installed_version());
+  make_version_block(card, "POWERSCREEN", &updates_version_label, &version_suffix_label, parts.first, parts.second);
+  make_status(card, update_status);
+
+  lv_obj_set_parent(channel_cont, card);
+  lv_obj_set_size(channel_cont, px(376), px(46));
+  lv_obj_set_pos(channel_cont, px(16), px(110));
+  lv_obj_t *channel_label = lv_obj_get_child(channel_cont, 0);
+  if (channel_label != NULL) {
+    lv_label_set_text(channel_label, "Update channel");
+    lv_obj_set_style_text_font(channel_label, &lv_font_montserrat_14, LV_PART_MAIN);
+    lv_obj_set_style_translate_y(channel_label, 0, LV_PART_MAIN);
+    lv_obj_align(channel_label, LV_ALIGN_LEFT_MID, px(4), 0);
+  }
+  lv_obj_align(channel_dd, LV_ALIGN_RIGHT_MID, 0, 0);
+
+  lv_obj_set_parent(update_button, card);
+  lv_obj_set_size(update_button, px(376), px(48));
+  lv_obj_align(update_button, LV_ALIGN_BOTTOM_MID, 0, -px(16));
+  lv_obj_set_style_radius(update_button, px(10), LV_PART_MAIN);
+
+  // CFS Power Script card.
+  lv_obj_t *script_card = lv_obj_create(updates_page);
+  style_card(script_card);
+  lv_obj_set_size(script_card, px(408), px(178));
+  lv_obj_set_pos(script_card, px(316), px(250));
+  make_version_block(script_card, "CFS POWER SCRIPT", &script_version_label, &script_suffix_label, script_base, script_suffix);
+  script_status_label = make_status(script_card, NULL);
+
+  script_button = make_update_button(script_card, "UPDATE");
+  lv_obj_align(script_button, LV_ALIGN_BOTTOM_MID, 0, -px(16));
+  lv_obj_add_state(script_button, LV_STATE_DISABLED);
+  lv_obj_add_event_cb(script_button, &SysInfoPanel::_handle_callback, LV_EVENT_CLICKED, this);
 
   // Tab buttons on the left of the title bar.
   auto create_tab_btn = [this](const char *text, lv_coord_t x) {
@@ -609,12 +813,22 @@ void SysInfoPanel::create_tabs() {
 
 void SysInfoPanel::show_tab(bool updates) {
   if (updates) {
+    if (lv_obj_has_flag(updates_page, LV_OBJ_FLAG_HIDDEN)) {
+      powerui::overlay_open("Power Update", [this]() {
+        show_tab(false);
+        if (power_update_direct) {
+          power_update_direct = false;
+          lv_obj_move_background(cont);
+        }
+      });  // Back in the title bar returns to System (or closes the panel when opened from Settings)
+    }
     lv_obj_add_flag(general_page, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(updates_page, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_state(tab_general_btn, LV_STATE_CHECKED);
     lv_obj_add_state(tab_updates_btn, LV_STATE_CHECKED);
     lv_label_set_text(updates_version_label, split_version(installed_version()).first.c_str());
     check_for_update();
+    check_script_update();
   } else {
     lv_obj_clear_flag(general_page, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(updates_page, LV_OBJ_FLAG_HIDDEN);
@@ -774,6 +988,10 @@ void SysInfoPanel::start_update() {
 }
 
 void SysInfoPanel::poll_update() {
+  if (script_dirty.exchange(false)) {
+    apply_script_state();
+  }
+
   if (check_done.exchange(false)) {
     switch (check_result.load()) {
     case 1:
@@ -815,6 +1033,98 @@ void SysInfoPanel::poll_update() {
     show_update_overlay("Update failed", "The update script did not finish.", false);
   } else {
     show_update_overlay("Update installed", "Restart PowerScreen to apply the new version.", false);
+  }
+}
+
+namespace {
+const char *POWER_SCRIPT_NAME = "CFS-Power-Script";
+}
+
+void SysInfoPanel::check_script_update() {
+  if (ws_client == NULL) {
+    return;
+  }
+  lv_label_set_text(script_status_label, "Checking for updates...");
+  lv_obj_add_state(script_button, LV_STATE_DISABLED);
+
+  ws_client->send_jsonrpc("machine.update.status", json{{"refresh", false}}, [this](json &j) {
+    std::lock_guard<std::mutex> guard(script_mutex);
+    if (j.contains("result") && j["result"].contains("version_info")) {
+      const json &versions = j["result"]["version_info"];
+      auto read_version = [&versions](const char *name, std::string &out) {
+        if (versions.contains(name) && versions[name].is_object()) {
+          out = versions[name].value("version", std::string("unknown"));
+        }
+      };
+      read_version("klipper", klipper_version);
+      read_version("moonraker", moonraker_version);
+    }
+    json info;
+    if (j.contains("result") && j["result"].contains("version_info") && j["result"]["version_info"].contains(POWER_SCRIPT_NAME)) {
+      info = j["result"]["version_info"][POWER_SCRIPT_NAME];
+    }
+    if (info.is_object()) {
+      const std::string version = info.value("version", std::string());
+      const std::string remote = info.value("remote_version", std::string());
+      const std::string full = info.value("full_version_string", version);
+      const bool behind = info.contains("commits_behind") && info["commits_behind"].is_array() && !info["commits_behind"].empty();
+      const auto parts = split_version(version);
+      script_base = parts.first.empty() ? "unknown" : parts.first;
+      script_suffix = full;
+      script_state = (behind || (!remote.empty() && remote != version)) ? 2 : 1;
+      script_message = script_state == 2 ? "New version " + remote + " available." : "Power Script is up to date.";
+    } else {
+      script_state = 3;
+      script_message = "The Power Script is not in the update manager.";
+    }
+    script_dirty = true;
+  });
+}
+
+void SysInfoPanel::start_script_update() {
+  if (ws_client == NULL) {
+    return;
+  }
+  if (is_printing()) {
+    std::lock_guard<std::mutex> guard(script_mutex);
+    script_state = 3;
+    script_message = "It cannot be updated while a print is in progress.";
+    script_dirty = true;
+    return;
+  }
+  {
+    std::lock_guard<std::mutex> guard(script_mutex);
+    script_state = 4;
+    script_message = "Updating the Power Script...";
+    script_dirty = true;
+  }
+  ws_client->send_jsonrpc("machine.update.upgrade", json{{"name", POWER_SCRIPT_NAME}}, [this](json &j) {
+    std::lock_guard<std::mutex> guard(script_mutex);
+    if (j.contains("error")) {
+      script_state = 3;
+      script_message = j["error"].is_object() ? j["error"].value("message", std::string("Update failed.")) : "Update failed.";
+    } else {
+      script_state = 5;
+      script_message = "Power Script updated.";
+    }
+    script_dirty = true;
+  });
+}
+
+// Runs on the LVGL thread (from poll_update) to show the last result of the Power Script check or update.
+void SysInfoPanel::apply_script_state() {
+  std::lock_guard<std::mutex> guard(script_mutex);
+  refresh_system_versions();
+  lv_label_set_text(script_version_label, script_base.c_str());
+  lv_label_set_text(script_suffix_label, script_suffix.c_str());
+  lv_label_set_text(script_status_label, script_message.c_str());
+  lv_obj_set_style_text_color(script_status_label,
+                              lv_color_hex(script_state == 2 || script_state == 5 ? 0x4ADE80 : (script_state == 3 ? 0xFF6467 : 0xFAFAFA)),
+                              LV_PART_MAIN);
+  if (script_state == 2) {
+    lv_obj_clear_state(script_button, LV_STATE_DISABLED);
+  } else {
+    lv_obj_add_state(script_button, LV_STATE_DISABLED);
   }
 }
 
@@ -927,7 +1237,11 @@ void SysInfoPanel::handle_callback(lv_event_t *e)
   if (lv_event_get_code(e) == LV_EVENT_CLICKED) {
     lv_obj_t *btn = lv_event_get_current_target(e);
 
-    if (btn == tab_general_btn) {
+    if (btn == network_card) {
+      if (wifi_callback) {
+        wifi_callback();
+      }
+    } else if (btn == tab_general_btn) {
       show_tab(false);
     } else if (btn == tab_updates_btn || btn == about_row) {
       show_tab(true);
@@ -943,6 +1257,10 @@ void SysInfoPanel::handle_callback(lv_event_t *e)
       }
       spdlog::trace("update powerscreen pressed from system info");
       start_update();
+    } else if (btn == script_button) {
+      if (!lv_obj_has_state(script_button, LV_STATE_DISABLED)) {
+        start_script_update();
+      }
     } else if (btn == update_close_btn) {
       lv_obj_add_flag(update_overlay, LV_OBJ_FLAG_HIDDEN);
     }
@@ -995,5 +1313,26 @@ void SysInfoPanel::handle_callback(lv_event_t *e)
       conf->set<bool>("/invert_z_icon", inverted);
       conf->save();
     }
+  }
+}
+
+void SysInfoPanel::refresh_system_versions() {
+  // Caller holds script_mutex.
+  if (sys_value_labels[1] != NULL) {
+    lv_label_set_text(sys_value_labels[1], script_base.c_str());
+    lv_label_set_text(sys_value_labels[2], klipper_version.c_str());
+    lv_label_set_text(sys_value_labels[3], moonraker_version.c_str());
+  }
+}
+
+void SysInfoPanel::handle_brightness(lv_event_t *event) {
+  const int value = lv_slider_get_value(brightness_slider);
+  if (lv_event_get_code(event) == LV_EVENT_VALUE_CHANGED) {
+    lv_label_set_text(brightness_value, fmt::format("{}%", value).c_str());
+    write_backlight(value);
+  } else if (lv_event_get_code(event) == LV_EVENT_RELEASED) {
+    Config *conf = Config::get_instance();
+    conf->set<int>("/display_brightness", value);
+    conf->save();
   }
 }

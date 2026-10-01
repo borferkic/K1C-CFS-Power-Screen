@@ -361,6 +361,13 @@ PrintStatusPanel::~PrintStatusPanel() {
 void PrintStatusPanel::foreground() {
   // populate();
   lv_obj_move_foreground(status_cont);
+  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
+  powerui::overlay_open("Print Status", [this]() {
+    lv_obj_move_background(status_cont);
+    if (back_home_callback) {
+      back_home_callback();
+    }
+  });
 }
 
 void PrintStatusPanel::background() {

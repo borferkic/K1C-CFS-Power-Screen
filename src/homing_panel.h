@@ -46,6 +46,7 @@ class HomingPanel : public NotifyConsumer {
   ButtonContainer y_up_btn;
   ButtonContainer home_xy_btn;
   ButtonContainer z_down_btn;
+  ButtonContainer home_z_btn;
   ButtonContainer x_down_btn;
   ButtonContainer y_down_btn;
   ButtonContainer x_up_btn;

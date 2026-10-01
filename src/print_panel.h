@@ -63,6 +63,10 @@ class PrintPanel : public NotifyConsumer {
   };
 
   void show_dir(Tree *dir, uint32_t sort_type);
+  // Local / USB switch: the USB drive is exposed to Moonraker through a "USB" link inside the gcodes folder.
+  void sync_usb_link();
+  void set_storage(bool usb);
+  void update_storage_buttons();
   void show_file_detail(Tree *f);
   void handle_file_card(lv_event_t *event);
   void request_file_metadata(Tree *file);
@@ -84,6 +88,11 @@ class PrintPanel : public NotifyConsumer {
   lv_obj_t *queue_btn;
 
   lv_obj_t *left_cont;
+  lv_obj_t *storage_row = NULL;
+  lv_obj_t *local_btn = NULL;
+  lv_obj_t *usb_btn = NULL;
+  bool usb_view = false;
+  bool usb_missing = false;
   lv_obj_t *file_table_btns;
   lv_obj_t *refresh_btn;
   lv_obj_t *modified_sort_btn;

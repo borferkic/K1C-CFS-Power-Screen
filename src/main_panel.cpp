@@ -59,6 +59,8 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   , title_label(lv_label_create(title_bar))
   , time_label(lv_label_create(title_bar))
   , logo(lv_img_create(title_bar))
+  , title_label_bold(NULL)
+  , back_pill(NULL)
   , clock_timer(NULL)
   , network_timer(NULL)
   , main_cont(lv_obj_create(main_tab))
@@ -102,11 +104,35 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
     lv_obj_clear_flag(logo, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_align(logo, LV_ALIGN_LEFT_MID, px(16), 0);
 
-    lv_obj_set_width(title_label, LV_SIZE_CONTENT);
-    lv_obj_set_style_text_color(title_label, lv_color_hex(COLOR_FG), LV_PART_MAIN);
-    lv_obj_set_style_text_font(title_label, &lv_font_montserrat_16, LV_PART_MAIN);
-    lv_obj_align(title_label, LV_ALIGN_LEFT_MID, px(16), 0);
-    lv_obj_add_flag(title_label, LV_OBJ_FLAG_HIDDEN);
+    // Title: centered and bold (Montserrat has no bold here, so it is drawn twice, one pixel apart).
+    title_label_bold = lv_label_create(title_bar);
+    for (lv_obj_t *l : {title_label, title_label_bold}) {
+      lv_obj_set_width(l, LV_SIZE_CONTENT);
+      lv_obj_set_style_text_color(l, lv_color_hex(COLOR_FG), LV_PART_MAIN);
+      lv_obj_set_style_text_font(l, &lv_font_montserrat_20, LV_PART_MAIN);
+      lv_obj_add_flag(l, LV_OBJ_FLAG_HIDDEN);
+    }
+
+    // Back button of the overlay panels, on the left of the title bar.
+    back_pill = plain(title_bar);
+    lv_obj_add_flag(back_pill, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_size(back_pill, px(96), px(32));
+    lv_obj_align(back_pill, LV_ALIGN_LEFT_MID, px(8), 0);
+    lv_obj_set_style_radius(back_pill, px(8), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(back_pill, lv_color_hex(0x16A34A), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(back_pill, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(back_pill, lv_color_hex(0x15803D), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_border_width(back_pill, 0, LV_PART_MAIN);
+    lv_obj_set_style_border_color(back_pill, lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_border_opa(back_pill, LV_OPA_10, LV_PART_MAIN);
+    lv_obj_t *back_text = label(back_pill, LV_SYMBOL_LEFT "  Back", &lv_font_montserrat_16, lv_color_white());
+    lv_obj_center(back_text);
+    lv_obj_add_event_cb(back_pill, &MainPanel::_handle_back_click_cb, LV_EVENT_CLICKED, this);
+    lv_obj_add_flag(back_pill, LV_OBJ_FLAG_HIDDEN);
+
+    powerui::set_overlay_handlers([this](const std::string &title, std::function<void()> back) {
+      push_overlay(title, back);
+    });
 
     lv_obj_set_width(time_label, LV_SIZE_CONTENT);
     lv_obj_set_style_text_color(time_label, lv_color_hex(COLOR_MUTED), LV_PART_MAIN);
@@ -140,11 +166,7 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
     lv_obj_set_style_bg_color(console_page, screen_background, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(console_page, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_add_flag(console_page, LV_OBJ_FLAG_HIDDEN);
-    console_panel.set_back_callback([this]() {
-      lv_obj_add_flag(console_page, LV_OBJ_FLAG_HIDDEN);
-      update_header();
-    });
-    setting_panel.set_console_callback([this]() { open_console(); });
+    printertune_panel.set_console_callback([this]() { open_console(); });
 
     ws.register_notify_update(this);
     led_panel.set_state_callback([this](bool active) {
@@ -196,9 +218,7 @@ void MainPanel::open_console() {
   lv_obj_clear_flag(console_page, LV_OBJ_FLAG_HIDDEN);
   lv_obj_move_foreground(console_page);
   lv_obj_move_foreground(title_bar);
-  lv_label_set_text(title_label, "Console");
-  lv_obj_add_flag(logo, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_clear_flag(title_label, LV_OBJ_FLAG_HIDDEN);
+  push_overlay("Console", [this]() { lv_obj_add_flag(console_page, LV_OBJ_FLAG_HIDDEN); });
 }
 
 void MainPanel::update_filament_state(json &root, const std::string &prefix) {
@@ -428,6 +448,28 @@ void MainPanel::handle_tab_click_cb(lv_event_t *event) {
   if (lv_event_get_code(event) == LV_EVENT_CLICKED) {
     lv_obj_add_flag(console_page, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(tabview);
+    overlays.clear();
+    update_header();
+  }
+}
+
+void MainPanel::push_overlay(const std::string &title, std::function<void()> back) {
+  if (!overlays.empty() && overlays.back().title == title) {
+    overlays.back().back = back;
+  } else {
+    overlays.push_back({title, back});
+  }
+  update_header();
+}
+
+// Back button of the title bar: close the top overlay panel.
+void MainPanel::handle_back_click_cb(lv_event_t *event) {
+  if (lv_event_get_code(event) == LV_EVENT_CLICKED && !overlays.empty()) {
+    Overlay top = overlays.back();
+    overlays.pop_back();
+    if (top.back) {
+      top.back();
+    }
     update_header();
   }
 }
@@ -584,6 +626,16 @@ void MainPanel::create_main(lv_obj_t *parent)
     set_home_view(print_card.is_active());
 }
 
+void MainPanel::set_title(const char *text) {
+  lv_label_set_text(title_label, text);
+  lv_label_set_text(title_label_bold, text);
+  lv_obj_align(title_label, LV_ALIGN_CENTER, 0, 0);
+  lv_obj_align(title_label_bold, LV_ALIGN_CENTER, 1, 0);
+  lv_obj_clear_flag(title_label, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_clear_flag(title_label_bold, LV_OBJ_FLAG_HIDDEN);
+}
+
+// Home shows the logo; every other screen shows its title (bold, centered) and overlay panels add a Back button.
 void MainPanel::update_header() {
   const char *title = NULL;
   switch (lv_tabview_get_tab_act(tabview)) {
@@ -600,13 +652,19 @@ void MainPanel::update_header() {
       break;
   }
 
-  if (title == NULL) {
-    lv_obj_clear_flag(logo, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_add_flag(title_label, LV_OBJ_FLAG_HIDDEN);
-  } else {
-    lv_label_set_text(title_label, title);
+  if (!overlays.empty()) {
     lv_obj_add_flag(logo, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_clear_flag(title_label, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(back_pill, LV_OBJ_FLAG_HIDDEN);
+    set_title(overlays.back().title.c_str());
+  } else if (title != NULL) {
+    lv_obj_add_flag(logo, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(back_pill, LV_OBJ_FLAG_HIDDEN);
+    set_title(title);
+  } else {
+    lv_obj_clear_flag(logo, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(back_pill, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(title_label, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(title_label_bold, LV_OBJ_FLAG_HIDDEN);
   }
   update_nav_indicator();
 }

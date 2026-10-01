@@ -1,4 +1,5 @@
 #include "power_panel.h"
+#include "powerui.h"
 #include "utils.h"
 #include "spdlog/spdlog.h"
 
@@ -111,6 +112,8 @@ void PowerPanel::foreground() {
   ws.send_jsonrpc("machine.device_power.status", params, [this](json& j) {
     this->handle_device_callback(j);
   });
+  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
+  powerui::overlay_open("Power Devices", [this]() { lv_obj_move_background(cont); });
 }
 
 void PowerPanel::handle_callback(lv_event_t *e) {

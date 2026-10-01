@@ -287,6 +287,8 @@ void InputShaperPanel::foreground() {
   }
   
   lv_obj_move_foreground(cont);
+  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
+  powerui::overlay_open("Input Shaper", [this]() { lv_obj_move_background(cont); });
 }
 
 

@@ -126,10 +126,9 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   put(unload_btn, 12, 226, 140, 95);
   put(cooldown_btn, 12, 333, 140, 95);
   // Right rail.
-  put(spoolman_btn, 584, 12, 140, 95);
-  put(extrude_btn, 584, 119, 140, 95);
-  put(retract_btn, 584, 226, 140, 95);
-  put(back_btn, 594, 358, 120, 44);
+  put(spoolman_btn, 584, 12, 140, 130);
+  put(extrude_btn, 584, 154, 140, 130);
+  put(retract_btn, 584, 296, 140, 132);
 
   for (ButtonContainer *button : {&manual_change_btn, &load_btn, &unload_btn, &spoolman_btn, &retract_btn}) {
     style_button(button->get_container(), button->get_button(), ButtonKind::Outline);
@@ -192,6 +191,8 @@ ExtruderPanel::~ExtruderPanel() {
 
 void ExtruderPanel::foreground() {
   lv_obj_move_foreground(panel_cont);
+  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
+  powerui::overlay_open("Filament", [this]() { lv_obj_move_background(panel_cont); });
 }
 
 void ExtruderPanel::update_clock() {

@@ -5,6 +5,7 @@
 #include "websocket_client.h"
 #include "notify_consumer.h"
 #include "slider_container.h"
+#include "fan_control.h"
 #include "button_container.h"
 
 #include <map>
@@ -62,7 +63,7 @@ class FanPanel : public NotifyConsumer {
   lv_obj_t *time_label;
   lv_timer_t *clock_timer;
   lv_obj_t *fans_cont;
-  std::map<std::string, std::shared_ptr<SliderContainer>> fans;
+  std::map<std::string, std::shared_ptr<FanControl>> fans;
   /* SliderContainer fan0; */
   /* SliderContainer fan1; */
   /* SliderContainer fan2; */

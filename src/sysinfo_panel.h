@@ -3,8 +3,11 @@
 
 #include "button_container.h"
 #include "lvgl/lvgl.h"
+#include "websocket_client.h"
 
 #include <atomic>
+#include <functional>
+#include <mutex>
 #include <vector>
 #include <string>
 
@@ -14,9 +17,14 @@ class SysInfoPanel {
   ~SysInfoPanel();
 
   void foreground();
+  // Opens the Power Update page (PowerScreen and CFS Power Script versions) directly; Back closes the panel.
+  void open_power_update();
   void handle_callback(lv_event_t *event);
   // Start the update in the background and show the waiting screen.
   void start_update();
+  void set_websocket(KWebSocketClient *client) { ws_client = client; }
+  // Called when the network card is touched (opens the Wi-Fi panel).
+  void set_wifi_callback(std::function<void()> callback) { wifi_callback = callback; }
 
  static void _handle_callback(lv_event_t *event) {
     SysInfoPanel *panel = (SysInfoPanel*)event->user_data;
@@ -24,7 +32,32 @@ class SysInfoPanel {
   };
 
  private:
+  // CFS Power Script: version and update through the Moonraker update manager (entry "CFS-Power-Script").
+  KWebSocketClient *ws_client = NULL;
+  lv_obj_t *script_version_label = NULL;
+  lv_obj_t *script_suffix_label = NULL;
+  lv_obj_t *script_status_label = NULL;
+  lv_obj_t *script_button = NULL;
+  std::mutex script_mutex;
+  std::string script_base = "...";
+  std::string script_suffix;
+  std::string script_message;
+  int script_state = 0;  // 0 unknown, 1 up to date, 2 update available, 3 error, 4 updating, 5 updated
+  std::atomic<bool> script_dirty{false};
+  void check_script_update();
+  void start_script_update();
+  void apply_script_state();
   lv_obj_t *about_row = NULL;
+  bool power_update_direct = false;
+  std::function<void()> wifi_callback;
+  // System page: version list and screen brightness.
+  lv_obj_t *sys_value_labels[5] = {NULL, NULL, NULL, NULL, NULL};  // PowerScreen, Power Script, Klipper, Moonraker, K1C Firmware
+  lv_obj_t *brightness_slider = NULL;
+  lv_obj_t *brightness_value = NULL;
+  std::string klipper_version = "...";
+  std::string moonraker_version = "...";
+  void refresh_system_versions();
+  void handle_brightness(lv_event_t *event);
   lv_obj_t *version_suffix_label = NULL;
   lv_obj_t *cont;
   lv_obj_t *title_bar;
@@ -102,6 +135,10 @@ class SysInfoPanel {
   void poll_update();
   bool is_printing();
   void show_updated_notice();
+
+  static void _handle_brightness(lv_event_t *event) {
+    static_cast<SysInfoPanel *>(event->user_data)->handle_brightness(event);
+  }
 
   static void _update_clock_cb(lv_timer_t *timer) {
     SysInfoPanel *panel = (SysInfoPanel *)timer->user_data;

@@ -1,4 +1,5 @@
 #include "limits_panel.h"
+#include "powerui.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
 
@@ -90,6 +91,8 @@ void LimitsPanel::init(json &j) {
 
 void LimitsPanel::foreground() {
   lv_obj_move_foreground(cont);
+  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
+  powerui::overlay_open("Limits", [this]() { lv_obj_move_background(cont); });
 }
 
 void LimitsPanel::consume(json &j) {

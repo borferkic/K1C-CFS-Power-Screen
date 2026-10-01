@@ -27,15 +27,14 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
 #endif
   , sysinfo_panel()
   , spoolman_panel(sm)
-  , wifi_btn(cont, &network_img, "WIFI", &SettingPanel::_handle_callback, this)
-  , restart_klipper_btn(cont, &refresh_img, "Restart\nKlipper", &SettingPanel::_handle_callback, this)
-  , restart_firmware_btn(cont, &refresh_img, "Restart\nFirmware", &SettingPanel::_handle_callback, this)
+  , wifi_btn(cont, &network_img, "Wi-Fi", &SettingPanel::_handle_callback, this)
+  , restart_klipper_btn(cont, &refresh_img, "Restart Klipper", &SettingPanel::_handle_callback, this)
+  , restart_firmware_btn(cont, &refresh_img, "Restart Firmware", &SettingPanel::_handle_callback, this)
   , sysinfo_btn(cont, &info_img, "System", &SettingPanel::_handle_callback, this)
   , spoolman_btn(cont, &ui_cfs_img, "CFS", &SettingPanel::_handle_callback, this)
-  , powerscreen_restart_btn(cont, &refresh_img, "Restart PowerScreen", &SettingPanel::_handle_callback, this)
-  , powerscreen_update_btn(cont, &update_img, "Update PowerScreen", &SettingPanel::_handle_callback, this)
+  , powerscreen_restart_btn(cont, &refresh_img, "Restart Screen", &SettingPanel::_handle_callback, this)
+  , powerscreen_update_btn(cont, &update_img, "Power Update", &SettingPanel::_handle_callback, this)
   , printer_select_btn(cont, &print, "Printers", &SettingPanel::_handle_callback, this)
-  , console_btn(cont, &ui_console_img, "Console", &SettingPanel::_handle_callback, this)
   , confirm_overlay(NULL)
   , confirm_label(NULL)
   , confirm_cancel_btn(NULL)
@@ -44,40 +43,43 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
   lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(cont, LV_PCT(100), LV_PCT(100));
 
+  sysinfo_panel.set_websocket(&ws);
+  sysinfo_panel.set_wifi_callback([this]() { wifi_panel.foreground(); });
   wifi_btn.set_subtitle("Network");
-  restart_klipper_btn.set_subtitle("Service");
-  restart_firmware_btn.set_subtitle("Firmware");
-  sysinfo_btn.set_subtitle("Preferences and About");
+  restart_klipper_btn.set_subtitle("Reload printer service");
+  restart_firmware_btn.set_subtitle("Firmware restart");
+  sysinfo_btn.set_subtitle("Preferences and info");
   spoolman_btn.set_subtitle("Filament system");
-  powerscreen_restart_btn.set_subtitle("This interface");
-  powerscreen_update_btn.set_subtitle("Check for updates");
-  console_btn.set_subtitle("G-code and macros");
+  powerscreen_restart_btn.set_subtitle("Reload this interface");
+  powerscreen_update_btn.set_subtitle("PowerScreen and Script");
 
   spoolman_btn.disable();
+  spoolman_btn.set_pill("Offline", lv_color_hex(0xFF6467));
 #ifdef OS_ANDROID
   wifi_btn.disable();
 #endif
 
-  static lv_coord_t grid_main_row_dsc[] = {20, 150, 150, LV_GRID_TEMPLATE_LAST};
+  static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
   static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1),
       LV_GRID_TEMPLATE_LAST};
 
   lv_obj_set_grid_dsc_array(cont, grid_main_col_dsc, grid_main_row_dsc);
-  lv_obj_set_style_pad_row(cont, 20, LV_PART_MAIN);
+  lv_obj_set_style_pad_all(cont, 12, LV_PART_MAIN);
+  lv_obj_set_style_pad_row(cont, 12, LV_PART_MAIN);
+  lv_obj_set_style_pad_column(cont, 12, LV_PART_MAIN);
 
+  const lv_grid_align_t S = LV_GRID_ALIGN_STRETCH;
   // row 1
-  lv_obj_set_grid_cell(wifi_btn.get_button(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 1, 1);
-  lv_obj_set_grid_cell(restart_klipper_btn.get_button(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 1, 1);
-  lv_obj_set_grid_cell(restart_firmware_btn.get_button(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 1, 1);
-  lv_obj_set_grid_cell(sysinfo_btn.get_button(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 1, 1);
+  lv_obj_set_grid_cell(wifi_btn.get_button(), S, 0, 1, S, 0, 1);
+  lv_obj_set_grid_cell(restart_klipper_btn.get_button(), S, 1, 1, S, 0, 1);
+  lv_obj_set_grid_cell(restart_firmware_btn.get_button(), S, 2, 1, S, 0, 1);
+  lv_obj_set_grid_cell(sysinfo_btn.get_button(), S, 3, 1, S, 0, 1);
 
-  // row 2
-  lv_obj_set_grid_cell(spoolman_btn.get_button(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(powerscreen_restart_btn.get_button(), LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(powerscreen_update_btn.get_button(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_START, 2, 1);
-  // The Console takes the slot of Printers (this build only targets the K1C, which has a single printer).
+  // row 2 (the Console now lives in Calibrations; this build only targets the K1C, so Printers stays hidden)
+  lv_obj_set_grid_cell(spoolman_btn.get_button(), S, 0, 1, S, 1, 1);
+  lv_obj_set_grid_cell(powerscreen_restart_btn.get_button(), S, 1, 1, S, 1, 1);
+  lv_obj_set_grid_cell(powerscreen_update_btn.get_button(), S, 2, 1, S, 1, 1);
   lv_obj_add_flag(printer_select_btn.get_button(), LV_OBJ_FLAG_HIDDEN);
-  lv_obj_set_grid_cell(console_btn.get_button(), LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_START, 2, 1);
 
   create_confirm_overlay();
 }
@@ -137,12 +139,7 @@ void SettingPanel::handle_callback(lv_event_t *event) {
       }
     } else if (btn == powerscreen_update_btn.get_button()) {
       spdlog::trace("update powerscreen pressed");
-      sysinfo_panel.start_update();
-    } else if (btn == console_btn.get_button()) {
-      spdlog::trace("setting console pressed");
-      if (console_callback) {
-        console_callback();
-      }
+      sysinfo_panel.open_power_update();
     } else if (btn == printer_select_btn.get_button()) {
       spdlog::trace("setting printers pressed");
       printer_select_panel.foreground();
@@ -150,12 +147,9 @@ void SettingPanel::handle_callback(lv_event_t *event) {
   }
 }
 
-void SettingPanel::set_console_callback(std::function<void()> callback) {
-  console_callback = callback;
-}
-
 void SettingPanel::enable_spoolman() {
   spoolman_btn.enable();
+  spoolman_btn.hide_pill();
 }
 
 namespace {

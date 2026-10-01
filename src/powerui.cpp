@@ -33,6 +33,20 @@ double overlay_height_scale() {
   return static_cast<double>(overlay_height_px()) / 480.0;
 }
 
+namespace {
+std::function<void(const std::string &, std::function<void()>)> overlay_handler;
+}
+
+void set_overlay_handlers(std::function<void(const std::string &, std::function<void()>)> open_handler) {
+  overlay_handler = open_handler;
+}
+
+void overlay_open(const std::string &title, std::function<void()> on_back) {
+  if (overlay_handler) {
+    overlay_handler(title, on_back);
+  }
+}
+
 lv_obj_t *plain(lv_obj_t *parent) {
   lv_obj_t *o = lv_obj_create(parent);
   lv_obj_remove_style_all(o);

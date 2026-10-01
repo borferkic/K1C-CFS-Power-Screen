@@ -1,4 +1,5 @@
 #include "tmc_status_panel.h"
+#include "powerui.h"
 #include "spdlog/spdlog.h"
 
 LV_IMG_DECLARE(back);
@@ -62,6 +63,8 @@ TmcStatusPanel::~TmcStatusPanel() {
 
 void TmcStatusPanel::foreground() {
   lv_obj_move_foreground(cont);
+  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
+  powerui::overlay_open("TMC Metrics", [this]() { lv_obj_move_background(cont); });
 }
 
 void TmcStatusPanel::background() {

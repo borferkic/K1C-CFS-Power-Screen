@@ -1,10 +1,12 @@
 #include "fan_panel.h"
+#include "powerui.h"
 #include "state.h"
 #include "utils.h"
 #include "spdlog/spdlog.h"
 
-LV_IMG_DECLARE(cancel);
-LV_IMG_DECLARE(fan_on);
+#include <algorithm>
+#include <vector>
+
 LV_IMG_DECLARE(back);
 
 namespace {
@@ -29,38 +31,18 @@ FanPanel::FanPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   lv_obj_set_style_bg_opa(fanpanel_cont, LV_OPA_COVER, 0);
   lv_obj_set_style_border_width(fanpanel_cont, 0, 0);
 
-  lv_obj_clear_flag(title_bar, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_size(title_bar, LV_PCT(100), 32);
-  lv_obj_set_pos(title_bar, 0, 0);
-  lv_obj_set_style_pad_all(title_bar, 0, 0);
-  lv_obj_set_style_bg_color(title_bar, lv_color_hex(0x171717), 0);
-  lv_obj_set_style_bg_opa(title_bar, LV_OPA_COVER, 0);
-  lv_obj_set_style_border_width(title_bar, 0, 0);
-
-  lv_label_set_text(title_label, "FAN CONTROL");
-  lv_obj_set_width(title_label, LV_PCT(100));
-  lv_label_set_long_mode(title_label, LV_LABEL_LONG_DOT);
-  lv_obj_set_style_text_align(title_label, LV_TEXT_ALIGN_CENTER, 0);
-  lv_obj_set_style_text_color(title_label, lv_color_white(), 0);
-  lv_obj_set_style_text_font(title_label, &lv_font_montserrat_20, 0);
-  lv_obj_align(title_label, LV_ALIGN_CENTER, 0, 0);
-
-  lv_obj_set_width(time_label, LV_SIZE_CONTENT);
-  lv_obj_set_style_text_color(time_label, lv_color_white(), 0);
-  lv_obj_set_style_text_font(time_label, &lv_font_montserrat_20, 0);
-  lv_obj_align(time_label, LV_ALIGN_RIGHT_MID, -10, 0);
-  update_clock();
+  lv_obj_add_flag(title_bar, LV_OBJ_FLAG_HIDDEN);  // the main title bar shows "Fans"
+  lv_obj_set_style_bg_opa(title_bar, LV_OPA_TRANSP, 0);
+  lv_obj_set_size(title_bar, 1, 1);
   clock_timer = lv_timer_create(&FanPanel::_update_clock_cb, 1000, this);
 
   lv_obj_clear_flag(fans_cont, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_size(fans_cont, lv_pct(80), lv_pct(100));
-  lv_obj_set_height(fans_cont, lv_obj_get_height(lv_scr_act()) - 32);
-  lv_obj_set_style_bg_color(fans_cont, lv_color_hex(FAN_PANEL_BACKGROUND), 0);
-  lv_obj_set_style_bg_opa(fans_cont, LV_OPA_COVER, 0);
-  lv_obj_align(fans_cont, LV_ALIGN_TOP_MID, 0, 32);
-  lv_obj_set_flex_flow(fans_cont, LV_FLEX_FLOW_COLUMN);
-
-  lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, 0, -20);
+  lv_obj_set_size(fans_cont, LV_PCT(100), LV_PCT(100));
+  lv_obj_set_pos(fans_cont, 0, 0);
+  lv_obj_set_style_pad_all(fans_cont, 0, 0);
+  lv_obj_set_style_border_width(fans_cont, 0, 0);
+  lv_obj_set_style_bg_opa(fans_cont, LV_OPA_TRANSP, 0);
+  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
   ws.register_notify_update(this);
 }
 
@@ -102,10 +84,32 @@ void FanPanel::create_fans(json &f) {
   std::lock_guard<std::mutex> lock(lv_lock);
   fans.clear();
 
+  // Hotend, Chamber and Rear first (the K1C's fan0, fan2 and fan1); any other fan follows.
+  const std::vector<std::pair<std::string, std::string>> known = {
+    {"output_pin fan0", "Hotend Fan"}, {"output_pin fan2", "Chamber Fan"}, {"output_pin fan1", "Rear Fan"}};
+  std::vector<std::pair<std::string, std::string>> order;
+  for (const auto &k : known) {
+    if (f.contains(k.first)) {
+      order.push_back(k);
+    }
+  }
   for (auto &fan : f.items()) {
-    std::string key = fan.key();
-    spdlog::trace("create fan {}, {}", f.dump(), fan.value().dump());
-    std::string display_name = fan.value()["display_name"].template get<std::string>();
+    const std::string key = fan.key();
+    bool listed = false;
+    for (const auto &k : known) {
+      listed = listed || k.first == key;
+    }
+    if (!listed) {
+      order.push_back({key, fan.value()["display_name"].template get<std::string>()});
+    }
+  }
+
+  const int count = static_cast<int>(order.size());
+  const int card_height = count > 3 ? 132 : (416 - 12 * (count - 1)) / std::max(count, 1);
+  int index = 0;
+  for (const auto &entry : order) {
+    const std::string &key = entry.first;
+    spdlog::trace("create fan {}", key);
 
     lv_event_cb_t fan_cb = &FanPanel::_handle_fan_update;
     if (key == "fan") {
@@ -114,11 +118,9 @@ void FanPanel::create_fans(json &f) {
       // generic_fan, controller_fan, etc.
       fan_cb = &FanPanel::_handle_fan_update_generic;
     }
-    auto fptr = std::make_shared<SliderContainer>(fans_cont, display_name.c_str(), &cancel, "Off",
-						  &fan_on, "Max", fan_cb, this);
-    lv_obj_set_style_text_align(fptr->get_label(), LV_TEXT_ALIGN_CENTER, 0);
+    auto fptr = std::make_shared<FanControl>(fans_cont, entry.second.c_str(), 12 + index * (card_height + 12), card_height, fan_cb, this);
     fans.insert({key, fptr});
-    // lv_obj_set_grid_cell(fptr->get_container(), LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, rowidx++, 1);
+    index++;
   }
 
   if (fans.size() > 3) {
@@ -150,6 +152,8 @@ void FanPanel::foreground() {
   
   lv_obj_move_foreground(back_btn.get_container());
   lv_obj_move_foreground(fanpanel_cont);
+  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
+  powerui::overlay_open("Fans", [this]() { lv_obj_move_background(fanpanel_cont); });
 }
 
 void FanPanel::update_clock() {

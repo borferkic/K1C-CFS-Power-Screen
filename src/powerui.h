@@ -3,6 +3,9 @@
 
 #include "lvgl/lvgl.h"
 
+#include <functional>
+#include <string>
+
 // PowerUI theme helpers: shared colors and small widget builders used by the new Home screen.
 // All sizes are given in design pixels for an 800x480 display and scaled by px().
 namespace powerui {
@@ -50,6 +53,11 @@ void badge_set(lv_obj_t *badge, const char *text, lv_color_t dot);
 // Two-button view switch: child 0 = print view, child 1 = temperature chart.
 lv_obj_t *view_toggle(lv_obj_t *parent, lv_event_cb_t cb, void *user_data);
 void view_toggle_set(lv_obj_t *toggle, bool print_view);
+
+// Overlay panels (Filament, Homing, System...) announce themselves so the main title bar can show their title and a
+// Back button. `on_back` runs when the Back button is touched. MainPanel installs the handlers.
+void set_overlay_handlers(std::function<void(const std::string &, std::function<void()>)> open_handler);
+void overlay_open(const std::string &title, std::function<void()> on_back);
 
 // Styles for the existing icon-and-label buttons (ButtonContainer): `container` is the button's outer object and
 // `inner` its image button (made transparent). Icon and text take the color of the kind.

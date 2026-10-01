@@ -135,6 +135,8 @@ void SpoolmanPanel::init() {
 void SpoolmanPanel::foreground() {
   lv_obj_clear_flag(cont, LV_OBJ_FLAG_HIDDEN);
   lv_obj_move_foreground(cont);
+  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
+  powerui::overlay_open("CFS", [this]() { lv_obj_move_background(cont); });
 }
 
 void SpoolmanPanel::populate_spools(std::vector<json> &sorted_spools) {
