@@ -3,7 +3,7 @@
 #include "state.h"
 #include "spdlog/spdlog.h"
 
-LV_IMG_DECLARE(refresh_img);
+LV_IMG_DECLARE(ui_icon_reset);
 LV_IMG_DECLARE(back);
 
 LimitsPanel::LimitsPanel(KWebSocketClient &c, std::mutex &l)
@@ -11,10 +11,6 @@ LimitsPanel::LimitsPanel(KWebSocketClient &c, std::mutex &l)
   , ws(c)
   , cont(lv_obj_create(lv_scr_act()))
   , limit_cont(lv_obj_create(cont))
-  , velocity(limit_cont, "Velocity (mm/s)", &refresh_img, "Reset", &refresh_img, NULL, &LimitsPanel::_handle_callback, this, "")
-  , acceleration(limit_cont, "Acceleration (mm/s2)", &refresh_img, "Reset", &refresh_img, NULL, &LimitsPanel::_handle_callback, this, "")
-  , square_corner(limit_cont, "Square Corner Velocity (mm/s)", &refresh_img, "Reset", &refresh_img, NULL, &LimitsPanel::_handle_callback, this, "")
-  , accel_to_decel(limit_cont, "Acceleration to Deceleration (mm/s2)", &refresh_img, "Reset", &refresh_img, NULL, &LimitsPanel::_handle_callback, this, "")
   , back_btn(cont, &back, "Back", &LimitsPanel::_handle_callback, this)
   , max_velocity_default(1000)
   , max_accel_default(20000)
@@ -22,15 +18,21 @@ LimitsPanel::LimitsPanel(KWebSocketClient &c, std::mutex &l)
   , square_corner_default(5)
 {
   lv_obj_move_background(cont);
-  lv_obj_set_style_pad_all(cont, 0, 0);
-  lv_obj_set_size(cont, LV_PCT(100), LV_PCT(100));
-  lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
+  powerui::style_overlay_root(cont);
 
-  lv_obj_center(limit_cont);
-  lv_obj_set_size(limit_cont, lv_pct(100), lv_pct(100));
-  lv_obj_set_flex_flow(limit_cont, LV_FLEX_FLOW_COLUMN);
+  lv_obj_set_pos(limit_cont, 0, 0);
+  lv_obj_set_size(limit_cont, LV_PCT(100), LV_PCT(100));
+  lv_obj_set_style_pad_all(limit_cont, 0, 0);
+  lv_obj_set_style_border_width(limit_cont, 0, 0);
+  lv_obj_set_style_bg_opa(limit_cont, LV_OPA_TRANSP, 0);
+  lv_obj_clear_flag(limit_cont, LV_OBJ_FLAG_SCROLLABLE);
 
-  lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, 0, -20);
+  velocity = create_card(12, 12, "Velocity", "mm/s", max_velocity_default);
+  acceleration = create_card(374, 12, "Acceleration", "mm/s2", max_accel_default);
+  square_corner = create_card(12, 226, "Square corner velocity", "mm/s", square_corner_default);
+  accel_to_decel = create_card(374, 226, "Acceleration to deceleration", "mm/s2", max_accel_to_decel_default);
+
+  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
   
   ws.register_notify_update(this);
 }
@@ -42,27 +44,86 @@ LimitsPanel::~LimitsPanel() {
   }
 }
 
+void LimitsPanel::LimitCard::set_range(int min_range, int max_range) {
+  lv_slider_set_range(slider, min_range, max_range);
+  lv_label_set_text(min_label, std::to_string(min_range).c_str());
+  lv_label_set_text(max_label, std::to_string(max_range).c_str());
+}
+
+void LimitsPanel::LimitCard::set_default(int v) {
+  lv_label_set_text(default_label, fmt::format("Default: {} {}", v, unit).c_str());
+}
+
+void LimitsPanel::LimitCard::update_value(int v) {
+  lv_label_set_text(value, std::to_string(v).c_str());
+  lv_slider_set_value(slider, v, LV_ANIM_ON);
+}
+
+void LimitsPanel::_handle_value_changed(lv_event_t *event) {
+  lv_obj_t *slider = lv_event_get_target(event);
+  lv_obj_t *value = (lv_obj_t*)event->user_data;
+  lv_label_set_text(value, std::to_string((int)lv_slider_get_value(slider)).c_str());
+}
+
+LimitsPanel::LimitCard LimitsPanel::create_card(int x, int y, const char *name, const char *unit, int max_range) {
+  using namespace powerui;
+  LimitCard c;
+  c.unit = unit;
+  c.card = card(limit_cont, x, y, 350, 202);
+
+  lv_obj_t *title = label(c.card, name, &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+  lv_obj_set_pos(title, px(20), px(18));
+
+  c.reset = action_button(c.card, &ui_icon_reset, "Reset", ActionKind::Outline, 246, 12, 90, 32, &LimitsPanel::_handle_callback, this);
+
+  c.value = label(c.card, "0", &lv_font_montserrat_40, lv_color_hex(COLOR_FG));
+  lv_obj_set_pos(c.value, px(20), px(58));
+  lv_obj_t *unit_label = label(c.card, unit, &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+  lv_obj_align_to(unit_label, c.value, LV_ALIGN_OUT_RIGHT_BOTTOM, px(8), -px(6));
+
+  c.slider = lv_slider_create(c.card);
+  lv_obj_set_size(c.slider, px(310), px(14));
+  lv_obj_set_pos(c.slider, px(20), px(122));
+  lv_slider_set_range(c.slider, 0, max_range);
+  style_slider(c.slider);
+  lv_obj_add_event_cb(c.slider, &LimitsPanel::_handle_value_changed, LV_EVENT_VALUE_CHANGED, c.value);
+  lv_obj_add_event_cb(c.slider, &LimitsPanel::_handle_callback, LV_EVENT_RELEASED, this);
+
+  c.min_label = label(c.card, "0", &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
+  lv_obj_set_pos(c.min_label, px(20), px(150));
+  c.max_label = label(c.card, std::to_string(max_range).c_str(), &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
+  lv_obj_align(c.max_label, LV_ALIGN_TOP_RIGHT, -px(20), px(150));
+  c.default_label = label(c.card, "", &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
+  lv_obj_align(c.default_label, LV_ALIGN_BOTTOM_LEFT, px(20), -px(14));
+  c.set_default(max_range);
+  return c;
+}
+
 void LimitsPanel::init(json &j) {
   State *s = State::get_instance();
   auto v = s->get_data("/printer_state/configfile/settings/printer"_json_pointer);
   if (!v.is_null()) {
     if (v.contains("max_velocity")) {
       max_velocity_default = v["max_velocity"].template get<int>();      
+      velocity.set_default(max_velocity_default);
       velocity.set_range(1, max_velocity_default);
     }
 
     if (v.contains("max_accel")) {
       max_accel_default = v["max_accel"].template get<int>();
+      acceleration.set_default(max_accel_default);
       acceleration.set_range(1, max_accel_default);
     }
 
     if (v.contains("max_accel_to_decel")) {
       max_accel_to_decel_default = v["max_accel_to_decel"].template get<int>();
+      accel_to_decel.set_default(max_accel_to_decel_default);
       accel_to_decel.set_range(1, max_accel_to_decel_default);
     }
 
     if (v.contains("square_corner_velocity")) {
       square_corner_default = v["square_corner_velocity"].template get<int>();
+      square_corner.set_default(square_corner_default);
       square_corner.set_range(0, square_corner_default);
     }
     

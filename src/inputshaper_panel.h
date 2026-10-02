@@ -82,13 +82,18 @@ class InputShaperPanel {
   lv_obj_t *switch_cont;
   lv_obj_t *graph_switch_label;
   lv_obj_t *graph_switch;
-  ButtonContainer calibrate_btn;
-  ButtonContainer save_btn;
-  ButtonContainer emergency_btn;
-  ButtonContainer back_btn;
+  lv_obj_t *calibrate_btn;
+  lv_obj_t *save_btn;
+  lv_obj_t *stop_btn;
+  ButtonContainer emergency_btn;  // hidden: keeps the "Do you want to emergency stop?" confirmation
+  ButtonContainer back_btn;       // hidden: Back lives in the title bar
   bool ximage_fullsized;
   bool yimage_fullsized;
   json calibrate_output;
+
+  void emergency_stop();
+  void toggle_graph(lv_obj_t *graph_cont, lv_obj_t *graph, lv_obj_t *axis_card, bool &fullsized);
+  void fit_graph(lv_obj_t *graph_cont, lv_obj_t *graph);
 
   static std::vector<std::string> shapers;
   

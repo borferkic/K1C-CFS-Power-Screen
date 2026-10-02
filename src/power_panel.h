@@ -33,7 +33,15 @@ class PowerPanel {
     lv_obj_t *cont;
     ButtonContainer back_btn;
 
-    std::map<std::string, lv_obj_t*> devices;
+    struct Device {
+      lv_obj_t *toggle;
+      lv_obj_t *state;  // On / Off badge
+    };
+    void set_state(Device &d, bool on);
+
+    lv_obj_t *list_card;   // card with a row per device
+    lv_obj_t *empty;       // shown while there are no devices
+    std::map<std::string, Device> devices;
   
 };
 

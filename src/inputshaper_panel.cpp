@@ -7,10 +7,21 @@
 
 #include <algorithm>
 
-LV_IMG_DECLARE(resume);
-LV_IMG_DECLARE(sd_img);
+LV_IMG_DECLARE(ui_icon_play);
+LV_IMG_DECLARE(ui_icon_save);
+LV_IMG_DECLARE(ui_icon_estop);
 LV_IMG_DECLARE(emergency);
 LV_IMG_DECLARE(back);
+
+namespace {
+// Axis card geometry (design px, overlay coordinates); the graph sits at the top of the card.
+constexpr int CARD_W = 350;
+constexpr int CARD_H = 326;
+constexpr int GRAPH_X = 14;
+constexpr int GRAPH_Y = 56;
+constexpr int GRAPH_W = 322;
+constexpr int GRAPH_H = 150;
+}
 
 LV_FONT_DECLARE(dejavusans_mono_14);
 
@@ -66,9 +77,10 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l)
   , switch_cont(lv_obj_create(button_cont))
   , graph_switch_label(lv_label_create(switch_cont))
   , graph_switch(lv_switch_create(switch_cont))
-  , calibrate_btn(button_cont, &resume, "Calibrate", &InputShaperPanel::_handle_callback, this)
-  , save_btn(button_cont, &sd_img, "Save", &InputShaperPanel::_handle_callback, this)
-  , emergency_btn(button_cont, &emergency, "Stop", &InputShaperPanel::_handle_callback, this,
+  , calibrate_btn(NULL)
+  , save_btn(NULL)
+  , stop_btn(NULL)
+  , emergency_btn(cont, &emergency, "Stop", &InputShaperPanel::_handle_callback, this,
 		  "Do you want to emergency stop?",
 		  [&c]() {
 		    spdlog::debug("emergency stop pressed");
@@ -78,165 +90,149 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l)
   , ximage_fullsized(false)
   , yimage_fullsized(false)
 {
+  using namespace powerui;
   lv_obj_move_background(cont);
+  style_overlay_root(cont);
+  lv_obj_add_flag(emergency_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
+  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
 
-  lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);  
-  lv_obj_set_size(cont, LV_PCT(100), LV_PCT(100));
-  lv_obj_set_style_pad_all(cont, 0, 0);
-  
-  lv_obj_t *graph_label = lv_label_create(xgraph_cont);
-  lv_label_set_text(graph_label, "X Frequency Response");
-  lv_obj_align(graph_label, LV_ALIGN_BOTTOM_MID, 0, 0);
+  struct AxisWidgets {
+    lv_obj_t *card, *axis_label, *sw, *graph_cont, *graph, *output, *spinner, *slider_cont, *slider, *value, *dd;
+    const char *name;
+    int x;
+  };
+  AxisWidgets axes_w[2] = {
+    {xcontrol, xaxis_label, x_switch, xgraph_cont, xgraph, xoutput, xspinner, xslider_cont, xslider, xlabel, xshaper_dd, "X axis", 12},
+    {ycontrol, yaxis_label, y_switch, ygraph_cont, ygraph, youtput, yspinner, yslider_cont, yslider, ylabel, yshaper_dd, "Y axis", 374},
+  };
 
-  lv_obj_set_style_pad_all(xgraph_cont, 0, 0);
-  lv_obj_add_flag(xgraph_cont, LV_OBJ_FLAG_CLICKABLE);
-  lv_obj_clear_flag(xgraph_cont, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_add_event_cb(xgraph_cont, &InputShaperPanel::_handle_image_clicked,
-		      LV_EVENT_CLICKED, this);
+  for (auto &a : axes_w) {
+    // The axis control container becomes the card; its widgets are laid out by hand.
+    lv_obj_remove_style_all(a.card);
+    lv_obj_clear_flag(a.card, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_pos(a.card, px(a.x), px(12));
+    lv_obj_set_size(a.card, px(CARD_W), px(CARD_H));
+    lv_obj_set_style_bg_color(a.card, lv_color_hex(COLOR_CARD), 0);
+    lv_obj_set_style_bg_opa(a.card, LV_OPA_COVER, 0);
+    lv_obj_set_style_radius(a.card, px(14), 0);
+    lv_obj_set_style_border_width(a.card, 1, 0);
+    lv_obj_set_style_border_color(a.card, lv_color_hex(COLOR_WHITE), 0);
+    lv_obj_set_style_border_opa(a.card, LV_OPA_10, 0);
 
-  graph_label = lv_label_create(ygraph_cont);
-  lv_label_set_text(graph_label, "Y Frequency Response");  
-  lv_obj_align(graph_label, LV_ALIGN_BOTTOM_MID, 0, 0);
+    lv_label_set_text(a.axis_label, a.name);
+    lv_obj_set_width(a.axis_label, LV_SIZE_CONTENT);
+    lv_obj_set_style_text_font(a.axis_label, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_color(a.axis_label, lv_color_hex(COLOR_FG), 0);
+    lv_obj_set_pos(a.axis_label, px(18), px(18));
 
-  lv_obj_set_style_pad_all(ygraph_cont, 0, 0);
-  lv_obj_add_flag(ygraph_cont, LV_OBJ_FLAG_CLICKABLE);
-  lv_obj_clear_flag(ygraph_cont, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_add_event_cb(ygraph_cont, &InputShaperPanel::_handle_image_clicked,
-		      LV_EVENT_CLICKED, this);
+    style_switch(a.sw);
+    lv_obj_align(a.sw, LV_ALIGN_TOP_RIGHT, -px(18), px(16));
+    lv_obj_add_state(a.sw, LV_STATE_CHECKED);
 
-  // graphs
-  lv_img_set_zoom(xgraph, 95);
-  lv_obj_center(xgraph);
-  // lv_img_set_src(xgraph, "A:/usr/data/printer_data/thumbnails/resonances_x.png");  
+    // Graph / result area.
+    lv_obj_set_parent(a.graph_cont, a.card);
+    lv_obj_set_pos(a.graph_cont, px(GRAPH_X), px(GRAPH_Y));
+    lv_obj_set_size(a.graph_cont, px(GRAPH_W), px(GRAPH_H));
+    lv_obj_set_style_pad_all(a.graph_cont, 0, 0);
+    lv_obj_set_style_radius(a.graph_cont, px(10), 0);
+    lv_obj_set_style_border_width(a.graph_cont, 0, 0);
+    lv_obj_set_style_bg_color(a.graph_cont, lv_color_hex(COLOR_BG), 0);
+    lv_obj_set_style_bg_opa(a.graph_cont, LV_OPA_COVER, 0);
+    lv_obj_set_style_clip_corner(a.graph_cont, true, 0);
+    lv_obj_add_flag(a.graph_cont, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_clear_flag(a.graph_cont, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_add_event_cb(a.graph_cont, &InputShaperPanel::_handle_image_clicked, LV_EVENT_CLICKED, this);
+    lv_obj_clear_flag(a.graph, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_center(a.graph);
+    lv_obj_add_flag(a.graph_cont, LV_OBJ_FLAG_HIDDEN);
 
-  lv_img_set_zoom(ygraph, 95);
-  lv_obj_center(ygraph);
-  // lv_img_set_src(ygraph, "A:/usr/data/printer_data/thumbnails/resonances_y.png");
-  
-  lv_obj_set_size(ygraph_cont, LV_PCT(40), LV_PCT(45));
-  lv_obj_clear_flag(ygraph_cont, LV_OBJ_FLAG_SCROLLABLE);  
-  lv_obj_set_size(xgraph_cont, LV_PCT(40), LV_PCT(45));
-  lv_obj_clear_flag(xgraph_cont, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_parent(a.output, a.card);
+    lv_obj_set_pos(a.output, px(GRAPH_X + 8), px(GRAPH_Y + 6));
+    lv_obj_set_size(a.output, px(GRAPH_W - 16), px(GRAPH_H - 12));
+    lv_label_set_text(a.output, "");
+    lv_obj_set_style_text_font(a.output, &dejavusans_mono_14, LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(a.output, lv_color_hex(COLOR_FG), 0);
 
-  // text output
-  lv_obj_set_size(xoutput, LV_PCT(38), LV_PCT(45));
-  lv_label_set_text(xoutput, "");
-  lv_obj_set_style_text_font(xoutput, &dejavusans_mono_14, LV_STATE_DEFAULT);
+    lv_obj_t *hint = label(a.card, "Run Calibrate to measure this axis", &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
+    lv_obj_set_pos(hint, px(GRAPH_X + 8), px(GRAPH_Y + GRAPH_H / 2 - 8));
+    lv_obj_set_style_text_align(hint, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_width(hint, px(GRAPH_W - 16));
+    lv_obj_move_background(hint);
 
-  lv_obj_set_size(youtput, LV_PCT(38), LV_PCT(45));
-  lv_label_set_text(youtput, "");
-  lv_obj_set_style_text_font(youtput, &dejavusans_mono_14, LV_STATE_DEFAULT);
+    lv_obj_set_parent(a.spinner, a.card);
+    lv_obj_add_flag(a.spinner, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_set_size(a.spinner, px(60), px(60));
+    lv_obj_set_pos(a.spinner, px(GRAPH_X + GRAPH_W / 2 - 30), px(GRAPH_Y + GRAPH_H / 2 - 30));
 
-  // spinners
-  lv_obj_add_flag(xspinner, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_set_size(xspinner, 100, 100);
+    // Shaper type, frequency and slider.
+    lv_obj_t *shaper_title = label(a.card, "Shaper", &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+    lv_obj_set_pos(shaper_title, px(18), px(224));
+    lv_obj_set_size(a.dd, px(150), px(40));
+    lv_obj_set_pos(a.dd, px(CARD_W - 18 - 150), px(214));
+    style_select(a.dd);
 
-  lv_obj_add_flag(yspinner, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_set_size(yspinner, 100, 100);  
+    lv_obj_t *freq_title = label(a.card, "Frequency", &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+    lv_obj_set_pos(freq_title, px(18), px(274));
 
-  // buttons
-  lv_obj_set_size(button_cont, LV_PCT(20), LV_PCT(100));
-  lv_obj_clear_flag(button_cont, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_flex_flow(button_cont, LV_FLEX_FLOW_COLUMN);
-  lv_obj_set_flex_align(button_cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_parent(a.value, a.card);
+    lv_label_set_text(a.value, "0 Hz");
+    lv_obj_set_style_text_font(a.value, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(a.value, lv_color_hex(COLOR_FG), 0);
+    lv_obj_align(a.value, LV_ALIGN_TOP_RIGHT, -px(18), px(268));
 
-  lv_obj_set_size(switch_cont, LV_PCT(100), LV_SIZE_CONTENT);
-  lv_obj_set_style_pad_row(switch_cont, 0, 0);
-  lv_obj_set_flex_flow(switch_cont, LV_FLEX_FLOW_COLUMN);
-  lv_obj_set_flex_align(switch_cont, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-  
-  lv_obj_set_style_text_align(graph_switch_label, LV_TEXT_ALIGN_CENTER, 0);
-  lv_label_set_text(graph_switch_label, "Graph");
-  lv_obj_set_width(graph_switch_label, LV_PCT(100));
-  lv_obj_clear_state(graph_switch, LV_STATE_CHECKED);
-  lv_obj_clear_flag(switch_cont, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_style_pad_all(switch_cont, 0, 0);
+    lv_obj_set_parent(a.slider, a.card);
+    lv_obj_set_size(a.slider, px(CARD_W - 36), px(14));
+    lv_obj_set_pos(a.slider, px(18), px(302));
+    lv_slider_set_range(a.slider, 0, 1400);
+    style_slider(a.slider);
+    lv_obj_add_event_cb(a.slider, &InputShaperPanel::_handle_update_slider, LV_EVENT_VALUE_CHANGED, this);
+    lv_obj_add_flag(a.slider_cont, LV_OBJ_FLAG_HIDDEN);
 
-  auto scale = powerui::overlay_width_scale();
+    lv_obj_set_size(a.card, px(CARD_W), px(CARD_H));
+  }
 
-  // controls
-  lv_obj_set_flex_flow(xcontrol, LV_FLEX_FLOW_ROW_WRAP);
-  lv_obj_set_flex_align(xcontrol, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-  lv_obj_clear_flag(xcontrol, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_size(xcontrol, LV_PCT(62), LV_SIZE_CONTENT);
-  lv_obj_set_style_pad_row(xcontrol, 0, 0);
-  lv_obj_set_style_pad_all(xcontrol, 0, 0);
-
-  lv_obj_set_width(xaxis_label, LV_PCT(100));
-  lv_label_set_text(xaxis_label, "X Axis");
-  lv_obj_add_state(x_switch, LV_STATE_CHECKED);
-
-  lv_obj_clear_flag(xslider_cont, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_size(xslider_cont, LV_PCT(53), LV_SIZE_CONTENT);
-  lv_obj_set_style_pad_all(xslider_cont, 0, 0);
-  
-  lv_obj_center(xslider);
-  lv_obj_set_width(xslider, LV_PCT(85));
-  lv_slider_set_range(xslider, 0, 1400);
-
-  lv_obj_add_event_cb(xslider, &InputShaperPanel::_handle_update_slider,
-		      LV_EVENT_VALUE_CHANGED, this);
-  
-
-  lv_obj_align_to(xlabel, xslider, LV_ALIGN_OUT_BOTTOM_MID, 0, 35 * scale);
-  lv_label_set_text(xlabel, "0 Hz");
-  
   lv_dropdown_set_options(xshaper_dd, fmt::format("{}", fmt::join(shapers, "\n")).c_str());
-
-  lv_obj_set_flex_flow(ycontrol, LV_FLEX_FLOW_ROW_WRAP);
-  lv_obj_set_flex_align(ycontrol, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-  lv_obj_clear_flag(ycontrol, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_size(ycontrol, LV_PCT(62), LV_SIZE_CONTENT);
-  lv_obj_set_style_pad_all(ycontrol, 0, 0);
-  lv_obj_set_style_pad_row(ycontrol, 0, 0);
-
-  lv_obj_set_width(yaxis_label, LV_PCT(100));
-  lv_label_set_text(yaxis_label, "Y Axis");
-  lv_obj_add_state(y_switch, LV_STATE_CHECKED);
-
-  lv_obj_clear_flag(yslider_cont, LV_OBJ_FLAG_SCROLLABLE);    
-  lv_obj_set_size(yslider_cont, LV_PCT(53), LV_SIZE_CONTENT);
-  lv_obj_set_style_pad_all(yslider_cont, 0, 0);
-  
-  lv_obj_center(yslider);
-  lv_obj_set_width(yslider, LV_PCT(85));
-  lv_slider_set_range(yslider, 0, 1400);
-  
-  lv_obj_add_event_cb(yslider, &InputShaperPanel::_handle_update_slider,
-		      LV_EVENT_VALUE_CHANGED, this);
-  
-  lv_obj_align_to(ylabel, yslider, LV_ALIGN_OUT_BOTTOM_MID, 0, 35 * scale);
-  lv_label_set_text(ylabel, "0 Hz");
-
   lv_dropdown_set_options(yshaper_dd, fmt::format("{}", fmt::join(shapers, "\n")).c_str());
+  style_select(xshaper_dd);
+  style_select(yshaper_dd);
 
-  static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(2), LV_GRID_FR(1), LV_GRID_FR(1),
-    LV_GRID_TEMPLATE_LAST};
-  static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(3), LV_GRID_FR(7), LV_GRID_FR(7),
-    LV_GRID_TEMPLATE_LAST};
-  
-  lv_obj_set_grid_dsc_array(cont, grid_main_col_dsc, grid_main_row_dsc);
+  // Bottom bar: graphs switch, hints and the actions.
+  lv_obj_remove_style_all(button_cont);
+  lv_obj_clear_flag(button_cont, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_pos(button_cont, px(12), px(350));
+  lv_obj_set_size(button_cont, px(712), px(78));
+  lv_obj_set_style_bg_color(button_cont, lv_color_hex(COLOR_CARD), 0);
+  lv_obj_set_style_bg_opa(button_cont, LV_OPA_COVER, 0);
+  lv_obj_set_style_radius(button_cont, px(14), 0);
+  lv_obj_set_style_border_width(button_cont, 1, 0);
+  lv_obj_set_style_border_color(button_cont, lv_color_hex(COLOR_WHITE), 0);
+  lv_obj_set_style_border_opa(button_cont, LV_OPA_10, 0);
 
-  // row 1, col 2/3
-  lv_obj_set_grid_cell(xspinner, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(yspinner, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(xgraph_cont, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(ygraph_cont, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(xoutput, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(youtput, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+  lv_obj_remove_style_all(switch_cont);
+  lv_obj_clear_flag(switch_cont, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_size(switch_cont, px(190), px(54));
+  lv_obj_set_pos(switch_cont, px(20), px(12));
+  lv_obj_set_flex_flow(switch_cont, LV_FLEX_FLOW_ROW_WRAP);
+  lv_obj_set_flex_align(switch_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_style_pad_column(switch_cont, px(12), 0);
+  lv_obj_set_style_pad_row(switch_cont, px(4), 0);
+  lv_label_set_text(graph_switch_label, "Graphs");
+  lv_obj_set_width(graph_switch_label, LV_SIZE_CONTENT);
+  lv_obj_set_style_text_font(graph_switch_label, &lv_font_montserrat_16, 0);
+  lv_obj_set_style_text_color(graph_switch_label, lv_color_hex(COLOR_FG), 0);
+  style_switch(graph_switch);
+  lv_obj_clear_state(graph_switch, LV_STATE_CHECKED);
+  lv_obj_t *note = label(switch_cont, "Needs an accelerometer. Save restarts Klipper", &lv_font_montserrat_10, lv_color_hex(COLOR_MUTED));
+  lv_label_set_long_mode(note, LV_LABEL_LONG_WRAP);
+  lv_obj_set_width(note, px(190));
 
-  // row 2, col 2 span 2
-  lv_obj_set_grid_cell(xcontrol, LV_GRID_ALIGN_START, 1, 2, LV_GRID_ALIGN_START, 1, 1);
+  calibrate_btn = action_button(button_cont, &ui_icon_play, "Calibrate", ActionKind::Primary, 230, 12, 190, 54,
+				&InputShaperPanel::_handle_callback, this);
+  save_btn = action_button(button_cont, &ui_icon_save, "Save", ActionKind::Outline, 430, 12, 140, 54,
+			   &InputShaperPanel::_handle_callback, this);
+  stop_btn = action_button(button_cont, &ui_icon_estop, "Stop", ActionKind::Destructive, 580, 12, 120, 54,
+			   &InputShaperPanel::_handle_callback, this);
 
-  // row 3, col 2 span 2
-  lv_obj_set_grid_cell(ycontrol, LV_GRID_ALIGN_START, 1, 2, LV_GRID_ALIGN_START, 2, 1);
-
-  // row 1, col 1
-  lv_obj_set_grid_cell(button_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 3);
-
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_FLOATING);  
-  lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, 0, -20);
-  
   // TODO: show only register when issuing macros inputshaper cares about, then unregister after.
   // ws.register_gcode_resp([this](json& d) { this->handle_macro_response(d); });
   ws.register_method_callback("notify_gcode_response",
@@ -294,7 +290,7 @@ void InputShaperPanel::foreground() {
 
 void InputShaperPanel::handle_callback(lv_event_t *event) {
   lv_obj_t *btn = lv_event_get_current_target(event);
-  if (btn == calibrate_btn.get_container()) {
+  if (btn == calibrate_btn) {
     bool x_requested = lv_obj_has_state(x_switch, LV_STATE_CHECKED);
     bool y_requested = lv_obj_has_state(y_switch, LV_STATE_CHECKED);
 
@@ -335,7 +331,7 @@ void InputShaperPanel::handle_callback(lv_event_t *event) {
     // ws.gcode_script(fmt::format("TEST_RESONANCES AXIS=X NAME=x FREQ_START={} FREQ_END={}\nM400", 5, 10));
     // ws.gcode_script(fmt::format("TEST_RESONANCES AXIS=X NAME=x\nM400\nTEST_RESONANCES AXIS=Y NAME=y\nM400"));
 
-  } else if (btn == save_btn.get_container()) {
+  } else if (btn == save_btn) {
     double xhz = (double)lv_slider_get_value(xslider) / 10.0;
     double yhz = (double)lv_slider_get_value(yslider) / 10.0;
 
@@ -350,8 +346,8 @@ void InputShaperPanel::handle_callback(lv_event_t *event) {
 
   } else if (btn == back_btn.get_container()) {
     lv_obj_move_background(cont);
-  } else if (btn == emergency_btn.get_container()) {
-    ws.send_jsonrpc("printer.emergency_stop");
+  } else if (btn == stop_btn || btn == emergency_btn.get_container()) {
+    emergency_stop();
   }
 }
 
@@ -384,6 +380,7 @@ void InputShaperPanel::handle_macro_response(json &j) {
 	      
 	    lv_label_set_text(xoutput, "");
 	    lv_img_set_src(xgraph, png_path.c_str());
+	    fit_graph(xgraph_cont, xgraph);
 	    lv_obj_clear_flag(xgraph_cont, LV_OBJ_FLAG_HIDDEN);
 	    set_shaper_detail(res, NULL, xslider, xlabel, xshaper_dd);
 	    lv_obj_move_foreground(xgraph_cont);
@@ -410,6 +407,7 @@ void InputShaperPanel::handle_macro_response(json &j) {
 
 	    lv_label_set_text(youtput, "");
 	    lv_img_set_src(ygraph, png_path.c_str());
+	    fit_graph(ygraph_cont, ygraph);
 	    lv_obj_clear_flag(ygraph_cont, LV_OBJ_FLAG_HIDDEN);
 	    set_shaper_detail(res, NULL, yslider, ylabel, yshaper_dd);
 	    lv_obj_move_foreground(ygraph_cont);
@@ -448,68 +446,54 @@ void InputShaperPanel::handle_macro_response(json &j) {
   }
 }
 
+void InputShaperPanel::emergency_stop() {
+  Config *conf = Config::get_instance();
+  auto estop = conf->get_json("/prompt_emergency_stop");
+  if (!estop.is_null() && estop.template get<bool>()) {
+    emergency_btn.handle_prompt();
+  } else {
+    ws.send_jsonrpc("printer.emergency_stop");
+  }
+}
+
+// Scale the graph PNG to fit (contain) inside its box.
+void InputShaperPanel::fit_graph(lv_obj_t *graph_cont, lv_obj_t *graph) {
+  lv_img_header_t header;
+  const void *src = lv_img_get_src(graph);
+  if (src == NULL || lv_img_decoder_get_info(src, &header) != LV_RES_OK || header.w == 0 || header.h == 0) {
+    return;
+  }
+  const double fit = std::min((double)lv_obj_get_width(graph_cont) / header.w, (double)lv_obj_get_height(graph_cont) / header.h);
+  lv_img_set_zoom(graph, static_cast<uint16_t>(256 * fit));
+  lv_obj_center(graph);
+}
+
+// Enlarge a graph over the whole panel (and back into its axis card).
+void InputShaperPanel::toggle_graph(lv_obj_t *graph_cont, lv_obj_t *graph, lv_obj_t *axis_card, bool &fullsized) {
+  if (fullsized) {
+    lv_obj_set_parent(graph_cont, axis_card);
+    lv_obj_clear_flag(graph_cont, LV_OBJ_FLAG_FLOATING);
+    lv_obj_set_pos(graph_cont, powerui::px(GRAPH_X), powerui::px(GRAPH_Y));
+    lv_obj_set_size(graph_cont, powerui::px(GRAPH_W), powerui::px(GRAPH_H));
+  } else {
+    lv_obj_set_parent(graph_cont, cont);
+    lv_obj_add_flag(graph_cont, LV_OBJ_FLAG_FLOATING);
+    lv_obj_set_pos(graph_cont, 0, 0);
+    lv_obj_set_size(graph_cont, LV_PCT(100), LV_PCT(100));
+  }
+  lv_obj_move_foreground(graph_cont);
+  lv_obj_update_layout(graph_cont);
+  fit_graph(graph_cont, graph);
+  fullsized = !fullsized;
+}
+
 void InputShaperPanel::handle_image_clicked(lv_event_t *e) {
-  const lv_event_code_t code = lv_event_get_code(e);
-  if (code == LV_EVENT_CLICKED) {
+  if (lv_event_get_code(e) == LV_EVENT_CLICKED) {
     lv_obj_t *clicked = lv_event_get_target(e);
-
     if (clicked == xgraph_cont) {
-      if (yimage_fullsized) {
-	lv_obj_invalidate(ygraph);
-	lv_img_set_zoom(ygraph, 150);
-	yimage_fullsized = false;
-	lv_obj_set_size(ygraph_cont, LV_PCT(40), LV_PCT(45));
-	lv_obj_clear_flag(ygraph_cont, LV_OBJ_FLAG_FLOATING);	
-	
-	// lv_obj_set_size(ygraph_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);	
-      }
-      
-      lv_obj_invalidate(xgraph);
-
-      if (ximage_fullsized) {
-	lv_img_set_zoom(xgraph, 95);
-	lv_obj_set_size(xgraph_cont, LV_PCT(40), LV_PCT(45));
-	lv_obj_clear_flag(xgraph_cont, LV_OBJ_FLAG_FLOATING);	
-	
-	// lv_obj_set_size(xgraph_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);		
-	
-      } else {
-	lv_img_set_zoom(xgraph, LV_IMG_ZOOM_NONE);
-	lv_obj_add_flag(xgraph_cont, LV_OBJ_FLAG_FLOATING);	
-	lv_obj_set_size(xgraph_cont, LV_PCT(100), LV_PCT(100));
-      }
-      lv_obj_move_foreground(xgraph_cont);      
-      ximage_fullsized = !ximage_fullsized;
-
+      toggle_graph(xgraph_cont, xgraph, xcontrol, ximage_fullsized);
     } else if (clicked == ygraph_cont) {
-      if (ximage_fullsized) {
-	lv_obj_invalidate(xgraph);
-	lv_img_set_zoom(xgraph, 150);
-	ximage_fullsized = false;
-	// lv_obj_set_size(xgraph_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-	lv_obj_set_size(xgraph_cont, LV_PCT(40), LV_PCT(45));
-	lv_obj_clear_flag(xgraph_cont, LV_OBJ_FLAG_FLOATING);	
-	
-      }
-      
-      lv_obj_invalidate(ygraph);
-
-      if (yimage_fullsized) {
-	lv_img_set_zoom(ygraph, 95);
-	// lv_obj_set_size(ygraph_cont, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-	lv_obj_set_size(ygraph_cont, LV_PCT(40), LV_PCT(45));
-	lv_obj_clear_flag(ygraph_cont, LV_OBJ_FLAG_FLOATING);
-
-      } else {
-	lv_img_set_zoom(ygraph, LV_IMG_ZOOM_NONE);
-	lv_obj_set_size(ygraph_cont, LV_PCT(100), LV_PCT(100));
-
-	// floating hacks (free child from grid) around the grid layout alignment
-	lv_obj_add_flag(ygraph_cont, LV_OBJ_FLAG_FLOATING);
-
-      }
-      lv_obj_move_foreground(ygraph_cont);
-      yimage_fullsized = !yimage_fullsized;
+      toggle_graph(ygraph_cont, ygraph, ycontrol, yimage_fullsized);
     }
   }
 }

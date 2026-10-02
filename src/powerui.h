@@ -99,6 +99,22 @@ void style_select(lv_obj_t *dropdown);
 // Segmented control look for a button matrix with checkable items (soft green when selected).
 void style_segmented(lv_obj_t *btnm);
 
+// Slider look: translucent track, green indicator and a white round knob.
+void style_slider(lv_obj_t *slider);
+
+// Switch look (shadcn): grey track, green when on, round knob.
+void style_switch(lv_obj_t *sw);
+
+// Action button of the tool screens: optional line icon (a 32 px mask, tinted) and a text on one line.
+// Primary = filled green, Outline = bordered card, Destructive = red outline. Returns the clickable button; `cb`
+// receives LV_EVENT_CLICKED with `user_data`.
+enum class ActionKind { Primary, Outline, Destructive };
+lv_obj_t *action_button(lv_obj_t *parent, const lv_img_dsc_t *icon_src, const char *text, ActionKind kind,
+                        int x, int y, int w, int h, lv_event_cb_t cb, void *user_data);
+
+// Background of an overlay panel's root container: page color, no padding or border, not scrollable.
+void style_overlay_root(lv_obj_t *cont);
+
 } // namespace powerui
 
 #endif // __POWERUI_H__

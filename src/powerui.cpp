@@ -298,4 +298,93 @@ void style_select(lv_obj_t *dropdown) {
   }
 }
 
+void style_slider(lv_obj_t *slider) {
+  lv_obj_set_style_bg_color(slider, lv_color_hex(COLOR_SECONDARY), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(slider, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(slider, lv_color_hex(COLOR_ACCENT), LV_PART_INDICATOR);
+  lv_obj_set_style_bg_opa(slider, LV_OPA_COVER, LV_PART_INDICATOR);
+  lv_obj_set_style_bg_color(slider, lv_color_hex(COLOR_FG), LV_PART_KNOB);
+  lv_obj_set_style_bg_opa(slider, LV_OPA_COVER, LV_PART_KNOB);
+  lv_obj_set_style_pad_all(slider, px(6), LV_PART_KNOB);
+  lv_obj_set_style_radius(slider, LV_RADIUS_CIRCLE, LV_PART_MAIN);
+  lv_obj_set_style_radius(slider, LV_RADIUS_CIRCLE, LV_PART_INDICATOR);
+  lv_obj_set_style_radius(slider, LV_RADIUS_CIRCLE, LV_PART_KNOB);
+  lv_obj_set_style_shadow_width(slider, 0, LV_PART_KNOB);
+}
+
+void style_switch(lv_obj_t *sw) {
+  lv_obj_set_size(sw, px(46), px(26));
+  lv_obj_set_style_bg_color(sw, lv_color_hex(COLOR_SECONDARY), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(sw, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_border_width(sw, 1, LV_PART_MAIN);
+  lv_obj_set_style_border_color(sw, lv_color_hex(COLOR_WHITE), LV_PART_MAIN);
+  lv_obj_set_style_border_opa(sw, LV_OPA_10, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(sw, lv_color_hex(COLOR_SECONDARY), LV_PART_INDICATOR);
+  lv_obj_set_style_bg_opa(sw, LV_OPA_COVER, LV_PART_INDICATOR);
+  lv_obj_set_style_bg_color(sw, lv_color_hex(COLOR_ACCENT), LV_PART_INDICATOR | LV_STATE_CHECKED);
+  lv_obj_set_style_bg_color(sw, lv_color_hex(COLOR_FG), LV_PART_KNOB);
+  lv_obj_set_style_bg_opa(sw, LV_OPA_COVER, LV_PART_KNOB);
+  lv_obj_set_style_bg_color(sw, lv_color_hex(COLOR_ACCENT_DARK), LV_PART_KNOB | LV_STATE_CHECKED);
+  lv_obj_set_style_pad_all(sw, px(-3), LV_PART_KNOB);
+  lv_obj_set_style_shadow_width(sw, 0, LV_PART_KNOB);
+  lv_obj_set_style_outline_width(sw, 0, LV_PART_MAIN);
+}
+
+lv_obj_t *action_button(lv_obj_t *parent, const lv_img_dsc_t *icon_src, const char *text, ActionKind kind,
+                        int x, int y, int w, int h, lv_event_cb_t cb, void *user_data) {
+  lv_obj_t *btn = lv_btn_create(parent);
+  lv_obj_set_pos(btn, px(x), px(y));
+  lv_obj_set_size(btn, px(w), px(h));
+  lv_obj_clear_flag(btn, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_flex_flow(btn, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(btn, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_style_pad_all(btn, 0, 0);
+  lv_obj_set_style_pad_column(btn, px(8), 0);
+  lv_obj_set_style_shadow_width(btn, 0, 0);
+  lv_obj_set_style_radius(btn, px(10), 0);
+  lv_obj_set_style_border_width(btn, 1, 0);
+  lv_obj_set_style_bg_opa(btn, LV_OPA_COVER, 0);
+
+  lv_color_t main = lv_color_hex(COLOR_FG);
+  if (kind == ActionKind::Primary) {
+    main = lv_color_hex(COLOR_ACCENT_DARK);
+    lv_obj_set_style_bg_color(btn, lv_color_hex(COLOR_ACCENT), 0);
+    lv_obj_set_style_bg_color(btn, lv_color_hex(COLOR_ACCENT_PRESSED), LV_STATE_PRESSED);
+    lv_obj_set_style_border_width(btn, 0, 0);
+  } else {
+    if (kind == ActionKind::Destructive) {
+      main = lv_color_hex(COLOR_DESTRUCTIVE);
+      lv_obj_set_style_border_color(btn, main, 0);
+      lv_obj_set_style_border_opa(btn, LV_OPA_40, 0);
+    } else {
+      lv_obj_set_style_border_color(btn, lv_color_hex(COLOR_WHITE), 0);
+      lv_obj_set_style_border_opa(btn, LV_OPA_10, 0);
+    }
+    lv_obj_set_style_bg_color(btn, lv_color_hex(COLOR_CARD), 0);
+    lv_obj_set_style_bg_color(btn, lv_color_hex(COLOR_SECONDARY), LV_STATE_PRESSED);
+  }
+  lv_obj_set_style_opa(btn, LV_OPA_50, LV_STATE_DISABLED);
+
+  if (icon_src != NULL) {
+    lv_obj_t *ic = icon(btn, icon_src, 20, main);
+    lv_obj_clear_flag(ic, LV_OBJ_FLAG_CLICKABLE);
+  }
+  lv_obj_t *l = label(btn, text, &lv_font_montserrat_16, main);
+  lv_obj_clear_flag(l, LV_OBJ_FLAG_CLICKABLE);
+  if (cb != NULL) {
+    lv_obj_add_event_cb(btn, cb, LV_EVENT_CLICKED, user_data);
+  }
+  return btn;
+}
+
+void style_overlay_root(lv_obj_t *cont) {
+  lv_obj_set_style_pad_all(cont, 0, 0);
+  lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_size(cont, LV_PCT(100), LV_PCT(100));
+  lv_obj_set_style_bg_color(cont, lv_color_hex(COLOR_BG), 0);
+  lv_obj_set_style_bg_opa(cont, LV_OPA_COVER, 0);
+  lv_obj_set_style_border_width(cont, 0, 0);
+  lv_obj_set_style_radius(cont, 0, 0);
+}
+
 } // namespace powerui

@@ -6,6 +6,8 @@
 #include "lvgl/lvgl.h"
 
 #include <mutex>
+#include <string>
+#include <vector>
 
 class BeltsCalibrationPanel {
  public:
@@ -44,12 +46,16 @@ class BeltsCalibrationPanel {
   lv_obj_t *excite_slider;
   lv_obj_t *excite_label;
   lv_obj_t *excite_dd;
-  lv_obj_t *button_cont;
-  ButtonContainer calibrate_btn;
-  ButtonContainer excite_btn;
-  ButtonContainer emergency_btn;
-  ButtonContainer back_btn;
+  lv_obj_t *graph_hint;     // placeholder while there is no graph
+  lv_obj_t *calibrate_btn;
+  lv_obj_t *excite_btn;
+  lv_obj_t *stop_btn;
+  ButtonContainer emergency_btn;  // hidden: keeps the "Do you want to emergency stop?" confirmation
+  ButtonContainer back_btn;       // hidden: Back lives in the title bar
   bool image_fullsized;
+
+  void fit_graph();
+  void emergency_stop();
 
   static std::vector<std::string> axes;
 
