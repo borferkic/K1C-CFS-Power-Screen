@@ -58,7 +58,7 @@ FanControl::FanControl(lv_obj_t *parent, const char *name, int y, int height, lv
     lv_obj_set_style_bg_opa(button, primary ? LV_OPA_20 : LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_set_style_bg_color(button, lv_color_hex(COLOR_SECONDARY), LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
-    lv_obj_set_style_border_color(button, primary ? accent : lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_border_color(button, primary ? accent : lv_color_hex(COLOR_WHITE), LV_PART_MAIN);
     lv_obj_set_style_border_opa(button, primary ? LV_OPA_50 : LV_OPA_10, LV_PART_MAIN);
     lv_obj_t *text_label = label(button, text, &lv_font_montserrat_16, primary ? accent : lv_color_hex(COLOR_FG));
     lv_obj_center(text_label);

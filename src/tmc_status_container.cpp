@@ -1,4 +1,5 @@
 #include "tmc_status_container.h"
+#include "powerui.h"
 #include "spdlog/spdlog.h"
 
 TmcStatusContainer::TmcStatusContainer(KWebSocketClient &c,
@@ -10,10 +11,10 @@ TmcStatusContainer::TmcStatusContainer(KWebSocketClient &c,
   , label(lv_label_create(chart_cont))
   , legend(lv_obj_create(chart_cont))
   , chart(lv_chart_create(chart_cont))
-  , sg_series(lv_chart_add_series(chart, lv_palette_main(LV_PALETTE_ORANGE), LV_CHART_AXIS_PRIMARY_Y))
-  , irms_series(lv_chart_add_series(chart, lv_palette_main(LV_PALETTE_RED), LV_CHART_AXIS_PRIMARY_Y))
-  , semin_series(lv_chart_add_series(chart, lv_palette_main(LV_PALETTE_BLUE), LV_CHART_AXIS_PRIMARY_Y))
-  , semax_series(lv_chart_add_series(chart, lv_palette_main(LV_PALETTE_GREEN), LV_CHART_AXIS_PRIMARY_Y))
+  , sg_series(lv_chart_add_series(chart, lv_color_hex(powerui::COLOR_MAT_ORANGE), LV_CHART_AXIS_PRIMARY_Y))
+  , irms_series(lv_chart_add_series(chart, lv_color_hex(powerui::COLOR_MAT_RED), LV_CHART_AXIS_PRIMARY_Y))
+  , semin_series(lv_chart_add_series(chart, lv_color_hex(powerui::COLOR_MAT_BLUE), LV_CHART_AXIS_PRIMARY_Y))
+  , semax_series(lv_chart_add_series(chart, lv_color_hex(powerui::COLOR_MAT_GREEN), LV_CHART_AXIS_PRIMARY_Y))
   , stepper_config(lv_obj_create(cont))
 
   , semin_sb(stepper_config, "semin", 0, 15, 0,
@@ -82,19 +83,19 @@ TmcStatusContainer::TmcStatusContainer(KWebSocketClient &c,
   
   lv_obj_t *axis_label = lv_label_create(legend);
   lv_label_set_text(axis_label, "sg_result");
-  lv_obj_set_style_text_color(axis_label, lv_palette_main(LV_PALETTE_ORANGE), 0);
+  lv_obj_set_style_text_color(axis_label, lv_color_hex(powerui::COLOR_MAT_ORANGE), 0);
 
   axis_label = lv_label_create(legend);
   lv_label_set_text(axis_label, "i_rms (mA)");
-  lv_obj_set_style_text_color(axis_label, lv_palette_main(LV_PALETTE_RED), 0);  
+  lv_obj_set_style_text_color(axis_label, lv_color_hex(powerui::COLOR_MAT_RED), 0);  
 
   axis_label = lv_label_create(legend);
   lv_label_set_text(axis_label, "semin * 32");
-  lv_obj_set_style_text_color(axis_label, lv_palette_main(LV_PALETTE_BLUE), 0);  
+  lv_obj_set_style_text_color(axis_label, lv_color_hex(powerui::COLOR_MAT_BLUE), 0);  
 
   axis_label = lv_label_create(legend);
   lv_label_set_text(axis_label, "(semin + semax + 1) * 32");
-  lv_obj_set_style_text_color(axis_label, lv_palette_main(LV_PALETTE_GREEN), 0);
+  lv_obj_set_style_text_color(axis_label, lv_color_hex(powerui::COLOR_MAT_GREEN), 0);
   
   lv_obj_set_style_size(chart, 0, LV_PART_INDICATOR);
 

@@ -65,7 +65,7 @@ lv_obj_t *card(lv_obj_t *parent, int x, int y, int w, int h) {
   lv_obj_set_style_bg_opa(o, LV_OPA_COVER, 0);
   lv_obj_set_style_radius(o, px(14), 0);
   lv_obj_set_style_border_width(o, 1, 0);
-  lv_obj_set_style_border_color(o, lv_color_white(), 0);
+  lv_obj_set_style_border_color(o, lv_color_hex(COLOR_WHITE), 0);
   lv_obj_set_style_border_opa(o, LV_OPA_10, 0);
   return o;
 }
@@ -105,7 +105,7 @@ lv_obj_t *badge(lv_obj_t *parent, const char *text, lv_color_t dot_color) {
   lv_obj_set_size(b, LV_SIZE_CONTENT, px(24));
   lv_obj_set_style_radius(b, LV_RADIUS_CIRCLE, 0);
   lv_obj_set_style_border_width(b, 1, 0);
-  lv_obj_set_style_border_color(b, lv_color_white(), 0);
+  lv_obj_set_style_border_color(b, lv_color_hex(COLOR_WHITE), 0);
   lv_obj_set_style_border_opa(b, LV_OPA_10, 0);
   lv_obj_set_style_pad_left(b, px(10), 0);
   lv_obj_set_style_pad_right(b, px(10), 0);
@@ -135,7 +135,7 @@ lv_obj_t *view_toggle(lv_obj_t *parent, lv_event_cb_t cb, void *user_data) {
   lv_obj_set_style_bg_color(t, lv_color_hex(COLOR_SECONDARY), 0);
   lv_obj_set_style_bg_opa(t, LV_OPA_COVER, 0);
   lv_obj_set_style_border_width(t, 1, 0);
-  lv_obj_set_style_border_color(t, lv_color_white(), 0);
+  lv_obj_set_style_border_color(t, lv_color_hex(COLOR_WHITE), 0);
   lv_obj_set_style_border_opa(t, LV_OPA_10, 0);
 
   const lv_img_dsc_t *icons[2] = {&print, &chart_img};
@@ -168,7 +168,7 @@ void view_toggle_set(lv_obj_t *t, bool print_view) {
 
 void style_button(lv_obj_t *container, lv_obj_t *inner, ButtonKind kind) {
   lv_color_t main = lv_color_hex(COLOR_FG);
-  lv_color_t border = lv_color_white();
+  lv_color_t border = lv_color_hex(COLOR_WHITE);
   lv_opa_t border_opa = LV_OPA_10;
   lv_color_t bg = lv_color_hex(COLOR_CARD);
   lv_opa_t bg_opa = LV_OPA_COVER;
@@ -229,7 +229,73 @@ void style_segmented(lv_obj_t *btnm) {
   lv_obj_set_style_border_color(btnm, lv_color_hex(COLOR_ACCENT), LV_PART_ITEMS | LV_STATE_CHECKED);
   lv_obj_set_style_border_opa(btnm, LV_OPA_50, LV_PART_ITEMS | LV_STATE_CHECKED);
   lv_obj_set_style_text_color(btnm, lv_color_hex(COLOR_ACCENT), LV_PART_ITEMS | LV_STATE_CHECKED);
-  lv_obj_set_style_bg_color(btnm, lv_color_hex(0x333333), LV_PART_ITEMS | LV_STATE_PRESSED);
+  lv_obj_set_style_bg_color(btnm, lv_color_hex(COLOR_PRESSED), LV_PART_ITEMS | LV_STATE_PRESSED);
+}
+
+lv_obj_t *empty_state(lv_obj_t *parent, const lv_img_dsc_t *icon_src, const char *title, const char *description) {
+  lv_obj_t *box = plain(parent);
+  lv_obj_set_width(box, LV_PCT(100));
+  lv_obj_set_height(box, LV_SIZE_CONTENT);
+  lv_obj_set_flex_flow(box, LV_FLEX_FLOW_COLUMN);
+  lv_obj_set_flex_align(box, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_style_pad_top(box, px(48), 0);
+  lv_obj_set_style_pad_row(box, px(8), 0);
+
+  lv_obj_t *tile = plain(box);
+  lv_obj_set_size(tile, px(56), px(56));
+  lv_obj_set_style_radius(tile, px(12), 0);
+  lv_obj_set_style_bg_color(tile, lv_color_hex(COLOR_SECONDARY), 0);
+  lv_obj_set_style_bg_opa(tile, LV_OPA_COVER, 0);
+  lv_obj_t *glyph = icon(tile, icon_src, 32, lv_color_hex(COLOR_MUTED));
+  lv_obj_center(glyph);
+
+  lv_obj_t *title_label = label(box, title, &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
+  lv_obj_set_style_text_align(title_label, LV_TEXT_ALIGN_CENTER, 0);
+  lv_obj_t *description_label = label(box, description, &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
+  lv_label_set_long_mode(description_label, LV_LABEL_LONG_WRAP);
+  lv_obj_set_width(description_label, LV_PCT(80));
+  lv_obj_set_style_text_align(description_label, LV_TEXT_ALIGN_CENTER, 0);
+  return box;
+}
+
+void style_select(lv_obj_t *dropdown) {
+  lv_obj_set_style_bg_color(dropdown, lv_color_hex(COLOR_CARD), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(dropdown, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_border_width(dropdown, 1, LV_PART_MAIN);
+  lv_obj_set_style_border_color(dropdown, lv_color_hex(COLOR_WHITE), LV_PART_MAIN);
+  lv_obj_set_style_border_opa(dropdown, LV_OPA_10, LV_PART_MAIN);
+  lv_obj_set_style_radius(dropdown, px(10), LV_PART_MAIN);
+  lv_obj_set_style_shadow_width(dropdown, 0, LV_PART_MAIN);
+  lv_obj_set_style_pad_hor(dropdown, px(12), LV_PART_MAIN);
+  lv_obj_set_style_text_color(dropdown, lv_color_hex(COLOR_FG), LV_PART_MAIN);
+  lv_obj_set_style_text_font(dropdown, &lv_font_montserrat_14, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(dropdown, lv_color_hex(COLOR_SECONDARY), LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_set_style_border_color(dropdown, lv_color_hex(COLOR_ACCENT), LV_PART_MAIN | LV_STATE_FOCUSED);
+  lv_obj_set_style_border_opa(dropdown, LV_OPA_50, LV_PART_MAIN | LV_STATE_FOCUSED);
+  lv_obj_set_style_outline_width(dropdown, 0, LV_PART_MAIN);
+  lv_obj_set_style_text_color(dropdown, lv_color_hex(COLOR_MUTED), LV_PART_INDICATOR);
+
+  // Open list.
+  lv_obj_t *list = lv_dropdown_get_list(dropdown);
+  if (list != NULL) {
+    lv_obj_set_style_bg_color(list, lv_color_hex(COLOR_CARD), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(list, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_border_width(list, 1, LV_PART_MAIN);
+    lv_obj_set_style_border_color(list, lv_color_hex(COLOR_WHITE), LV_PART_MAIN);
+    lv_obj_set_style_border_opa(list, LV_OPA_20, LV_PART_MAIN);
+    lv_obj_set_style_radius(list, px(10), LV_PART_MAIN);
+    lv_obj_set_style_shadow_width(list, 0, LV_PART_MAIN);
+    lv_obj_set_style_text_color(list, lv_color_hex(COLOR_FG), LV_PART_MAIN);
+    lv_obj_set_style_text_font(list, &lv_font_montserrat_14, LV_PART_MAIN);
+    lv_obj_set_style_pad_ver(list, px(6), LV_PART_MAIN);
+    lv_obj_set_style_text_line_space(list, px(14), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(list, LV_OPA_TRANSP, LV_PART_SELECTED);
+    lv_obj_set_style_bg_color(list, lv_color_hex(COLOR_ACCENT), LV_PART_SELECTED | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_opa(list, LV_OPA_20, LV_PART_SELECTED | LV_STATE_CHECKED);
+    lv_obj_set_style_text_color(list, lv_color_hex(COLOR_ACCENT), LV_PART_SELECTED | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_color(list, lv_color_hex(COLOR_SECONDARY), LV_PART_SELECTED | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_opa(list, LV_OPA_COVER, LV_PART_SELECTED | LV_STATE_PRESSED);
+  }
 }
 
 } // namespace powerui

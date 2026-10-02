@@ -79,7 +79,6 @@ void Config::init(std::string config_path, const std::string thumbdir) {
         {"thumbnail_path", thumbdir},
         {"wpa_supplicant", "/var/run/wpa_supplicant"},
 #endif
-        {"theme", "green"},
         {"display_sleep_sec", -1}
 #ifndef OS_ANDROID
         , {"default_printer", "k1"},
@@ -175,10 +174,8 @@ void Config::init(std::string config_path, const std::string thumbdir) {
     data["/display_sleep_sec"_json_pointer] = -1;
   }
 
-  auto &theme = data["/theme"_json_pointer];
-  if (theme.is_null()) {
-    data["/theme"_json_pointer] = "green";
-  }
+  // The selectable themes were removed: PowerUI has fixed colors.
+  data.erase("theme");
   
   std::ofstream o(config_path);
   o << std::setw(2) << data << std::endl;

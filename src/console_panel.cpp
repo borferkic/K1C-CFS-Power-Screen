@@ -1,4 +1,5 @@
 #include "console_panel.h"
+#include "powerui.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
 
@@ -68,14 +69,14 @@ ConsolePanel::ConsolePanel(KWebSocketClient &websocket_client, std::mutex &lock,
   lv_obj_add_event_cb(label, &ConsolePanel::_handle_clear_input, LV_EVENT_CLICKED, this);
 
   // ---- PowerUI console (reference 11-consola): one card with a colored log, a row of shortcuts and the input.
-  const lv_color_t bg = lv_color_hex(0x0A0A0A);
-  const lv_color_t card_bg = lv_color_hex(0x171717);
-  const lv_color_t fg = lv_color_hex(0xFAFAFA);
-  const lv_color_t muted = lv_color_hex(0xA1A1A1);
-  const lv_color_t accent = lv_color_hex(0x4ADE80);
+  const lv_color_t bg = lv_color_hex(powerui::COLOR_BG);
+  const lv_color_t card_bg = lv_color_hex(powerui::COLOR_CARD);
+  const lv_color_t fg = lv_color_hex(powerui::COLOR_FG);
+  const lv_color_t muted = lv_color_hex(powerui::COLOR_MUTED);
+  const lv_color_t accent = lv_color_hex(powerui::COLOR_ACCENT);
   auto border = [](lv_obj_t *obj, lv_part_t part) {
     lv_obj_set_style_border_width(obj, 1, part);
-    lv_obj_set_style_border_color(obj, lv_color_white(), part);
+    lv_obj_set_style_border_color(obj, lv_color_hex(powerui::COLOR_WHITE), part);
     lv_obj_set_style_border_opa(obj, LV_OPA_10, part);
   };
 
@@ -127,7 +128,7 @@ ConsolePanel::ConsolePanel(KWebSocketClient &websocket_client, std::mutex &lock,
   lv_obj_add_flag(clear_btn, LV_OBJ_FLAG_FLOATING);
   lv_obj_set_size(clear_btn, 88, 32);
   lv_obj_align(clear_btn, LV_ALIGN_TOP_RIGHT, 0, 0);
-  lv_obj_set_style_bg_color(clear_btn, lv_color_hex(0x262626), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(clear_btn, lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(clear_btn, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_radius(clear_btn, 8, LV_PART_MAIN);
   lv_obj_set_style_shadow_width(clear_btn, 0, LV_PART_MAIN);
@@ -171,17 +172,17 @@ ConsolePanel::ConsolePanel(KWebSocketClient &websocket_client, std::mutex &lock,
   lv_obj_set_style_text_color(input, muted, LV_PART_TEXTAREA_PLACEHOLDER);
 
   lv_obj_set_size(send_btn, 110, 44);
-  lv_obj_set_style_bg_color(send_btn, lv_color_hex(0x16A34A), LV_PART_MAIN);
-  lv_obj_set_style_bg_color(send_btn, lv_color_hex(0x15803D), LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_set_style_bg_color(send_btn, lv_color_hex(powerui::COLOR_PRIMARY), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(send_btn, lv_color_hex(powerui::COLOR_PRIMARY_PRESSED), LV_PART_MAIN | LV_STATE_PRESSED);
   lv_obj_set_style_bg_opa(send_btn, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_radius(send_btn, 10, LV_PART_MAIN);
   lv_obj_set_style_shadow_width(send_btn, 0, LV_PART_MAIN);
   lv_label_set_text(send_btn_label, LV_SYMBOL_OK "  Send");
-  lv_obj_set_style_text_color(send_btn_label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_color(send_btn_label, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
 
   lv_obj_set_parent(kb, console_cont);
   lv_obj_set_style_bg_color(kb, card_bg, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(kb, lv_color_hex(0x262626), LV_PART_ITEMS);
+  lv_obj_set_style_bg_color(kb, lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_ITEMS);
   lv_obj_set_style_text_color(kb, fg, LV_PART_ITEMS);
   lv_obj_set_style_radius(kb, 8, LV_PART_ITEMS);
   lv_obj_set_style_border_width(kb, 0, LV_PART_ITEMS);
@@ -304,8 +305,8 @@ void ConsolePanel::refresh_chips(const std::string &prefix) {
     lv_obj_t *chip = lv_btn_create(chips_row);
     lv_obj_set_height(chip, 36);
     lv_obj_set_width(chip, LV_SIZE_CONTENT);
-    lv_obj_set_style_bg_color(chip, lv_color_hex(0x262626), LV_PART_MAIN);
-    lv_obj_set_style_bg_color(chip, lv_color_hex(0x333333), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(chip, lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(chip, lv_color_hex(powerui::COLOR_PRESSED), LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_bg_opa(chip, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_set_style_radius(chip, 8, LV_PART_MAIN);
     lv_obj_set_style_shadow_width(chip, 0, LV_PART_MAIN);
@@ -313,7 +314,7 @@ void ConsolePanel::refresh_chips(const std::string &prefix) {
     lv_obj_t *chip_label = lv_label_create(chip);
     lv_label_set_text(chip_label, text.c_str());
     lv_obj_set_style_text_font(chip_label, &dejavusans_mono_14, LV_PART_MAIN);
-    lv_obj_set_style_text_color(chip_label, lv_color_hex(0xFAFAFA), LV_PART_MAIN);
+    lv_obj_set_style_text_color(chip_label, lv_color_hex(powerui::COLOR_FG), LV_PART_MAIN);
     lv_obj_center(chip_label);
     lv_obj_add_event_cb(chip, &ConsolePanel::_handle_chip, LV_EVENT_CLICKED, this);
     ++count;

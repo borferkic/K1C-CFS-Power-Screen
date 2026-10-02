@@ -43,13 +43,13 @@ PromptPanel::PromptPanel(KWebSocketClient &websocket_client, std::mutex &lock, l
     lv_obj_center(prompt_cont);
     lv_obj_set_style_pad_all(prompt_cont, 16, 0);
     lv_obj_set_style_radius(prompt_cont, 14, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(prompt_cont, lv_color_hex(0x171717), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(prompt_cont, lv_color_hex(powerui::COLOR_CARD), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(prompt_cont, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_set_style_border_width(prompt_cont, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_color(prompt_cont, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(prompt_cont, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_opa(prompt_cont, LV_OPA_30, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(prompt_cont, 0, LV_PART_MAIN);
-    lv_obj_set_style_text_color(prompt_cont, lv_color_hex(0xFAFAFA), LV_PART_MAIN);
+    lv_obj_set_style_text_color(prompt_cont, lv_color_hex(powerui::COLOR_FG), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(flex, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_set_style_border_width(flex, 0, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(footer_cont, LV_OPA_TRANSP, LV_PART_MAIN);
@@ -112,11 +112,11 @@ PromptPanel::PromptPanel(KWebSocketClient &websocket_client, std::mutex &lock, l
 #ifdef DEBUG_LINES
     // for debugging
     lv_obj_set_style_border_width(header, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_color(header, lv_palette_main(LV_PALETTE_RED), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(header, lv_color_hex(powerui::COLOR_MAT_RED), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_width(flex, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_color(flex, lv_palette_main(LV_PALETTE_YELLOW), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(flex, lv_color_hex(powerui::COLOR_MAT_YELLOW), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_width(footer_cont, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_color(footer_cont, lv_palette_main(LV_PALETTE_BLUE), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(footer_cont, lv_color_hex(powerui::COLOR_MAT_BLUE), LV_PART_MAIN | LV_STATE_DEFAULT);
 #endif
 
     ws.register_notify_update(this);
@@ -127,28 +127,28 @@ PromptPanel::PromptPanel(KWebSocketClient &websocket_client, std::mutex &lock, l
 
     // button styles
     lv_style_init(&style_btn_grey);
-    lv_style_set_bg_color(&style_btn_grey, lv_palette_main(LV_PALETTE_GREY));
+    lv_style_set_bg_color(&style_btn_grey, lv_color_hex(powerui::COLOR_MAT_GREY));
     lv_style_set_bg_opa(&style_btn_grey, LV_OPA_COVER);
     lv_style_set_pad_all(&style_btn_grey, 0);
 
     lv_style_init(&style_btn_blue);
-    lv_style_set_bg_color(&style_btn_blue, lv_palette_main(LV_PALETTE_BLUE));
+    lv_style_set_bg_color(&style_btn_blue, lv_color_hex(powerui::COLOR_MAT_BLUE));
     lv_style_set_bg_opa(&style_btn_blue, LV_OPA_COVER);
 
     lv_style_init(&style_btn_green);
-    lv_style_set_bg_color(&style_btn_green, lv_palette_main(LV_PALETTE_GREEN));
+    lv_style_set_bg_color(&style_btn_green, lv_color_hex(powerui::COLOR_MAT_GREEN));
     lv_style_set_bg_opa(&style_btn_green, LV_OPA_COVER);
 
     lv_style_init(&style_btn_red);
-    lv_style_set_bg_color(&style_btn_red, lv_palette_main(LV_PALETTE_RED));
+    lv_style_set_bg_color(&style_btn_red, lv_color_hex(powerui::COLOR_MAT_RED));
     lv_style_set_bg_opa(&style_btn_red, LV_OPA_COVER);
 
     lv_style_init(&style_btn_orange);
-    lv_style_set_bg_color(&style_btn_orange, lv_palette_main(LV_PALETTE_ORANGE));
+    lv_style_set_bg_color(&style_btn_orange, lv_color_hex(powerui::COLOR_MAT_ORANGE));
     lv_style_set_bg_opa(&style_btn_orange, LV_OPA_COVER);
 
     lv_style_init(&style_btn_dark_grey);
-    lv_style_set_bg_color(&style_btn_dark_grey, lv_palette_darken(LV_PALETTE_GREY, 1));
+    lv_style_set_bg_color(&style_btn_dark_grey, lv_color_hex(powerui::COLOR_MAT_GREY_DARK));
     lv_style_set_bg_opa(&style_btn_dark_grey, LV_OPA_COVER);
     
     background(); // hide ourselves
@@ -353,12 +353,12 @@ void PromptPanel::handle_macro_response(json &j) {
                 lv_obj_set_flex_grow(textfield, 1);
                 lv_obj_set_style_outline_pad(textfield, 0, 0);
                 lv_label_set_text(textfield, prompt_text.c_str());
-                lv_obj_set_style_text_color(textfield, lv_color_hex(0xFAFAFA), LV_PART_MAIN);
+                lv_obj_set_style_text_color(textfield, lv_color_hex(powerui::COLOR_FG), LV_PART_MAIN);
                 lv_obj_center(textfield);
 #ifdef DEBUG_LINES
                 lv_obj_set_style_border_width(textfield, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-                lv_obj_set_style_border_color(textfield, lv_palette_main(LV_PALETTE_GREEN), LV_PART_MAIN | LV_STATE_DEFAULT);
-                lv_obj_set_style_bg_color(textfield, lv_palette_lighten(LV_PALETTE_GREEN, 2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                lv_obj_set_style_border_color(textfield, lv_color_hex(powerui::COLOR_MAT_GREEN), LV_PART_MAIN | LV_STATE_DEFAULT);
+                lv_obj_set_style_bg_color(textfield, lv_color_hex(powerui::COLOR_MAT_GREEN_LIGHT), LV_PART_MAIN | LV_STATE_DEFAULT);
 #endif
             // due to using find, order IS important!  
             } else if (command.find("prompt_button_group_start") == 0) {
@@ -378,8 +378,8 @@ void PromptPanel::handle_macro_response(json &j) {
 
 #ifdef DEBUG_LINES
                 lv_obj_set_style_border_width(button_group_cont, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-                lv_obj_set_style_border_color(button_group_cont, lv_palette_main(LV_PALETTE_PINK), LV_PART_MAIN | LV_STATE_DEFAULT);
-                lv_obj_set_style_bg_color(button_group_cont, lv_palette_lighten(LV_PALETTE_PINK, 2), LV_PART_MAIN | LV_STATE_DEFAULT);
+                lv_obj_set_style_border_color(button_group_cont, lv_color_hex(powerui::COLOR_MAT_PINK), LV_PART_MAIN | LV_STATE_DEFAULT);
+                lv_obj_set_style_bg_color(button_group_cont, lv_color_hex(powerui::COLOR_MAT_PINK_LIGHT), LV_PART_MAIN | LV_STATE_DEFAULT);
 #endif
                 // lv_obj_set_style_min_height(button_group_cont, lv_pct(5), 0);
             } else if (command.find("prompt_button_group_end") == 0) {
@@ -494,19 +494,19 @@ void PromptPanel::handle_macro_response(json &j) {
 
                     {
                         // PowerUI kinds: success is the filled green action, error the destructive one, the rest are outlined.
-                        lv_color_t main_color = lv_color_hex(0xFAFAFA);
-                        lv_color_t bg = lv_color_hex(0x171717);
+                        lv_color_t main_color = lv_color_hex(powerui::COLOR_FG);
+                        lv_color_t bg = lv_color_hex(powerui::COLOR_CARD);
                         lv_opa_t border_opa = LV_OPA_10;
-                        lv_color_t border = lv_color_white();
-                        lv_color_t pressed = lv_color_hex(0x262626);
+                        lv_color_t border = lv_color_hex(powerui::COLOR_WHITE);
+                        lv_color_t pressed = lv_color_hex(powerui::COLOR_SECONDARY);
                         int border_width = 1;
                         if (!prompt_button_type.compare("success")) {
-                            main_color = lv_color_white();
-                            bg = lv_color_hex(0x16A34A);
-                            pressed = lv_color_hex(0x15803D);
+                            main_color = lv_color_hex(powerui::COLOR_WHITE);
+                            bg = lv_color_hex(powerui::COLOR_PRIMARY);
+                            pressed = lv_color_hex(powerui::COLOR_PRIMARY_PRESSED);
                             border_width = 0;
                         } else if (!prompt_button_type.compare("error")) {
-                            main_color = lv_color_hex(0xFF6467);
+                            main_color = lv_color_hex(powerui::COLOR_DESTRUCTIVE);
                             border = main_color;
                             border_opa = LV_OPA_40;
                         }
@@ -521,11 +521,11 @@ void PromptPanel::handle_macro_response(json &j) {
                         lv_obj_set_style_text_color(btn, main_color, LV_PART_MAIN);
                         lv_obj_set_style_text_font(label, &lv_font_montserrat_16, LV_PART_MAIN);
                         if (manual_filament_prompt && prompt_footer_button == "CLOSE") {
-                            lv_obj_set_style_bg_color(btn, lv_color_hex(0x16A34A), LV_PART_MAIN | LV_STATE_DEFAULT);
-                            lv_obj_set_style_bg_color(btn, lv_color_hex(0x15803D), LV_PART_MAIN | LV_STATE_PRESSED);
+                            lv_obj_set_style_bg_color(btn, lv_color_hex(powerui::COLOR_PRIMARY), LV_PART_MAIN | LV_STATE_DEFAULT);
+                            lv_obj_set_style_bg_color(btn, lv_color_hex(powerui::COLOR_PRIMARY_PRESSED), LV_PART_MAIN | LV_STATE_PRESSED);
                             lv_obj_set_style_border_width(btn, 0, LV_PART_MAIN);
                             lv_obj_set_style_radius(btn, powerui::px(8), LV_PART_MAIN);
-                            lv_obj_set_style_text_color(btn, lv_color_white(), LV_PART_MAIN);
+                            lv_obj_set_style_text_color(btn, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
                             lv_label_set_text(label, LV_SYMBOL_CLOSE "  Close");
                         }
                         if (button_icon != NULL) {

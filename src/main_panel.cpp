@@ -101,7 +101,7 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
     lv_obj_set_style_bg_opa(title_bar, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_set_style_border_width(title_bar, 1, LV_PART_MAIN);
     lv_obj_set_style_border_side(title_bar, LV_BORDER_SIDE_BOTTOM, LV_PART_MAIN);
-    lv_obj_set_style_border_color(title_bar, lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_border_color(title_bar, lv_color_hex(COLOR_WHITE), LV_PART_MAIN);
     lv_obj_set_style_border_opa(title_bar, LV_OPA_10, LV_PART_MAIN);
 
     lv_img_set_src(logo, &ui_logo);
@@ -123,13 +123,13 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
     lv_obj_set_size(back_pill, px(96), px(32));
     lv_obj_align(back_pill, LV_ALIGN_LEFT_MID, px(8), 0);
     lv_obj_set_style_radius(back_pill, px(8), LV_PART_MAIN);
-    lv_obj_set_style_bg_color(back_pill, lv_color_hex(0x16A34A), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(back_pill, lv_color_hex(powerui::COLOR_PRIMARY), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(back_pill, LV_OPA_COVER, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(back_pill, lv_color_hex(0x15803D), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(back_pill, lv_color_hex(powerui::COLOR_PRIMARY_PRESSED), LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_border_width(back_pill, 0, LV_PART_MAIN);
-    lv_obj_set_style_border_color(back_pill, lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_border_color(back_pill, lv_color_hex(COLOR_WHITE), LV_PART_MAIN);
     lv_obj_set_style_border_opa(back_pill, LV_OPA_10, LV_PART_MAIN);
-    lv_obj_t *back_text = label(back_pill, LV_SYMBOL_LEFT "  Back", &lv_font_montserrat_16, lv_color_white());
+    lv_obj_t *back_text = label(back_pill, LV_SYMBOL_LEFT "  Back", &lv_font_montserrat_16, lv_color_hex(COLOR_WHITE));
     lv_obj_center(back_text);
     lv_obj_add_event_cb(back_pill, &MainPanel::_handle_back_click_cb, LV_EVENT_CLICKED, this);
     lv_obj_add_flag(back_pill, LV_OBJ_FLAG_HIDDEN);
@@ -139,8 +139,8 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
     });
 
     lv_obj_set_width(time_label, LV_SIZE_CONTENT);
-    lv_obj_set_style_text_color(time_label, lv_color_hex(COLOR_MUTED), LV_PART_MAIN);
-    lv_obj_set_style_text_font(time_label, &lv_font_montserrat_14, LV_PART_MAIN);
+    lv_obj_set_style_text_color(time_label, lv_color_hex(COLOR_FG), LV_PART_MAIN);
+    lv_obj_set_style_text_font(time_label, &lv_font_montserrat_20, LV_PART_MAIN);
     lv_obj_align(time_label, LV_ALIGN_RIGHT_MID, -px(16), 0);
     update_clock();
     clock_timer = lv_timer_create(&MainPanel::_update_clock_cb, 1000, this);
@@ -385,7 +385,7 @@ void MainPanel::create_panel() {
   lv_obj_t *edge = plain(tab_btns);
   lv_obj_set_size(edge, 1, tab_btns_height);
   lv_obj_set_pos(edge, tab_btns_width - 1, 0);
-  lv_obj_set_style_bg_color(edge, lv_color_white(), 0);
+  lv_obj_set_style_bg_color(edge, lv_color_hex(COLOR_WHITE), 0);
   lv_obj_set_style_bg_opa(edge, LV_OPA_10, 0);
 
   nav_highlight = plain(tab_btns);
@@ -512,7 +512,7 @@ MainPanel::QuickButton MainPanel::create_quick_button(lv_obj_t *parent, int x, i
   lv_obj_set_style_bg_opa(button.btn, LV_OPA_COVER, 0);
   lv_obj_set_style_bg_color(button.btn, lv_color_hex(COLOR_SECONDARY), LV_STATE_PRESSED);
   lv_obj_set_style_border_width(button.btn, 1, 0);
-  lv_obj_set_style_border_color(button.btn, lv_color_white(), 0);
+  lv_obj_set_style_border_color(button.btn, lv_color_hex(COLOR_WHITE), 0);
   lv_obj_set_style_border_opa(button.btn, LV_OPA_10, 0);
   lv_obj_set_flex_flow(button.btn, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_align(button.btn, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
@@ -529,7 +529,7 @@ void MainPanel::set_quick_active(QuickButton &button, bool active, const char *t
     return;
   }
   lv_obj_set_style_bg_color(button.btn, lv_color_hex(active ? COLOR_SECONDARY : COLOR_CARD), 0);
-  lv_obj_set_style_border_color(button.btn, active ? lv_color_hex(COLOR_ACCENT) : lv_color_white(), 0);
+  lv_obj_set_style_border_color(button.btn, active ? lv_color_hex(COLOR_ACCENT) : lv_color_hex(COLOR_WHITE), 0);
   lv_obj_set_style_border_opa(button.btn, active ? LV_OPA_40 : LV_OPA_10, 0);
   icon_set_color(button.icon, lv_color_hex(active ? COLOR_ACCENT : COLOR_FG));
   lv_label_set_text(button.label, text);
@@ -566,7 +566,7 @@ void MainPanel::create_chart_card(lv_obj_t *parent) {
   lv_obj_set_style_pad_right(temp_chart, px(4), LV_PART_MAIN);
   lv_obj_set_style_pad_top(temp_chart, px(8), LV_PART_MAIN);
   lv_obj_set_style_pad_bottom(temp_chart, px(8), LV_PART_MAIN);
-  lv_obj_set_style_line_color(temp_chart, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_line_color(temp_chart, lv_color_hex(COLOR_WHITE), LV_PART_MAIN);
   lv_obj_set_style_line_opa(temp_chart, LV_OPA_10, LV_PART_MAIN);
   lv_obj_set_style_line_width(temp_chart, 1, LV_PART_MAIN);
   lv_obj_set_style_line_width(temp_chart, 2, LV_PART_ITEMS);
@@ -746,7 +746,7 @@ void MainPanel::create_sensors(json &temp_sensors) {
     const int slot = slot_it->second;
     bool controllable = sensor.value()["controllable"].template get<bool>();
 
-    lv_color_t color_code = lv_palette_main(LV_PALETTE_ORANGE);
+    lv_color_t color_code = lv_color_hex(COLOR_MAT_ORANGE);
     const lv_img_dsc_t *sensor_img = &heater;
     std::string display_name = sensor.value()["display_name"].template get<std::string>();
     if (key == "extruder") {

@@ -108,7 +108,7 @@ WifiPanel::WifiPanel(std::mutex &l)
   refresh_btn = lv_btn_create(list_card);
   lv_obj_set_size(refresh_btn, px(36), px(36));
   lv_obj_align(refresh_btn, LV_ALIGN_TOP_RIGHT, -px(14), px(14));
-  style_action_button(refresh_btn, lv_color_hex(COLOR_SECONDARY), LV_OPA_COVER, lv_color_hex(0x333333), lv_color_white(), LV_OPA_TRANSP, 8);
+  style_action_button(refresh_btn, lv_color_hex(COLOR_SECONDARY), LV_OPA_COVER, lv_color_hex(COLOR_PRESSED), lv_color_hex(COLOR_WHITE), LV_OPA_TRANSP, 8);
   lv_obj_t *refresh_label = label(refresh_btn, LV_SYMBOL_REFRESH, &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
   lv_obj_center(refresh_label);
   lv_obj_add_event_cb(refresh_btn, &WifiPanel::_handle_action, LV_EVENT_CLICKED, this);
@@ -172,15 +172,15 @@ WifiPanel::WifiPanel(std::mutex &l)
   connect_btn = lv_btn_create(cont);
   lv_obj_set_size(connect_btn, px(280), px(56));
   lv_obj_set_pos(connect_btn, px(444), px(248));
-  style_action_button(connect_btn, lv_color_hex(0x16A34A), LV_OPA_COVER, lv_color_hex(0x15803D), lv_color_white(), LV_OPA_TRANSP, 10);
-  connect_label = label(connect_btn, "Connect to network", &lv_font_montserrat_16, lv_color_white());
+  style_action_button(connect_btn, lv_color_hex(powerui::COLOR_PRIMARY), LV_OPA_COVER, lv_color_hex(powerui::COLOR_PRIMARY_PRESSED), lv_color_hex(COLOR_WHITE), LV_OPA_TRANSP, 10);
+  connect_label = label(connect_btn, "Connect to network", &lv_font_montserrat_16, lv_color_hex(COLOR_WHITE));
   lv_obj_center(connect_label);
   lv_obj_add_event_cb(connect_btn, &WifiPanel::_handle_action, LV_EVENT_CLICKED, this);
 
   scan_btn = lv_btn_create(cont);
   lv_obj_set_size(scan_btn, px(280), px(56));
   lv_obj_set_pos(scan_btn, px(444), px(316));
-  style_action_button(scan_btn, lv_color_hex(COLOR_CARD), LV_OPA_COVER, lv_color_hex(COLOR_SECONDARY), lv_color_white(), LV_OPA_10, 10);
+  style_action_button(scan_btn, lv_color_hex(COLOR_CARD), LV_OPA_COVER, lv_color_hex(COLOR_SECONDARY), lv_color_hex(COLOR_WHITE), LV_OPA_10, 10);
   lv_obj_t *scan_label = label(scan_btn, LV_SYMBOL_REFRESH "  Scan again", &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
   lv_obj_center(scan_label);
   lv_obj_add_event_cb(scan_btn, &WifiPanel::_handle_action, LV_EVENT_CLICKED, this);
@@ -300,6 +300,10 @@ void WifiPanel::rebuild_list() {
   }
 
   lv_obj_clean(list);
+  if (networks.empty()) {
+    empty_state(list, &network_img, "No networks found", "Move closer to the router and scan again.");
+    return;
+  }
   for (size_t i = 0; i < networks.size(); ++i) {
     const Network &network = networks[i];
     const bool connected = network.ssid == cur_network;

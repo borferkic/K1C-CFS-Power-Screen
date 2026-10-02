@@ -407,7 +407,7 @@ void SpoolmanPanel::handle_spoolman_action(lv_event_t *e) {
 
       if(row == 0) {
 	dsc->label_dsc->align = LV_TEXT_ALIGN_CENTER;
-	dsc->rect_dsc->bg_color = lv_color_mix(lv_palette_main(LV_PALETTE_BLUE),
+	dsc->rect_dsc->bg_color = lv_color_mix(lv_color_hex(powerui::COLOR_MAT_BLUE),
 					       dsc->rect_dsc->bg_color, LV_OPA_20);
 	dsc->rect_dsc->bg_opa = LV_OPA_COVER;
       }
@@ -426,7 +426,7 @@ void SpoolmanPanel::handle_spoolman_action(lv_event_t *e) {
       }
 
       if((row != 0 && row % 2) == 0) {
-	dsc->rect_dsc->bg_color = lv_color_mix(lv_palette_main(LV_PALETTE_GREY),
+	dsc->rect_dsc->bg_color = lv_color_mix(lv_color_hex(powerui::COLOR_MAT_GREY),
 					       dsc->rect_dsc->bg_color, LV_OPA_10);
 	dsc->rect_dsc->bg_opa = LV_OPA_COVER;
       }

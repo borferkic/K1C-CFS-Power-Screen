@@ -4,8 +4,8 @@
 #include <algorithm>
 
 namespace {
-constexpr uint32_t ICON_COLOR = 0xFAFAFA;
-constexpr uint32_t DISABLED_RED = 0xFF6467;
+constexpr uint32_t ICON_COLOR = powerui::COLOR_FG;
+constexpr uint32_t DISABLED_RED = powerui::COLOR_DESTRUCTIVE;
 }
 
 SquareButton::SquareButton(lv_obj_t *parent,
@@ -21,15 +21,15 @@ SquareButton::SquareButton(lv_obj_t *parent,
 {
   using namespace powerui;
   icon_color = lv_color_hex(ICON_COLOR);
-  text_color = lv_color_hex(COLOR_FG);
+  text_color = lv_color_hex(powerui::COLOR_FG);
 
   lv_obj_clear_flag(button, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_style_bg_color(button, lv_color_hex(COLOR_CARD), LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_bg_color(button, lv_color_hex(powerui::COLOR_CARD), LV_PART_MAIN | LV_STATE_DEFAULT);
   lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_bg_color(button, lv_color_hex(COLOR_SECONDARY), LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_set_style_bg_color(button, lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN | LV_STATE_PRESSED);
   lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
   lv_obj_set_style_border_width(button, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_border_color(button, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_border_color(button, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN | LV_STATE_DEFAULT);
   lv_obj_set_style_border_opa(button, LV_OPA_10, LV_PART_MAIN | LV_STATE_DEFAULT);
   lv_obj_set_style_radius(button, px(14), LV_PART_MAIN | LV_STATE_DEFAULT);
   lv_obj_set_style_shadow_width(button, 0, LV_PART_MAIN);
@@ -39,7 +39,7 @@ SquareButton::SquareButton(lv_obj_t *parent,
   lv_obj_set_size(icon_tile, px(60), px(60));
   lv_obj_align(icon_tile, LV_ALIGN_TOP_LEFT, px(14), px(14));
   lv_obj_set_style_radius(icon_tile, px(12), 0);
-  lv_obj_set_style_bg_color(icon_tile, lv_color_hex(COLOR_SECONDARY), 0);
+  lv_obj_set_style_bg_color(icon_tile, lv_color_hex(powerui::COLOR_SECONDARY), 0);
   lv_obj_set_style_bg_opa(icon_tile, LV_OPA_COVER, 0);
 
   icon = lv_img_create(icon_tile);
@@ -95,7 +95,11 @@ void SquareButton::set_subtitle(const char *text) {
 void SquareButton::set_pill(const char *text, lv_color_t dot) {
   if (pill == NULL) {
     pill = powerui::badge(button, text, dot);
-    lv_obj_align(pill, LV_ALIGN_TOP_RIGHT, -powerui::px(12), powerui::px(14));
+    // Compact: a longer text ("Printing") must not touch the icon tile on the left.
+    lv_obj_set_style_pad_left(pill, powerui::px(8), 0);
+    lv_obj_set_style_pad_right(pill, powerui::px(8), 0);
+    lv_obj_set_style_pad_column(pill, powerui::px(5), 0);
+    lv_obj_align(pill, LV_ALIGN_TOP_RIGHT, -powerui::px(8), powerui::px(14));
   } else {
     powerui::badge_set(pill, text, dot);
     lv_obj_clear_flag(pill, LV_OBJ_FLAG_HIDDEN);

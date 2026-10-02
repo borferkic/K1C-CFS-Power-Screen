@@ -20,8 +20,8 @@ LV_IMG_DECLARE(flow_up_img);
 LV_IMG_DECLARE(flow_down_img);
 LV_IMG_DECLARE(back);
 
-constexpr uint32_t CREALITY_GREEN = 0x4ADE80;
-constexpr uint32_t CREALITY_GREEN_PRESSED = 0x22C55E;
+constexpr uint32_t CREALITY_GREEN = powerui::COLOR_ACCENT;
+constexpr uint32_t CREALITY_GREEN_PRESSED = powerui::COLOR_ACCENT_PRESSED;
 
 FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   : NotifyConsumer(l)
@@ -65,7 +65,7 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   lv_obj_set_size(title_bar, LV_PCT(100), 32);
   lv_obj_set_pos(title_bar, 0, 0);
   lv_obj_set_style_pad_all(title_bar, 0, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(title_bar, lv_color_hex(0x171717), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(title_bar, lv_color_hex(powerui::COLOR_CARD), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(title_bar, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_width(title_bar, 0, LV_PART_MAIN);
 
@@ -73,12 +73,12 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   lv_obj_set_width(title_label, LV_PCT(100));
   lv_label_set_long_mode(title_label, LV_LABEL_LONG_DOT);
   lv_obj_set_style_text_align(title_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-  lv_obj_set_style_text_color(title_label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_color(title_label, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
   lv_obj_set_style_text_font(title_label, &lv_font_montserrat_20, LV_PART_MAIN);
   lv_obj_align(title_label, LV_ALIGN_CENTER, 0, 0);
 
   lv_obj_set_width(time_label, LV_SIZE_CONTENT);
-  lv_obj_set_style_text_color(time_label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_color(time_label, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
   lv_obj_set_style_text_font(time_label, &lv_font_montserrat_20, LV_PART_MAIN);
   lv_obj_align(time_label, LV_ALIGN_RIGHT_MID, -10, 0);
   update_clock();
@@ -87,7 +87,7 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   // ---- PowerUI layout: four metric cards (value, up / down, reset) and two step selectors.
   using namespace powerui;
   lv_obj_add_flag(title_bar, LV_OBJ_FLAG_HIDDEN);  // the main title bar shows "Fine Tune"
-  lv_obj_set_style_bg_color(panel_cont, lv_color_hex(COLOR_BG), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(panel_cont, lv_color_hex(powerui::COLOR_BG), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(panel_cont, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_width(panel_cont, 0, LV_PART_MAIN);
   lv_obj_add_flag(values_cont, LV_OBJ_FLAG_HIDDEN);
@@ -110,9 +110,9 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
     lv_obj_t *metric_card = card(panel_cont, x0, 12, 169, 270);
     lv_obj_move_to_index(metric_card, 0);
 
-    lv_obj_t *header_icon = icon(metric_card, headers[c].icon, 20, lv_color_hex(COLOR_MUTED));
+    lv_obj_t *header_icon = icon(metric_card, headers[c].icon, 20, lv_color_hex(powerui::COLOR_MUTED));
     lv_obj_set_pos(header_icon, px(14), px(14));
-    lv_obj_t *header_title = label(metric_card, headers[c].title, &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
+    lv_obj_t *header_title = label(metric_card, headers[c].title, &lv_font_montserrat_12, lv_color_hex(powerui::COLOR_MUTED));
     lv_obj_set_pos(header_title, px(40), px(17));
 
     // Value: only the number (the ImageLabel icon stays hidden).
@@ -130,7 +130,7 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
     lv_obj_t *value_label = lv_obj_get_child(value, 1);
     if (value_label != NULL) {
       lv_obj_set_style_text_font(value_label, &lv_font_montserrat_24, LV_PART_MAIN);
-      lv_obj_set_style_text_color(value_label, lv_color_hex(COLOR_FG), LV_PART_MAIN);
+      lv_obj_set_style_text_color(value_label, lv_color_hex(powerui::COLOR_FG), LV_PART_MAIN);
       lv_obj_set_style_text_align(value_label, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
       lv_obj_align(value_label, LV_ALIGN_LEFT_MID, px(3), 0);
     }
@@ -168,7 +168,7 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
     lv_obj_t *selector_label = step.selector->get_label();
     lv_label_set_text(selector_label, step.title);
     lv_obj_set_style_text_align(selector_label, LV_TEXT_ALIGN_LEFT, 0);
-    lv_obj_set_style_text_color(selector_label, lv_color_hex(COLOR_MUTED), 0);
+    lv_obj_set_style_text_color(selector_label, lv_color_hex(powerui::COLOR_MUTED), 0);
     lv_obj_set_style_text_font(selector_label, &lv_font_montserrat_14, 0);
     lv_obj_t *btnm = step.selector->get_selector();
     lv_obj_set_size(btnm, px(322), px(56));

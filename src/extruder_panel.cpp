@@ -29,7 +29,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   , clock_timer(NULL)
   , spoolman_panel(sm)
   , extruder_temp(ws, panel_cont, &extruder, 150,
-	  "EXTRUDER", lv_palette_main(LV_PALETTE_RED), false, true, numpad, "extruder", NULL, NULL)
+	  "EXTRUDER", lv_color_hex(powerui::COLOR_MAT_RED), false, true, numpad, "extruder", NULL, NULL)
   , temp_selector(panel_cont, "EXTRUDER TEMPERATURE (C)",
 		  {"180", "190", "200", "210", "220", "230", "240", ""}, 6, &ExtruderPanel::_handle_callback, this)
   , length_selector(panel_cont, "EXTRUDE LENGTH (MM)",
@@ -80,7 +80,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   lv_obj_set_size(title_bar, LV_PCT(100), 32);
   lv_obj_set_pos(title_bar, 0, 0);
   lv_obj_set_style_pad_all(title_bar, 0, 0);
-  lv_obj_set_style_bg_color(title_bar, lv_color_hex(0x171717), 0);
+  lv_obj_set_style_bg_color(title_bar, lv_color_hex(powerui::COLOR_CARD), 0);
   lv_obj_set_style_bg_opa(title_bar, LV_OPA_COVER, 0);
   lv_obj_set_style_border_width(title_bar, 0, 0);
 
@@ -88,12 +88,12 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   lv_obj_set_width(title_label, LV_PCT(100));
   lv_label_set_long_mode(title_label, LV_LABEL_LONG_DOT);
   lv_obj_set_style_text_align(title_label, LV_TEXT_ALIGN_CENTER, 0);
-  lv_obj_set_style_text_color(title_label, lv_color_white(), 0);
+  lv_obj_set_style_text_color(title_label, lv_color_hex(powerui::COLOR_WHITE), 0);
   lv_obj_set_style_text_font(title_label, &lv_font_montserrat_20, 0);
   lv_obj_align(title_label, LV_ALIGN_CENTER, 0, 0);
 
   lv_obj_set_width(time_label, LV_SIZE_CONTENT);
-  lv_obj_set_style_text_color(time_label, lv_color_white(), 0);
+  lv_obj_set_style_text_color(time_label, lv_color_hex(powerui::COLOR_WHITE), 0);
   lv_obj_set_style_text_font(time_label, &lv_font_montserrat_20, 0);
   lv_obj_align(time_label, LV_ALIGN_RIGHT_MID, -10, 0);
   update_clock();
@@ -102,7 +102,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   // PowerUI layout for the overlay area (736 x 440): left rail, three option cards, right rail.
   using namespace powerui;
   lv_obj_set_style_radius(panel_cont, 0, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(panel_cont, lv_color_hex(COLOR_BG), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(panel_cont, lv_color_hex(powerui::COLOR_BG), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(panel_cont, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_width(panel_cont, 0, LV_PART_MAIN);
 
@@ -135,12 +135,12 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   }
   style_button(extrude_btn.get_container(), extrude_btn.get_button(), ButtonKind::Soft);
   style_button(cooldown_btn.get_container(), cooldown_btn.get_button(), ButtonKind::Outline);
-  cooldown_btn.set_image_color(lv_color_hex(COLOR_CHAMBER));
-  lv_obj_set_style_text_color(cooldown_btn.get_container(), lv_color_hex(COLOR_CHAMBER), LV_PART_MAIN);
+  cooldown_btn.set_image_color(lv_color_hex(powerui::COLOR_CHAMBER));
+  lv_obj_set_style_text_color(cooldown_btn.get_container(), lv_color_hex(powerui::COLOR_CHAMBER), LV_PART_MAIN);
 
   // CFS: icon (four spools) to the left of the label; red while the CFS is not available.
-  spoolman_btn.set_disabled_text_color(lv_color_hex(COLOR_DESTRUCTIVE));
-  spoolman_icon = powerui::icon(spoolman_btn.get_container(), &ui_cfs_img, 26, lv_color_hex(COLOR_DESTRUCTIVE));
+  spoolman_btn.set_disabled_text_color(lv_color_hex(powerui::COLOR_DESTRUCTIVE));
+  spoolman_icon = powerui::icon(spoolman_btn.get_container(), &ui_cfs_img, 26, lv_color_hex(powerui::COLOR_DESTRUCTIVE));
   lv_obj_align(spoolman_icon, LV_ALIGN_LEFT_MID, 12, 0);
 
   // Option cards: title on top and a segmented selector below.
@@ -151,7 +151,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   lv_obj_t *temp_card = NULL;
   for (const CardSpec &spec : specs) {
     lv_obj_t *option_card = card(panel_cont, 164, spec.y, 408, spec.h);
-    lv_obj_t *title = label(option_card, spec.title, &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+    lv_obj_t *title = label(option_card, spec.title, &lv_font_montserrat_14, lv_color_hex(powerui::COLOR_MUTED));
     lv_obj_align(title, LV_ALIGN_TOP_LEFT, px(15), px(14));
 
     lv_obj_t *selector_cont = spec.selector->get_container();
@@ -211,7 +211,7 @@ void ExtruderPanel::show_manual_filament_change() {
 
 void ExtruderPanel::enable_spoolman() {
   spoolman_btn.enable();
-  powerui::icon_set_color(spoolman_icon, lv_color_hex(0xFAFAFA));
+  powerui::icon_set_color(spoolman_icon, lv_color_hex(powerui::COLOR_FG));
 }
 
 void ExtruderPanel::consume(json& j) {

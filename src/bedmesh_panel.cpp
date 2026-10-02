@@ -103,7 +103,7 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
 
   lv_obj_set_size(msgbox, LV_PCT(60), LV_PCT(40));
   lv_obj_set_style_border_width(msgbox, 2, 0);
-  lv_obj_set_style_bg_color(msgbox, lv_palette_darken(LV_PALETTE_GREY, 1), 0);
+  lv_obj_set_style_bg_color(msgbox, lv_color_hex(powerui::COLOR_MAT_GREY_DARK), 0);
   lv_obj_align(msgbox, LV_ALIGN_TOP_MID, 0, 20);
 
   lv_obj_t * label = NULL;
@@ -136,16 +136,16 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
     using namespace powerui;
     lv_obj_set_layout(cont, 0);
     lv_obj_set_style_radius(cont, 0, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(cont, lv_color_hex(COLOR_BG), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(cont, lv_color_hex(powerui::COLOR_BG), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(cont, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_set_style_border_width(cont, 0, LV_PART_MAIN);
 
     lv_obj_t *mesh_card = card(cont, 12, 12, 400, 416);
-    lv_obj_t *mesh_title = powerui::label(mesh_card, "Bed mesh", &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
+    lv_obj_t *mesh_title = powerui::label(mesh_card, "Bed mesh", &lv_font_montserrat_16, lv_color_hex(powerui::COLOR_FG));
     lv_obj_set_pos(mesh_title, px(20), px(16));
-    mesh_profile_label = powerui::label(mesh_card, "", &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+    mesh_profile_label = powerui::label(mesh_card, "", &lv_font_montserrat_14, lv_color_hex(powerui::COLOR_MUTED));
     lv_obj_set_pos(mesh_profile_label, px(20), px(40));
-    mesh_stats_label = powerui::label(mesh_card, "", &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+    mesh_stats_label = powerui::label(mesh_card, "", &lv_font_montserrat_14, lv_color_hex(powerui::COLOR_MUTED));
     lv_obj_align(mesh_stats_label, LV_ALIGN_BOTTOM_LEFT, px(20), -px(16));
 
     lv_obj_set_parent(mesh_table, mesh_card);
@@ -154,12 +154,12 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
     lv_obj_set_style_border_width(mesh_table, 0, LV_PART_MAIN);
     lv_obj_set_style_radius(mesh_table, 0, LV_PART_ITEMS);
     lv_obj_set_style_border_width(mesh_table, 0, LV_PART_ITEMS);
-    lv_obj_set_style_border_color(mesh_table, lv_color_hex(COLOR_CARD), LV_PART_ITEMS);
-    lv_obj_set_style_text_color(mesh_table, lv_color_hex(COLOR_FG), LV_PART_ITEMS);
+    lv_obj_set_style_border_color(mesh_table, lv_color_hex(powerui::COLOR_CARD), LV_PART_ITEMS);
+    lv_obj_set_style_text_color(mesh_table, lv_color_hex(powerui::COLOR_FG), LV_PART_ITEMS);
     lv_obj_set_style_pad_hor(mesh_table, 0, LV_PART_ITEMS);
 
     lv_obj_t *profile_card = card(cont, 424, 12, 300, 332);
-    lv_obj_t *profile_title = powerui::label(profile_card, "Profiles", &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
+    lv_obj_t *profile_title = powerui::label(profile_card, "Profiles", &lv_font_montserrat_16, lv_color_hex(powerui::COLOR_FG));
     lv_obj_set_pos(profile_title, px(20), px(16));
     lv_obj_set_parent(profile_cont, profile_card);
     lv_obj_set_size(profile_cont, px(276), px(272));
@@ -181,10 +181,10 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
       lv_obj_set_style_bg_opa(table, LV_OPA_TRANSP, LV_PART_MAIN);
       lv_obj_set_style_border_width(table, 0, LV_PART_MAIN);
       lv_obj_set_style_bg_opa(table, LV_OPA_TRANSP, LV_PART_ITEMS);
-      lv_obj_set_style_text_color(table, lv_color_hex(COLOR_FG), LV_PART_ITEMS);
+      lv_obj_set_style_text_color(table, lv_color_hex(powerui::COLOR_FG), LV_PART_ITEMS);
       lv_obj_set_style_border_side(table, LV_BORDER_SIDE_BOTTOM, LV_PART_ITEMS);
       lv_obj_set_style_border_width(table, 1, LV_PART_ITEMS);
-      lv_obj_set_style_border_color(table, lv_color_white(), LV_PART_ITEMS);
+      lv_obj_set_style_border_color(table, lv_color_hex(powerui::COLOR_WHITE), LV_PART_ITEMS);
       lv_obj_set_style_border_opa(table, LV_OPA_10, LV_PART_ITEMS);
       lv_obj_set_style_pad_top(table, px(9), LV_PART_ITEMS);
       lv_obj_set_style_pad_bottom(table, px(9), LV_PART_ITEMS);
@@ -206,9 +206,9 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
       const uint32_t col = dsc->id - row * cols;
       const char *name = lv_table_get_cell_value(table, row, 0);
       if (col == 0 && name != NULL && self->active_profile == name) {
-        dsc->label_dsc->color = lv_color_hex(COLOR_ACCENT);
+        dsc->label_dsc->color = lv_color_hex(powerui::COLOR_ACCENT);
       } else if (col > 0) {
-        dsc->label_dsc->color = lv_color_hex(COLOR_MUTED);
+        dsc->label_dsc->color = lv_color_hex(powerui::COLOR_MUTED);
         dsc->label_dsc->align = LV_TEXT_ALIGN_CENTER;
       }
     }, LV_EVENT_DRAW_PART_BEGIN, this);
@@ -223,7 +223,7 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
       if (col == 1) {
         dsc->label_dsc->align = LV_TEXT_ALIGN_RIGHT;
       } else {
-        dsc->label_dsc->color = lv_color_hex(COLOR_MUTED);
+        dsc->label_dsc->color = lv_color_hex(powerui::COLOR_MUTED);
       }
     }, LV_EVENT_DRAW_PART_BEGIN, this);
     lv_table_set_col_width(profile_table, 0, px(168));
@@ -563,7 +563,7 @@ void BedMeshPanel::mesh_draw_cb(lv_event_t * e)
     uint32_t col = dsc->id - row * lv_table_get_col_cnt(obj);
 
     dsc->label_dsc->align = LV_TEXT_ALIGN_CENTER;
-    dsc->label_dsc->color = lv_color_hex(0xFAFAFA);
+    dsc->label_dsc->color = lv_color_hex(powerui::COLOR_FG);
     
     // rows of the mesh is reversed
     int32_t reversed_row_idx = mesh.size() - row - 1;
@@ -579,7 +579,7 @@ static lv_color_t color_gradient(double offset)
 {
   const double full_scale = 0.25;  // mm of deviation that reaches the full color
   const double t = std::min(1.0, std::abs(offset) / full_scale);
-  const lv_color_t neutral = lv_color_hex(0x3A3A3A);
-  const lv_color_t target = offset > 0 ? lv_color_hex(0xF87171) : lv_color_hex(0x60A5FA);
+  const lv_color_t neutral = lv_color_hex(powerui::COLOR_NEUTRAL);
+  const lv_color_t target = offset > 0 ? lv_color_hex(powerui::COLOR_EXTRUDER) : lv_color_hex(powerui::COLOR_CHAMBER);
   return lv_color_mix(target, neutral, static_cast<uint8_t>(t * 255));
 }

@@ -13,7 +13,6 @@ PROJECT_NAME="K1C-CFS-POWER-SCREEN"
 cp ./build/bin/powerscreen $RELEASES_DIR/powerscreen
 cp -r ./k1/k1_mods $RELEASES_DIR
 cp -r ./k1/scripts $RELEASES_DIR
-cp -r ./themes $RELEASES_DIR
 cp ./installer.sh $RELEASES_DIR
 cp ./update.sh $RELEASES_DIR
 if [ -f ./custom_upgrade.sh ]; then

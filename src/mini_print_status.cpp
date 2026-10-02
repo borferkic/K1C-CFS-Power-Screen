@@ -114,7 +114,7 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
   lv_obj_align(stats, LV_ALIGN_TOP_LEFT, 0, px(210));
   lv_obj_set_style_radius(stats, px(10), 0);
   lv_obj_set_style_border_width(stats, 1, 0);
-  lv_obj_set_style_border_color(stats, lv_color_white(), 0);
+  lv_obj_set_style_border_color(stats, lv_color_hex(COLOR_WHITE), 0);
   lv_obj_set_style_border_opa(stats, LV_OPA_10, 0);
 
   const char *stat_names[3] = {"Elapsed", "Layer", "Speed"};
@@ -130,14 +130,14 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
       lv_obj_t *sep = plain(stats);
       lv_obj_set_size(sep, 1, px(66));
       lv_obj_set_pos(sep, px(cell_x), 0);
-      lv_obj_set_style_bg_color(sep, lv_color_white(), 0);
+      lv_obj_set_style_bg_color(sep, lv_color_hex(COLOR_WHITE), 0);
       lv_obj_set_style_bg_opa(sep, LV_OPA_10, 0);
     }
   }
 
   // Actions: Pause/Resume and Stop.
   const int btn_w = (CONTENT_W - 12) / 2;
-  pause_btn = action_button(cont, 0, 314, btn_w, 60, COLOR_SECONDARY, 0xFFFFFF, LV_OPA_10);
+  pause_btn = action_button(cont, 0, 314, btn_w, 60, COLOR_SECONDARY, COLOR_WHITE, LV_OPA_10);
   pause_icon = icon(pause_btn, &pause_img, 24, fg);
   pause_label = label(pause_btn, "Pause", &lv_font_montserrat_16, fg);
   lv_obj_add_event_cb(pause_btn, &MiniPrintStatus::_handle_action, LV_EVENT_CLICKED, this);

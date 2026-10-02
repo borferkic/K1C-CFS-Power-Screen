@@ -1,4 +1,5 @@
 #include "macros_panel.h"
+#include "powerui.h"
 #include "state.h"
 #include "utils.h"
 #include "spdlog/spdlog.h"
@@ -58,7 +59,7 @@ void MacrosPanel::populate() {
 
     // uint32_t i = 0;
     // lv_color_t cur_bg = lv_obj_get_style_bg_color(cont, 0);
-    // lv_color_t mixed = lv_color_mix(lv_palette_main(LV_PALETTE_GREY),
+    // lv_color_t mixed = lv_color_mix(lv_color_hex(powerui::COLOR_MAT_GREY),
     // 				    cur_bg, LV_OPA_10);
 
     for (auto const & [k, v] : macros) {

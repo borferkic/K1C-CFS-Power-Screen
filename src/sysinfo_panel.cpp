@@ -70,14 +70,14 @@ std::pair<std::string, std::string> split_version(const std::string &version) {
   return {version.substr(0, dash), version.substr(dash + 1)};
 }
 
-constexpr uint32_t CARD_BORDER = 0x4ADE80;
-constexpr uint32_t CREALITY_GREEN = 0x4ADE80;
-constexpr uint32_t BUTTON_GREY = 0x262626;
-constexpr uint32_t SCREEN_BACKGROUND = 0x0A0A0A;
+constexpr uint32_t CARD_BORDER = powerui::COLOR_ACCENT;
+constexpr uint32_t CREALITY_GREEN = powerui::COLOR_ACCENT;
+constexpr uint32_t BUTTON_GREY = powerui::COLOR_SECONDARY;
+constexpr uint32_t SCREEN_BACKGROUND = powerui::COLOR_BG;
 constexpr uint32_t BACK_BUTTON_BACKGROUND = SCREEN_BACKGROUND;
 
 lv_color_t screen_background_color() {
-  return lv_color_hex(0x0A0A0A);
+  return lv_color_hex(powerui::COLOR_BG);
 }
 
 void style_screen_object(lv_obj_t *obj) {
@@ -89,9 +89,9 @@ void style_screen_object(lv_obj_t *obj) {
 
 void style_card(lv_obj_t *card) {
   style_screen_object(card);
-  lv_obj_set_style_bg_color(card, lv_color_hex(0x171717), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(card, lv_color_hex(powerui::COLOR_CARD), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(card, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_set_style_border_color(card, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_border_color(card, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
   lv_obj_set_style_border_opa(card, LV_OPA_10, LV_PART_MAIN);
   lv_obj_set_style_border_width(card, 1, LV_PART_MAIN);
   lv_obj_set_style_radius(card, 14, LV_PART_MAIN);
@@ -118,7 +118,7 @@ lv_obj_t *find_row_label(lv_obj_t *row) {
 lv_obj_t *create_row_label(lv_obj_t *row, const char *text) {
   lv_obj_t *label = lv_label_create(row);
   lv_label_set_text(label, text);
-  lv_obj_set_style_text_color(label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_color(label, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
   lv_obj_set_style_text_font(label, &lv_font_montserrat_16, LV_PART_MAIN);
   lv_obj_set_style_translate_y(label, 5, LV_PART_MAIN);
   lv_obj_align(label, LV_ALIGN_LEFT_MID, 22, 0);
@@ -286,7 +286,7 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_set_size(title_bar, LV_PCT(100), 32);
   lv_obj_set_pos(title_bar, 0, 0);
   lv_obj_set_style_pad_all(title_bar, 0, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(title_bar, lv_color_hex(0x171717), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(title_bar, lv_color_hex(powerui::COLOR_CARD), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(title_bar, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_width(title_bar, 0, LV_PART_MAIN);
 
@@ -294,12 +294,12 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_set_width(title_label, LV_PCT(100));
   lv_label_set_long_mode(title_label, LV_LABEL_LONG_DOT);
   lv_obj_set_style_text_align(title_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-  lv_obj_set_style_text_color(title_label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_color(title_label, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
   lv_obj_set_style_text_font(title_label, &lv_font_montserrat_20, LV_PART_MAIN);
   lv_obj_align(title_label, LV_ALIGN_CENTER, 0, 0);
 
   lv_obj_set_width(time_label, LV_SIZE_CONTENT);
-  lv_obj_set_style_text_color(time_label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_color(time_label, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
   lv_obj_set_style_text_font(time_label, &lv_font_montserrat_20, LV_PART_MAIN);
   lv_obj_align(time_label, LV_ALIGN_RIGHT_MID, -10, 0);
   update_clock();
@@ -310,20 +310,20 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_set_pos(network_card, 12, 47);
 
   lv_label_set_text(network_title_label, "Network");
-  lv_obj_set_style_text_color(network_title_label, lv_color_hex(0xA1A1A1), LV_PART_MAIN);
+  lv_obj_set_style_text_color(network_title_label, lv_color_hex(powerui::COLOR_MUTED), LV_PART_MAIN);
   lv_obj_set_style_text_font(network_title_label, &lv_font_montserrat_14, LV_PART_MAIN);
   lv_obj_set_pos(network_title_label, 32, 18);
 
   lv_obj_set_width(network_name_label, 225);
   lv_obj_set_height(network_name_label, 24);
-  lv_obj_set_style_text_color(network_name_label, lv_color_hex(0xFAFAFA), LV_PART_MAIN);
+  lv_obj_set_style_text_color(network_name_label, lv_color_hex(powerui::COLOR_FG), LV_PART_MAIN);
   lv_obj_set_style_text_font(network_name_label, &lv_font_montserrat_20, LV_PART_MAIN);
   lv_label_set_long_mode(network_name_label, LV_LABEL_LONG_DOT);
   lv_obj_set_pos(network_name_label, 32, 42);
 
   lv_obj_set_width(network_ip_label, 225);
   lv_obj_set_height(network_ip_label, 24);
-  lv_obj_set_style_text_color(network_ip_label, lv_color_hex(0xA1A1A1), LV_PART_MAIN);
+  lv_obj_set_style_text_color(network_ip_label, lv_color_hex(powerui::COLOR_MUTED), LV_PART_MAIN);
   lv_obj_set_style_text_font(network_ip_label, &lv_font_montserrat_16, LV_PART_MAIN);
   lv_obj_set_pos(network_ip_label, 32, 66);
 
@@ -417,28 +417,28 @@ SysInfoPanel::SysInfoPanel()
                       LV_EVENT_VALUE_CHANGED, this);
 
   lv_label_set_text(brand_label, "PowerScreen by Boris SdK");
-  lv_obj_set_style_text_color(brand_label, lv_color_hex(0xFAFAFA), LV_PART_MAIN);
+  lv_obj_set_style_text_color(brand_label, lv_color_hex(powerui::COLOR_FG), LV_PART_MAIN);
   lv_obj_set_style_text_font(brand_label, &lv_font_montserrat_16, LV_PART_MAIN);
   lv_obj_set_pos(brand_label, 330, 292);
 
   lv_label_set_text(version_label, fmt::format("Version: {}", installed_version()).c_str());
   lv_obj_set_width(version_label, 410);
-  lv_obj_set_style_text_color(version_label, lv_color_hex(0xA1A1A1), LV_PART_MAIN);
+  lv_obj_set_style_text_color(version_label, lv_color_hex(powerui::COLOR_MUTED), LV_PART_MAIN);
   lv_obj_set_style_text_font(version_label, &lv_font_montserrat_14, LV_PART_MAIN);
   lv_label_set_long_mode(version_label, LV_LABEL_LONG_CLIP);
   lv_obj_set_pos(version_label, 330, 318);
 
   lv_obj_clear_flag(update_button, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(update_button, 300, 50);
-  lv_obj_set_style_bg_color(update_button, lv_color_hex(0x16A34A),
+  lv_obj_set_style_bg_color(update_button, lv_color_hex(powerui::COLOR_PRIMARY),
                             LV_PART_MAIN | LV_STATE_DEFAULT);
   lv_obj_set_style_bg_opa(update_button, LV_OPA_COVER,
                           LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_bg_color(update_button, lv_color_hex(0x15803D),
+  lv_obj_set_style_bg_color(update_button, lv_color_hex(powerui::COLOR_PRIMARY_PRESSED),
                             LV_PART_MAIN | LV_STATE_PRESSED);
   lv_obj_set_style_bg_opa(update_button, LV_OPA_COVER,
                           LV_PART_MAIN | LV_STATE_PRESSED);
-  lv_obj_set_style_bg_color(update_button, lv_color_hex(0x262626),
+  lv_obj_set_style_bg_color(update_button, lv_color_hex(powerui::COLOR_SECONDARY),
                             LV_PART_MAIN | LV_STATE_DISABLED);
   lv_obj_set_style_bg_opa(update_button, LV_OPA_COVER,
                           LV_PART_MAIN | LV_STATE_DISABLED);
@@ -449,14 +449,14 @@ SysInfoPanel::SysInfoPanel()
   lv_label_set_text(update_button_label, "UPDATE");
   lv_obj_set_width(update_button_label, LV_PCT(100));
   lv_obj_set_style_text_align(update_button_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-  lv_obj_set_style_text_color(update_button_label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_color(update_button_label, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
   lv_obj_set_style_text_font(update_button_label, &lv_font_montserrat_20, LV_PART_MAIN);
   lv_obj_align(update_button_label, LV_ALIGN_CENTER, 0, 0);
   lv_obj_add_event_cb(update_button, &SysInfoPanel::_handle_callback,
                       LV_EVENT_CLICKED, this);
 
   lv_label_set_text(update_status, "");
-  lv_obj_set_style_text_color(update_status, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_color(update_status, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
   lv_obj_set_style_text_font(update_status, &lv_font_montserrat_16, LV_PART_MAIN);
 
   create_tabs();
@@ -569,18 +569,18 @@ void SysInfoPanel::create_tabs() {
   lv_img_set_size_mode(printer_img, LV_IMG_SIZE_MODE_REAL);
   lv_img_set_zoom(printer_img, 72);
   lv_obj_align(printer_img, LV_ALIGN_LEFT_MID, px(14), 0);
-  lv_obj_t *printer_name = label(printer_card, "Creality K1C", &lv_font_montserrat_20, lv_color_hex(COLOR_FG));
+  lv_obj_t *printer_name = label(printer_card, "Creality K1C", &lv_font_montserrat_20, lv_color_hex(powerui::COLOR_FG));
   lv_obj_align(printer_name, LV_ALIGN_LEFT_MID, px(124), -px(14));
-  lv_obj_t *printer_info = label(printer_card, "CoreXY", &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+  lv_obj_t *printer_info = label(printer_card, "CoreXY", &lv_font_montserrat_14, lv_color_hex(powerui::COLOR_MUTED));
   lv_obj_align(printer_info, LV_ALIGN_LEFT_MID, px(124), px(12));
-  lv_obj_t *printer_size = label(printer_card, "220 x 220 x 250 mm", &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+  lv_obj_t *printer_size = label(printer_card, "220 x 220 x 250 mm", &lv_font_montserrat_14, lv_color_hex(powerui::COLOR_MUTED));
   lv_obj_align(printer_size, LV_ALIGN_LEFT_MID, px(124), px(34));
 
   lv_obj_t *info_card = lv_obj_create(general_page);
   style_card(info_card);
   lv_obj_set_size(info_card, px(350), px(294));
   lv_obj_set_pos(info_card, px(12), px(134));
-  lv_obj_t *info_title = label(info_card, "System", &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
+  lv_obj_t *info_title = label(info_card, "System", &lv_font_montserrat_16, lv_color_hex(powerui::COLOR_FG));
   lv_obj_set_pos(info_title, px(20), px(14));
   const char *info_names[5] = {"PowerScreen", "CFS Power Script", "Klipper", "Moonraker", "K1C Firmware"};
   for (int i = 0; i < 5; ++i) {
@@ -588,12 +588,12 @@ void SysInfoPanel::create_tabs() {
     lv_obj_t *line = plain(info_card);
     lv_obj_set_size(line, LV_PCT(100), 1);
     lv_obj_set_pos(line, 0, px(row_y));
-    lv_obj_set_style_bg_color(line, lv_color_white(), 0);
+    lv_obj_set_style_bg_color(line, lv_color_hex(powerui::COLOR_WHITE), 0);
     lv_obj_set_style_bg_opa(line, LV_OPA_10, 0);
 
-    lv_obj_t *name = label(info_card, info_names[i], &lv_font_montserrat_16, lv_color_hex(COLOR_MUTED));
+    lv_obj_t *name = label(info_card, info_names[i], &lv_font_montserrat_16, lv_color_hex(powerui::COLOR_MUTED));
     lv_obj_set_pos(name, px(20), px(row_y + 14));
-    lv_obj_t *value = label(info_card, "...", &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
+    lv_obj_t *value = label(info_card, "...", &lv_font_montserrat_16, lv_color_hex(powerui::COLOR_FG));
     lv_obj_set_width(value, px(160));
     lv_label_set_long_mode(value, LV_LABEL_LONG_CLIP);
     lv_obj_set_style_text_align(value, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN);
@@ -607,16 +607,16 @@ void SysInfoPanel::create_tabs() {
   lv_obj_set_size(network_card, px(350), px(110));
   lv_obj_set_pos(network_card, px(374), px(12));
   lv_obj_add_flag(network_card, LV_OBJ_FLAG_CLICKABLE);
-  lv_obj_set_style_bg_color(network_card, lv_color_hex(COLOR_SECONDARY), LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_set_style_bg_color(network_card, lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN | LV_STATE_PRESSED);
   lv_obj_add_event_cb(network_card, &SysInfoPanel::_handle_callback, LV_EVENT_CLICKED, this);
   lv_obj_add_flag(network_title_label, LV_OBJ_FLAG_HIDDEN);
   lv_obj_t *network_tile = plain(network_card);
   lv_obj_set_size(network_tile, px(60), px(60));
   lv_obj_set_pos(network_tile, px(18), px(25));
   lv_obj_set_style_radius(network_tile, px(12), 0);
-  lv_obj_set_style_bg_color(network_tile, lv_color_hex(COLOR_SECONDARY), 0);
+  lv_obj_set_style_bg_color(network_tile, lv_color_hex(powerui::COLOR_SECONDARY), 0);
   lv_obj_set_style_bg_opa(network_tile, LV_OPA_COVER, 0);
-  lv_obj_t *network_icon = icon(network_tile, &network_img, 36, lv_color_hex(COLOR_ACCENT));
+  lv_obj_t *network_icon = icon(network_tile, &network_img, 36, lv_color_hex(powerui::COLOR_ACCENT));
   lv_obj_center(network_icon);
   lv_obj_set_pos(network_name_label, px(92), px(22));
   lv_obj_set_width(network_name_label, px(220));
@@ -626,15 +626,15 @@ void SysInfoPanel::create_tabs() {
   lv_obj_set_width(network_ip_label, px(220));
   lv_obj_set_height(network_ip_label, LV_SIZE_CONTENT);
   lv_obj_set_style_text_font(network_ip_label, &lv_font_montserrat_14, LV_PART_MAIN);
-  lv_obj_t *network_hint = label(network_card, "Tap to open Wi-Fi", &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
+  lv_obj_t *network_hint = label(network_card, "Tap to open Wi-Fi", &lv_font_montserrat_12, lv_color_hex(powerui::COLOR_MUTED));
   lv_obj_set_pos(network_hint, px(92), px(76));
-  lv_obj_t *network_chevron = label(network_card, LV_SYMBOL_RIGHT, &lv_font_montserrat_16, lv_color_hex(COLOR_MUTED));
+  lv_obj_t *network_chevron = label(network_card, LV_SYMBOL_RIGHT, &lv_font_montserrat_16, lv_color_hex(powerui::COLOR_MUTED));
   lv_obj_align(network_chevron, LV_ALIGN_RIGHT_MID, -px(18), 0);
 
   // Right column: preferences card.
   lv_obj_set_size(controls_card, px(350), px(294));
   lv_obj_set_pos(controls_card, px(374), px(134));
-  lv_obj_t *prefs_title = label(controls_card, "Preferences", &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
+  lv_obj_t *prefs_title = label(controls_card, "Preferences", &lv_font_montserrat_16, lv_color_hex(powerui::COLOR_FG));
   lv_obj_set_pos(prefs_title, px(20), px(14));
 
   lv_obj_add_flag(z_icon_toggle_cont, LV_OBJ_FLAG_HIDDEN);  // "Invert Z icon" is no longer offered
@@ -653,21 +653,24 @@ void SysInfoPanel::create_tabs() {
   }
   lv_obj_set_size(display_sleep_dd, px(130), px(40));
   lv_obj_set_size(loglevel_dd, px(130), px(40));
+  style_select(display_sleep_dd);
+  style_select(loglevel_dd);
+  style_select(channel_dd);
 
   // Brightness: label, percentage and a slider (backlight 5-100 %).
-  lv_obj_t *brightness_label = label(controls_card, "Brightness", &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
+  lv_obj_t *brightness_label = label(controls_card, "Brightness", &lv_font_montserrat_16, lv_color_hex(powerui::COLOR_FG));
   lv_obj_set_pos(brightness_label, px(20), px(98 + 14));
-  brightness_value = label(controls_card, "100%", &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+  brightness_value = label(controls_card, "100%", &lv_font_montserrat_14, lv_color_hex(powerui::COLOR_MUTED));
   lv_obj_align(brightness_value, LV_ALIGN_TOP_RIGHT, -px(20), px(98 + 16));
   brightness_slider = lv_slider_create(controls_card);
   lv_slider_set_range(brightness_slider, 5, 100);
   lv_obj_set_size(brightness_slider, px(310), px(16));
   lv_obj_set_pos(brightness_slider, px(20), px(98 + 52));
-  lv_obj_set_style_bg_color(brightness_slider, lv_color_hex(COLOR_SECONDARY), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(brightness_slider, lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(brightness_slider, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(brightness_slider, lv_color_hex(COLOR_ACCENT), LV_PART_INDICATOR);
+  lv_obj_set_style_bg_color(brightness_slider, lv_color_hex(powerui::COLOR_ACCENT), LV_PART_INDICATOR);
   lv_obj_set_style_bg_opa(brightness_slider, LV_OPA_COVER, LV_PART_INDICATOR);
-  lv_obj_set_style_bg_color(brightness_slider, lv_color_hex(COLOR_FG), LV_PART_KNOB);
+  lv_obj_set_style_bg_color(brightness_slider, lv_color_hex(powerui::COLOR_FG), LV_PART_KNOB);
   lv_obj_set_style_bg_opa(brightness_slider, LV_OPA_COVER, LV_PART_KNOB);
   lv_obj_set_style_pad_all(brightness_slider, px(6), LV_PART_KNOB);
   {
@@ -682,7 +685,7 @@ void SysInfoPanel::create_tabs() {
     lv_obj_t *line = plain(controls_card);
     lv_obj_set_size(line, LV_PCT(100), 1);
     lv_obj_set_pos(line, 0, px(y));
-    lv_obj_set_style_bg_color(line, lv_color_white(), 0);
+    lv_obj_set_style_bg_color(line, lv_color_hex(powerui::COLOR_WHITE), 0);
     lv_obj_set_style_bg_opa(line, LV_OPA_10, 0);
   }
 
@@ -694,16 +697,16 @@ void SysInfoPanel::create_tabs() {
     lv_obj_t *button = lv_btn_create(parent);
     lv_obj_clear_flag(button, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_size(button, px(376), px(48));
-    lv_obj_set_style_bg_color(button, lv_color_hex(0x16A34A), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(button, lv_color_hex(powerui::COLOR_PRIMARY), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(button, lv_color_hex(0x15803D), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(button, lv_color_hex(powerui::COLOR_PRIMARY_PRESSED), LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
-    lv_obj_set_style_bg_color(button, lv_color_hex(0x262626), LV_PART_MAIN | LV_STATE_DISABLED);
+    lv_obj_set_style_bg_color(button, lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN | LV_STATE_DISABLED);
     lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DISABLED);
     lv_obj_set_style_border_width(button, 0, LV_PART_MAIN);
     lv_obj_set_style_shadow_width(button, 0, LV_PART_MAIN);
     lv_obj_set_style_radius(button, px(10), LV_PART_MAIN);
-    lv_obj_t *button_label = label(button, text, &lv_font_montserrat_16, lv_color_white());
+    lv_obj_t *button_label = label(button, text, &lv_font_montserrat_16, lv_color_hex(powerui::COLOR_WHITE));
     lv_obj_center(button_label);
     return button;
   };
@@ -712,21 +715,21 @@ void SysInfoPanel::create_tabs() {
                                    const std::string &base, const std::string &suffix) {
     lv_obj_t *t = lv_label_create(parent);
     lv_label_set_text(t, title);
-    lv_obj_set_style_text_color(t, lv_color_hex(COLOR_MUTED), LV_PART_MAIN);
+    lv_obj_set_style_text_color(t, lv_color_hex(powerui::COLOR_MUTED), LV_PART_MAIN);
     lv_obj_set_style_text_font(t, &lv_font_montserrat_14, LV_PART_MAIN);
     lv_obj_set_pos(t, px(20), px(14));
     lv_obj_t *v = lv_label_create(parent);
     lv_label_set_text(v, base.c_str());
     lv_label_set_long_mode(v, LV_LABEL_LONG_CLIP);
     lv_obj_set_width(v, px(260));
-    lv_obj_set_style_text_color(v, lv_color_hex(COLOR_FG), LV_PART_MAIN);
+    lv_obj_set_style_text_color(v, lv_color_hex(powerui::COLOR_FG), LV_PART_MAIN);
     lv_obj_set_style_text_font(v, &lv_font_montserrat_40, LV_PART_MAIN);
     lv_obj_set_pos(v, px(20), px(34));
     lv_obj_t *sfx = lv_label_create(parent);
     lv_label_set_text(sfx, suffix.c_str());
     lv_label_set_long_mode(sfx, LV_LABEL_LONG_CLIP);
     lv_obj_set_width(sfx, px(360));
-    lv_obj_set_style_text_color(sfx, lv_color_hex(COLOR_MUTED), LV_PART_MAIN);
+    lv_obj_set_style_text_color(sfx, lv_color_hex(powerui::COLOR_MUTED), LV_PART_MAIN);
     lv_obj_set_style_text_font(sfx, &lv_font_montserrat_12, LV_PART_MAIN);
     lv_obj_set_pos(sfx, px(22), px(88));
     *version_out = v;
@@ -742,7 +745,7 @@ void SysInfoPanel::create_tabs() {
     lv_label_set_long_mode(status, LV_LABEL_LONG_CLIP);
     lv_obj_set_width(status, px(250));
     lv_obj_set_style_text_align(status, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN);
-    lv_obj_set_style_text_color(status, lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_text_color(status, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
     lv_obj_set_style_text_font(status, &lv_font_montserrat_14, LV_PART_MAIN);
     lv_obj_align(status, LV_ALIGN_TOP_RIGHT, -px(18), px(14));
     return status;
@@ -757,9 +760,9 @@ void SysInfoPanel::create_tabs() {
   lv_img_set_src(photo, &device);
   lv_img_set_zoom(photo, 150);
   lv_obj_align(photo, LV_ALIGN_CENTER, 0, -px(22));
-  lv_obj_t *photo_name = label(photo_card, "Creality K1C", &lv_font_montserrat_18, lv_color_hex(COLOR_FG));
+  lv_obj_t *photo_name = label(photo_card, "Creality K1C", &lv_font_montserrat_18, lv_color_hex(powerui::COLOR_FG));
   lv_obj_align(photo_name, LV_ALIGN_BOTTOM_MID, 0, -px(32));
-  lv_obj_t *photo_info = label(photo_card, "CoreXY  220 x 220 x 250 mm", &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
+  lv_obj_t *photo_info = label(photo_card, "CoreXY  220 x 220 x 250 mm", &lv_font_montserrat_12, lv_color_hex(powerui::COLOR_MUTED));
   lv_obj_align(photo_info, LV_ALIGN_BOTTOM_MID, 0, -px(10));
 
   lv_obj_t *credits = lv_obj_create(updates_page);
@@ -771,7 +774,7 @@ void SysInfoPanel::create_tabs() {
   lv_label_set_text(brand_label, "Developed by Boris SdK");
   lv_obj_set_style_text_font(brand_label, &lv_font_montserrat_16, LV_PART_MAIN);
   lv_obj_align(brand_label, LV_ALIGN_CENTER, 0, -px(10));
-  lv_obj_t *theme_label = label(credits, "PowerUI 2026", &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
+  lv_obj_t *theme_label = label(credits, "PowerUI 2026", &lv_font_montserrat_12, lv_color_hex(powerui::COLOR_MUTED));
   lv_obj_align(theme_label, LV_ALIGN_CENTER, 0, px(14));
 
   // PowerScreen card.
@@ -820,11 +823,11 @@ void SysInfoPanel::create_tabs() {
     lv_obj_set_pos(btn, x, 2);
     lv_obj_set_style_radius(btn, 8, LV_PART_MAIN);
     lv_obj_set_style_shadow_width(btn, 0, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(btn, lv_color_hex(0x262626), LV_PART_MAIN);
-    lv_obj_set_style_bg_color(btn, lv_color_hex(0x16A34A), LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_color(btn, lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(btn, lv_color_hex(powerui::COLOR_PRIMARY), LV_PART_MAIN | LV_STATE_CHECKED);
     lv_obj_t *label = lv_label_create(btn);
     lv_label_set_text(label, text);
-    lv_obj_set_style_text_color(label, lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_text_color(label, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
     lv_obj_set_style_text_font(label, &lv_font_montserrat_16, LV_PART_MAIN);
     lv_obj_center(label);
     lv_obj_add_event_cb(btn, &SysInfoPanel::_handle_callback, LV_EVENT_CLICKED, this);
@@ -929,7 +932,7 @@ std::string phase_text(const std::string &status) {
 
 void SysInfoPanel::check_for_update() {
   lv_label_set_text(update_status, "Checking for updates...");
-  lv_obj_set_style_text_color(update_status, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_color(update_status, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
   lv_obj_add_state(update_button, LV_STATE_DISABLED);
 
   // The GitHub query takes several seconds: run it on another thread so the
@@ -1029,11 +1032,11 @@ void SysInfoPanel::poll_update() {
       break;
     case 2:
       lv_label_set_text(update_status, "PowerScreen is up to date.");
-      lv_obj_set_style_text_color(update_status, lv_color_white(), LV_PART_MAIN);
+      lv_obj_set_style_text_color(update_status, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
       break;
     default:
       lv_label_set_text(update_status, "Could not check for updates.");
-      lv_obj_set_style_text_color(update_status, lv_color_hex(0xF44336), LV_PART_MAIN);
+      lv_obj_set_style_text_color(update_status, lv_color_hex(powerui::COLOR_DANGER), LV_PART_MAIN);
       break;
     }
   }
@@ -1180,7 +1183,7 @@ void SysInfoPanel::apply_script_state() {
   lv_label_set_text(script_suffix_label, script_suffix.c_str());
   lv_label_set_text(script_status_label, script_message.c_str());
   lv_obj_set_style_text_color(script_status_label,
-                              lv_color_hex(script_state == 2 || script_state == 5 ? 0x4ADE80 : (script_state == 3 ? 0xFF6467 : 0xFAFAFA)),
+                              lv_color_hex(script_state == 2 || script_state == 5 ? powerui::COLOR_ACCENT : (script_state == 3 ? powerui::COLOR_DESTRUCTIVE : powerui::COLOR_FG)),
                               LV_PART_MAIN);
   if (script_state == 2) {
     lv_obj_clear_state(script_button, LV_STATE_DISABLED);
@@ -1194,7 +1197,7 @@ void SysInfoPanel::create_update_overlay() {
   update_overlay = lv_obj_create(lv_layer_top());
   lv_obj_remove_style_all(update_overlay);
   lv_obj_set_size(update_overlay, LV_PCT(100), LV_PCT(100));
-  lv_obj_set_style_bg_color(update_overlay, lv_color_black(), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(update_overlay, lv_color_hex(powerui::COLOR_BLACK), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(update_overlay, LV_OPA_70, LV_PART_MAIN);
   // Swallow all touches to lock the UI while updating.
   lv_obj_add_flag(update_overlay, LV_OBJ_FLAG_CLICKABLE);
@@ -1212,20 +1215,20 @@ void SysInfoPanel::create_update_overlay() {
   lv_obj_set_size(update_icon_tile, px(48), px(48));
   lv_obj_set_pos(update_icon_tile, px(28), px(24));
   lv_obj_set_style_radius(update_icon_tile, px(12), 0);
-  lv_obj_set_style_bg_color(update_icon_tile, lv_color_hex(COLOR_SECONDARY), 0);
+  lv_obj_set_style_bg_color(update_icon_tile, lv_color_hex(powerui::COLOR_SECONDARY), 0);
   lv_obj_set_style_bg_opa(update_icon_tile, LV_OPA_COVER, 0);
-  update_icon_label = label(update_icon_tile, LV_SYMBOL_REFRESH, &lv_font_montserrat_24, lv_color_hex(COLOR_ACCENT));
+  update_icon_label = label(update_icon_tile, LV_SYMBOL_REFRESH, &lv_font_montserrat_24, lv_color_hex(powerui::COLOR_ACCENT));
   lv_obj_center(update_icon_label);
 
-  update_title = label(update_card, "Updating PowerScreen", &lv_font_montserrat_20, lv_color_hex(COLOR_FG));
+  update_title = label(update_card, "Updating PowerScreen", &lv_font_montserrat_20, lv_color_hex(powerui::COLOR_FG));
   lv_obj_set_pos(update_title, px(90), px(28));
-  update_subtitle = label(update_card, "", &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+  update_subtitle = label(update_card, "", &lv_font_montserrat_14, lv_color_hex(powerui::COLOR_MUTED));
   lv_obj_set_pos(update_subtitle, px(90), px(56));
 
   update_rule = plain(update_card);
   lv_obj_set_size(update_rule, px(444), 1);
   lv_obj_set_pos(update_rule, px(28), px(94));
-  lv_obj_set_style_bg_color(update_rule, lv_color_white(), 0);
+  lv_obj_set_style_bg_color(update_rule, lv_color_hex(powerui::COLOR_WHITE), 0);
   lv_obj_set_style_bg_opa(update_rule, LV_OPA_10, 0);
 
   const char *step_names[3] = {"Download", "Install files", "Restart PowerScreen"};
@@ -1233,7 +1236,7 @@ void SysInfoPanel::create_update_overlay() {
     update_marks[i] = plain(update_card);
     lv_obj_set_size(update_marks[i], px(24), px(24));
     lv_obj_set_pos(update_marks[i], px(34), px(110 + i * 38));
-    update_step_labels[i] = label(update_card, step_names[i], &lv_font_montserrat_16, lv_color_hex(COLOR_MUTED));
+    update_step_labels[i] = label(update_card, step_names[i], &lv_font_montserrat_16, lv_color_hex(powerui::COLOR_MUTED));
     lv_obj_set_pos(update_step_labels[i], px(72), px(112 + i * 38));
   }
 
@@ -1241,18 +1244,18 @@ void SysInfoPanel::create_update_overlay() {
   lv_obj_set_size(update_bar, px(444), px(10));
   lv_obj_set_pos(update_bar, px(28), px(240));
   lv_bar_set_range(update_bar, 0, 100);
-  lv_obj_set_style_bg_color(update_bar, lv_color_hex(COLOR_SECONDARY), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(update_bar, lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(update_bar, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(update_bar, lv_color_hex(COLOR_ACCENT), LV_PART_INDICATOR);
+  lv_obj_set_style_bg_color(update_bar, lv_color_hex(powerui::COLOR_ACCENT), LV_PART_INDICATOR);
   lv_obj_set_style_bg_opa(update_bar, LV_OPA_COVER, LV_PART_INDICATOR);
   lv_obj_set_style_radius(update_bar, LV_RADIUS_CIRCLE, LV_PART_MAIN);
   lv_obj_set_style_radius(update_bar, LV_RADIUS_CIRCLE, LV_PART_INDICATOR);
 
-  update_hint = label(update_card, "", &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
+  update_hint = label(update_card, "", &lv_font_montserrat_12, lv_color_hex(powerui::COLOR_MUTED));
   lv_obj_set_pos(update_hint, px(28), px(262));
 
   // Message for the end states (error, nothing to update, restart needed).
-  update_phase = label(update_card, "", &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+  update_phase = label(update_card, "", &lv_font_montserrat_14, lv_color_hex(powerui::COLOR_MUTED));
   lv_label_set_long_mode(update_phase, LV_LABEL_LONG_WRAP);
   lv_obj_set_width(update_phase, px(420));
   lv_obj_set_style_text_align(update_phase, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
@@ -1261,12 +1264,12 @@ void SysInfoPanel::create_update_overlay() {
   update_close_btn = lv_btn_create(update_card);
   lv_obj_set_size(update_close_btn, px(160), px(40));
   lv_obj_align(update_close_btn, LV_ALIGN_BOTTOM_MID, 0, -px(28));
-  lv_obj_set_style_bg_color(update_close_btn, lv_color_hex(0x16A34A), LV_PART_MAIN);
-  lv_obj_set_style_bg_color(update_close_btn, lv_color_hex(0x15803D), LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_set_style_bg_color(update_close_btn, lv_color_hex(powerui::COLOR_PRIMARY), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(update_close_btn, lv_color_hex(powerui::COLOR_PRIMARY_PRESSED), LV_PART_MAIN | LV_STATE_PRESSED);
   lv_obj_set_style_border_width(update_close_btn, 0, LV_PART_MAIN);
   lv_obj_set_style_shadow_width(update_close_btn, 0, LV_PART_MAIN);
   lv_obj_set_style_radius(update_close_btn, px(10), LV_PART_MAIN);
-  lv_obj_t *close_label = label(update_close_btn, "Close", &lv_font_montserrat_16, lv_color_white());
+  lv_obj_t *close_label = label(update_close_btn, "Close", &lv_font_montserrat_16, lv_color_hex(powerui::COLOR_WHITE));
   lv_obj_center(close_label);
   lv_obj_add_event_cb(update_close_btn, &SysInfoPanel::_handle_callback, LV_EVENT_CLICKED, this);
 
@@ -1282,26 +1285,26 @@ void SysInfoPanel::set_update_step(int step) {
   for (int i = 0; i < 3; ++i) {
     lv_obj_clean(update_marks[i]);
     if (i < step) {
-      lv_obj_t *mark = label(update_marks[i], LV_SYMBOL_OK, &lv_font_montserrat_16, lv_color_hex(COLOR_ACCENT));
+      lv_obj_t *mark = label(update_marks[i], LV_SYMBOL_OK, &lv_font_montserrat_16, lv_color_hex(powerui::COLOR_ACCENT));
       lv_obj_center(mark);
-      lv_obj_set_style_text_color(update_step_labels[i], lv_color_hex(COLOR_ACCENT), LV_PART_MAIN);
+      lv_obj_set_style_text_color(update_step_labels[i], lv_color_hex(powerui::COLOR_ACCENT), LV_PART_MAIN);
     } else if (i == step) {
       lv_obj_t *spinner = lv_spinner_create(update_marks[i], 1000, 60);
       lv_obj_set_size(spinner, px(20), px(20));
       lv_obj_center(spinner);
       lv_obj_set_style_arc_width(spinner, 3, LV_PART_MAIN);
       lv_obj_set_style_arc_width(spinner, 3, LV_PART_INDICATOR);
-      lv_obj_set_style_arc_color(spinner, lv_color_hex(COLOR_SECONDARY), LV_PART_MAIN);
-      lv_obj_set_style_arc_color(spinner, lv_color_hex(COLOR_ACCENT), LV_PART_INDICATOR);
-      lv_obj_set_style_text_color(update_step_labels[i], lv_color_hex(COLOR_FG), LV_PART_MAIN);
+      lv_obj_set_style_arc_color(spinner, lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN);
+      lv_obj_set_style_arc_color(spinner, lv_color_hex(powerui::COLOR_ACCENT), LV_PART_INDICATOR);
+      lv_obj_set_style_text_color(update_step_labels[i], lv_color_hex(powerui::COLOR_FG), LV_PART_MAIN);
     } else {
       lv_obj_t *dot = plain(update_marks[i]);
       lv_obj_set_size(dot, px(8), px(8));
       lv_obj_center(dot);
       lv_obj_set_style_radius(dot, LV_RADIUS_CIRCLE, 0);
-      lv_obj_set_style_bg_color(dot, lv_color_hex(0x404040), 0);
+      lv_obj_set_style_bg_color(dot, lv_color_hex(powerui::COLOR_STEP_TODO), 0);
       lv_obj_set_style_bg_opa(dot, LV_OPA_COVER, 0);
-      lv_obj_set_style_text_color(update_step_labels[i], lv_color_hex(COLOR_MUTED), LV_PART_MAIN);
+      lv_obj_set_style_text_color(update_step_labels[i], lv_color_hex(powerui::COLOR_MUTED), LV_PART_MAIN);
     }
   }
   lv_label_set_text(update_hint, step >= 2 ? "The screen will be back in a few seconds." : "Do not turn off the printer. The screen restarts by itself.");
@@ -1312,8 +1315,8 @@ void SysInfoPanel::show_update_overlay(const std::string &title, const std::stri
   lv_label_set_text(update_title, title.c_str());
   const bool failure = title == "Update failed" || title == "Update not available";
   lv_label_set_text(update_icon_label, busy ? LV_SYMBOL_REFRESH : (failure ? LV_SYMBOL_CLOSE : LV_SYMBOL_OK));
-  lv_obj_set_style_text_color(update_icon_label, lv_color_hex(failure ? COLOR_DESTRUCTIVE : COLOR_ACCENT), LV_PART_MAIN);
-  lv_obj_set_style_bg_color(update_icon_tile, failure ? lv_color_hex(0x2A1517) : lv_color_hex(COLOR_SECONDARY), 0);
+  lv_obj_set_style_text_color(update_icon_label, lv_color_hex(failure ? powerui::COLOR_DESTRUCTIVE : powerui::COLOR_ACCENT), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(update_icon_tile, failure ? lv_color_hex(powerui::COLOR_DESTRUCTIVE_BG) : lv_color_hex(powerui::COLOR_SECONDARY), 0);
 
   for (int i = 0; i < 3; ++i) {
     for (lv_obj_t *obj : {update_marks[i], update_step_labels[i]}) {
@@ -1365,10 +1368,10 @@ void SysInfoPanel::show_updated_notice() {
   lv_obj_align(notice, LV_ALIGN_TOP_MID, 0, px(46));
   lv_obj_clear_flag(notice, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_clear_flag(notice, LV_OBJ_FLAG_CLICKABLE);
-  lv_obj_set_style_bg_color(notice, lv_color_hex(0x0F1F15), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(notice, lv_color_hex(powerui::COLOR_ACCENT_BG), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(notice, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_width(notice, 1, LV_PART_MAIN);
-  lv_obj_set_style_border_color(notice, lv_color_hex(COLOR_ACCENT), LV_PART_MAIN);
+  lv_obj_set_style_border_color(notice, lv_color_hex(powerui::COLOR_ACCENT), LV_PART_MAIN);
   lv_obj_set_style_border_opa(notice, LV_OPA_50, LV_PART_MAIN);
   lv_obj_set_style_radius(notice, px(14), LV_PART_MAIN);
   lv_obj_set_style_pad_all(notice, 0, LV_PART_MAIN);
@@ -1377,12 +1380,12 @@ void SysInfoPanel::show_updated_notice() {
   lv_obj_set_size(mark, px(32), px(32));
   lv_obj_align(mark, LV_ALIGN_LEFT_MID, px(30), 0);
   lv_obj_set_style_radius(mark, LV_RADIUS_CIRCLE, 0);
-  lv_obj_set_style_bg_color(mark, lv_color_hex(0x16A34A), 0);
+  lv_obj_set_style_bg_color(mark, lv_color_hex(powerui::COLOR_PRIMARY), 0);
   lv_obj_set_style_bg_opa(mark, LV_OPA_COVER, 0);
-  lv_obj_t *mark_label = label(mark, LV_SYMBOL_OK, &lv_font_montserrat_16, lv_color_white());
+  lv_obj_t *mark_label = label(mark, LV_SYMBOL_OK, &lv_font_montserrat_16, lv_color_hex(powerui::COLOR_WHITE));
   lv_obj_center(mark_label);
 
-  lv_obj_t *text = label(notice, "PowerScreen UPDATED!", &lv_font_montserrat_20, lv_color_hex(COLOR_FG));
+  lv_obj_t *text = label(notice, "PowerScreen UPDATED!", &lv_font_montserrat_20, lv_color_hex(powerui::COLOR_FG));
   lv_obj_align(text, LV_ALIGN_LEFT_MID, px(76), 0);
 
   lv_obj_del_delayed(notice, 6000);

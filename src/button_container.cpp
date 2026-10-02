@@ -1,4 +1,5 @@
 #include "button_container.h"
+#include "powerui.h"
 #include "config.h"
 #include "spdlog/spdlog.h"
 
@@ -70,7 +71,7 @@ ButtonContainer::ButtonContainer(lv_obj_t *parent,
   lv_label_set_text(label, text);
   lv_obj_set_width(label, LV_PCT(100));
   lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
-  lv_obj_set_style_text_color(label, lv_palette_darken(LV_PALETTE_GREY, 1), LV_STATE_DISABLED);
+  lv_obj_set_style_text_color(label, lv_color_hex(powerui::COLOR_MAT_GREY_DARK), LV_STATE_DISABLED);
 
   if (compact) {
     // Grey pill with arrow and text on one line. The pill is a non-clickable
@@ -87,13 +88,13 @@ ButtonContainer::ButtonContainer(lv_obj_t *parent,
     lv_obj_clear_flag(pill, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_radius(pill, 12, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(pill, LV_OPA_COVER, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(pill, lv_color_hex(0x16A34A), LV_PART_MAIN);
-    lv_obj_set_style_bg_color(pill, lv_color_hex(0x15803D), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(pill, lv_color_hex(powerui::COLOR_PRIMARY), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(pill, lv_color_hex(powerui::COLOR_PRIMARY_PRESSED), LV_PART_MAIN | LV_STATE_PRESSED);
 
     lv_obj_set_parent(label, pill);
     lv_label_set_text(label, fmt::format(LV_SYMBOL_LEFT "  {}", text).c_str());
     lv_obj_set_width(label, LV_SIZE_CONTENT);
-    lv_obj_set_style_text_color(label, lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_text_color(label, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
     lv_obj_set_style_text_font(label, &lv_font_montserrat_20, LV_PART_MAIN);
     lv_obj_center(label);
     return;

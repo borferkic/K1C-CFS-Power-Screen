@@ -34,7 +34,10 @@ std::string usb_mount_point() {
 LV_IMG_DECLARE(print);
 LV_IMG_DECLARE(back);
 
-constexpr uint32_t CREALITY_GREEN = 0x4ADE80;
+constexpr uint32_t CREALITY_GREEN = powerui::COLOR_ACCENT;
+
+LV_IMG_DECLARE(sd_img);
+LV_IMG_DECLARE(ui_icon_folder);
 
 #define SORTED_BY_NAME 1 << 0
 #define SORTED_BY_MODIFIED  1 << 1
@@ -81,7 +84,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_set_style_pad_column(files_cont, powerui::px(12), 0);
   lv_obj_set_style_radius(files_cont, 0, 0);
   lv_obj_set_style_border_width(files_cont, 0, 0);
-  lv_obj_set_style_bg_color(files_cont, lv_color_hex(0x0A0A0A), 0);
+  lv_obj_set_style_bg_color(files_cont, lv_color_hex(powerui::COLOR_BG), 0);
   lv_obj_set_style_bg_opa(files_cont, LV_OPA_COVER, 0);
 
   // left side cont
@@ -89,10 +92,10 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_clear_flag(left_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_flex_flow(left_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_style_pad_all(left_cont, powerui::px(12), 0);
-  lv_obj_set_style_bg_color(left_cont, lv_color_hex(0x171717), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(left_cont, lv_color_hex(powerui::COLOR_CARD), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(left_cont, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_width(left_cont, 1, LV_PART_MAIN);
-  lv_obj_set_style_border_color(left_cont, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_border_color(left_cont, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
   lv_obj_set_style_border_opa(left_cont, LV_OPA_10, LV_PART_MAIN);
   lv_obj_set_style_radius(left_cont, powerui::px(14), LV_PART_MAIN);
   lv_obj_set_style_pad_row(left_cont, powerui::px(8), LV_PART_MAIN);
@@ -118,7 +121,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   
   lv_obj_set_size(file_table_btns, LV_PCT(100), LV_SIZE_CONTENT);
   lv_obj_set_style_pad_all(file_table_btns, 4, 0);
-  lv_obj_set_style_bg_color(file_table_btns, lv_color_hex(0x0A0A0A), 0);
+  lv_obj_set_style_bg_color(file_table_btns, lv_color_hex(powerui::COLOR_BG), 0);
   lv_obj_set_style_bg_opa(file_table_btns, LV_OPA_COVER, 0);
   lv_obj_set_style_border_width(file_table_btns, 0, 0);
   lv_obj_set_style_radius(file_table_btns, 0, 0);
@@ -137,11 +140,11 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   for (lv_obj_t *sort_button : sort_buttons) {
     lv_obj_set_size(sort_button, sort_button == refresh_btn ? powerui::px(36) : (sort_button == modified_sort_btn ? powerui::px(88) : powerui::px(70)), powerui::px(36));
     lv_obj_set_style_pad_all(sort_button, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(sort_button, lv_color_hex(0xFAFAFA), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(sort_button, lv_color_hex(0x262626), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(sort_button, lv_color_hex(powerui::COLOR_FG), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(sort_button, lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(sort_button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(sort_button, 0, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(sort_button, lv_color_hex(0x333333), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(sort_button, lv_color_hex(powerui::COLOR_PRESSED), LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_bg_opa(sort_button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_border_width(sort_button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(sort_button, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -153,7 +156,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_label_set_long_mode(count_label, LV_LABEL_LONG_CLIP);
   lv_obj_set_flex_grow(count_label, 1);
   lv_obj_set_style_text_align(count_label, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN);
-  lv_obj_set_style_text_color(count_label, lv_color_hex(0xA1A1A1), LV_PART_MAIN);
+  lv_obj_set_style_text_color(count_label, lv_color_hex(powerui::COLOR_MUTED), LV_PART_MAIN);
   lv_obj_set_style_text_font(count_label, &lv_font_montserrat_12, LV_PART_MAIN);
   lv_obj_move_to_index(modified_sort_btn, 0);
   lv_obj_move_to_index(az_sort_btn, 1);
@@ -202,10 +205,10 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
 
   lv_obj_set_size(file_view, powerui::px(292), LV_PCT(100));
   lv_obj_clear_flag(file_view, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_style_bg_color(file_view, lv_color_hex(0x171717), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(file_view, lv_color_hex(powerui::COLOR_CARD), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(file_view, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_width(file_view, 1, LV_PART_MAIN);
-  lv_obj_set_style_border_color(file_view, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_border_color(file_view, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
   lv_obj_set_style_border_opa(file_view, LV_OPA_10, LV_PART_MAIN);
   lv_obj_set_style_radius(file_view, powerui::px(14), LV_PART_MAIN);
   lv_obj_set_style_pad_all(file_view, powerui::px(12), LV_PART_MAIN);
@@ -224,9 +227,9 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_move_foreground(back_btn.get_container());
   lv_obj_move_foreground(print_btn.get_container());
 
-  const lv_color_t file_button_grey = lv_color_hex(0x262626);
-  const lv_color_t file_button_green = lv_color_hex(0x16A34A);
-  const lv_color_t file_button_green_pressed = lv_color_hex(0x15803D);
+  const lv_color_t file_button_grey = lv_color_hex(powerui::COLOR_SECONDARY);
+  const lv_color_t file_button_green = lv_color_hex(powerui::COLOR_PRIMARY);
+  const lv_color_t file_button_green_pressed = lv_color_hex(powerui::COLOR_PRIMARY_PRESSED);
   lv_obj_t *file_action_buttons[] = {
     print_btn.get_container(), back_btn.get_container()
   };
@@ -236,7 +239,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
     lv_obj_set_width(button, file_action_width);
     lv_obj_set_style_bg_color(button, file_button_grey, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(button, lv_color_hex(0x333333), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(button, lv_color_hex(powerui::COLOR_PRESSED), LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_border_width(button, 0, LV_PART_MAIN);
     lv_obj_set_style_radius(button, 12, LV_PART_MAIN);
@@ -260,23 +263,23 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_t *print_label = lv_obj_get_child(print_btn.get_container(), 1);
   if (print_label != NULL) {
     lv_obj_set_style_text_font(print_label, &lv_font_montserrat_20, LV_PART_MAIN);
-    lv_obj_set_style_text_color(print_label, lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_text_color(print_label, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
   }
 
   delete_btn = lv_btn_create(action_row);
   lv_obj_set_size(delete_btn, powerui::px(56), powerui::px(56));
-  lv_obj_set_style_bg_color(delete_btn, lv_color_hex(0x171717), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(delete_btn, lv_color_hex(powerui::COLOR_CARD), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(delete_btn, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(delete_btn, lv_color_hex(0x262626), LV_PART_MAIN | LV_STATE_PRESSED);
+  lv_obj_set_style_bg_color(delete_btn, lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN | LV_STATE_PRESSED);
   lv_obj_set_style_border_width(delete_btn, 1, LV_PART_MAIN);
-  lv_obj_set_style_border_color(delete_btn, lv_color_hex(0xFF6467), LV_PART_MAIN);
+  lv_obj_set_style_border_color(delete_btn, lv_color_hex(powerui::COLOR_DESTRUCTIVE), LV_PART_MAIN);
   lv_obj_set_style_border_opa(delete_btn, LV_OPA_40, LV_PART_MAIN);
   lv_obj_set_style_radius(delete_btn, powerui::px(10), LV_PART_MAIN);
   lv_obj_set_style_shadow_width(delete_btn, 0, LV_PART_MAIN);
   lv_obj_t *delete_label = lv_label_create(delete_btn);
   lv_label_set_text(delete_label, LV_SYMBOL_TRASH);
   lv_obj_set_style_text_font(delete_label, &lv_font_montserrat_20, LV_PART_MAIN);
-  lv_obj_set_style_text_color(delete_label, lv_color_hex(0xFF6467), LV_PART_MAIN);
+  lv_obj_set_style_text_color(delete_label, lv_color_hex(powerui::COLOR_DESTRUCTIVE), LV_PART_MAIN);
   lv_obj_center(delete_label);
   lv_obj_add_event_cb(delete_btn, &PrintPanel::_handle_btns, LV_EVENT_CLICKED, this);
   lv_obj_set_style_bg_color(print_btn.get_container(), file_button_green,
@@ -305,7 +308,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
                       LV_EVENT_CLICKED, this);
   label = lv_label_create(delete_context_menu);
   lv_label_set_text(label, "Delete");
-  lv_obj_set_style_text_color(label, lv_palette_main(LV_PALETTE_RED), LV_PART_MAIN);
+  lv_obj_set_style_text_color(label, lv_color_hex(powerui::COLOR_MAT_RED), LV_PART_MAIN);
   lv_obj_set_style_text_font(label, &lv_font_montserrat_16, LV_PART_MAIN);
   lv_obj_center(label);
   lv_obj_add_flag(delete_context_cont, LV_OBJ_FLAG_HIDDEN);
@@ -315,7 +318,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_set_size(delete_confirm_cont, LV_PCT(100), LV_PCT(100));
   lv_obj_set_pos(delete_confirm_cont, 0, 0);
   lv_obj_set_style_pad_all(delete_confirm_cont, 0, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(delete_confirm_cont, lv_color_black(), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(delete_confirm_cont, lv_color_hex(powerui::COLOR_BLACK), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(delete_confirm_cont, LV_OPA_70, LV_PART_MAIN);
   lv_obj_set_style_border_width(delete_confirm_cont, 0, LV_PART_MAIN);
   lv_obj_add_flag(delete_confirm_cont, LV_OBJ_FLAG_CLICKABLE);
@@ -328,7 +331,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
                   static_cast<lv_coord_t>(190 * height_scale));
   lv_obj_align(delete_confirm_box, LV_ALIGN_CENTER, 0, 0);
   lv_obj_set_style_pad_all(delete_confirm_box, 12, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(delete_confirm_box, lv_palette_darken(LV_PALETTE_GREY, 1), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(delete_confirm_box, lv_color_hex(powerui::COLOR_MAT_GREY_DARK), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(delete_confirm_box, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_width(delete_confirm_box, 2, LV_PART_MAIN);
   lv_obj_set_style_border_color(delete_confirm_box, file_button_grey, LV_PART_MAIN);
@@ -339,7 +342,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_set_height(delete_confirm_label, static_cast<lv_coord_t>(88 * height_scale));
   lv_label_set_long_mode(delete_confirm_label, LV_LABEL_LONG_WRAP);
   lv_obj_set_style_text_align(delete_confirm_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-  lv_obj_set_style_text_color(delete_confirm_label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_color(delete_confirm_label, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
   lv_obj_set_style_text_font(delete_confirm_label, &lv_font_montserrat_20, LV_PART_MAIN);
   lv_obj_align(delete_confirm_label, LV_ALIGN_TOP_MID, 0, 8);
 
@@ -354,21 +357,21 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_set_style_radius(delete_accept_btn, 12, LV_PART_MAIN);
   label = lv_label_create(delete_accept_btn);
   lv_label_set_text(label, "Accept");
-  lv_obj_set_style_text_color(label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_color(label, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
   lv_obj_center(label);
 
   lv_obj_set_size(delete_cancel_btn, static_cast<lv_coord_t>(150 * width_scale),
                   static_cast<lv_coord_t>(54 * height_scale));
   lv_obj_align(delete_cancel_btn, LV_ALIGN_BOTTOM_RIGHT, -12, -12);
-  lv_obj_set_style_bg_color(delete_cancel_btn, lv_palette_main(LV_PALETTE_RED),
+  lv_obj_set_style_bg_color(delete_cancel_btn, lv_color_hex(powerui::COLOR_MAT_RED),
                             LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_bg_color(delete_cancel_btn, lv_palette_darken(LV_PALETTE_RED, 2),
+  lv_obj_set_style_bg_color(delete_cancel_btn, lv_color_hex(powerui::COLOR_MAT_RED_DARK),
                             LV_PART_MAIN | LV_STATE_PRESSED);
   lv_obj_set_style_bg_opa(delete_cancel_btn, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_radius(delete_cancel_btn, 12, LV_PART_MAIN);
   label = lv_label_create(delete_cancel_btn);
   lv_label_set_text(label, "Cancel");
-  lv_obj_set_style_text_color(label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_color(label, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
   lv_obj_center(label);
 
   lv_obj_add_event_cb(delete_accept_btn, &PrintPanel::_handle_btns,
@@ -385,7 +388,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
 
   lv_obj_set_size(msgbox, LV_PCT(60), LV_PCT(30));
   lv_obj_set_style_border_width(msgbox, 2, 0);
-  lv_obj_set_style_bg_color(msgbox, lv_palette_darken(LV_PALETTE_GREY, 1), 0);
+  lv_obj_set_style_bg_color(msgbox, lv_color_hex(powerui::COLOR_MAT_GREY_DARK), 0);
   
   lv_obj_align(msgbox, LV_ALIGN_CENTER, 0, 0);
 
@@ -502,13 +505,12 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
 
   if (usb_missing) {
     cur_file = NULL;
-    lv_obj_t *message = lv_label_create(file_grid);
-    lv_label_set_text(message, "No USB drive detected");
-    lv_obj_set_style_text_color(message, lv_color_hex(0xA1A1A1), LV_PART_MAIN);
-    lv_obj_set_style_text_font(message, &lv_font_montserrat_16, LV_PART_MAIN);
-    lv_obj_set_width(message, LV_PCT(100));
-    lv_obj_set_style_text_align(message, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-    lv_obj_set_style_pad_top(message, 40, LV_PART_MAIN);
+    powerui::empty_state(file_grid, &sd_img, "No USB drive detected", "Insert a USB drive and tap the reload button.");
+    return;
+  }
+  if (dir->children.empty()) {
+    cur_file = NULL;
+    powerui::empty_state(file_grid, &ui_icon_folder, "No files here", "Upload G-code from Fluidd or a USB drive.");
     return;
   }
   file_cards.reserve(dir->children.size());
@@ -522,9 +524,9 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_add_event_cb(card, &PrintPanel::_handle_file_card, LV_EVENT_CLICKED, this);
     lv_obj_add_event_cb(card, &PrintPanel::_handle_file_card, LV_EVENT_LONG_PRESSED, this);
     lv_obj_set_style_bg_opa(card, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(card, lv_color_hex(0x262626), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(card, lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_bg_opa(card, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
-    lv_obj_set_style_bg_color(card, lv_color_hex(0x262626), LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_color(card, lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN | LV_STATE_CHECKED);
     lv_obj_set_style_bg_opa(card, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_CHECKED);
     lv_obj_set_style_border_width(card, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_opa(card, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -540,10 +542,10 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_set_size(thumbnail_frame, powerui::px(40), powerui::px(40));
     lv_obj_clear_flag(thumbnail_frame, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_clear_flag(thumbnail_frame, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_style_bg_color(thumbnail_frame, lv_color_hex(0x0A0A0A), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(thumbnail_frame, lv_color_hex(powerui::COLOR_BG), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(thumbnail_frame, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_set_style_border_width(thumbnail_frame, 1, LV_PART_MAIN);
-    lv_obj_set_style_border_color(thumbnail_frame, lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_border_color(thumbnail_frame, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
     lv_obj_set_style_border_opa(thumbnail_frame, LV_OPA_10, LV_PART_MAIN);
     lv_obj_set_style_radius(thumbnail_frame, powerui::px(8), LV_PART_MAIN);
     lv_obj_set_style_pad_all(thumbnail_frame, 0, LV_PART_MAIN);
@@ -555,7 +557,7 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_set_size(thumbnail, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
     lv_obj_set_style_text_font(thumbnail, &lv_font_montserrat_16, LV_PART_MAIN);
     lv_obj_set_style_img_recolor(thumbnail,
-                                 directory ? lv_color_hex(CREALITY_GREEN) : lv_color_white(),
+                                 directory ? lv_color_hex(CREALITY_GREEN) : lv_color_hex(powerui::COLOR_WHITE),
                                  LV_PART_MAIN);
     lv_obj_set_style_img_recolor_opa(thumbnail, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_center(thumbnail);
@@ -579,7 +581,7 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_set_width(name_label, LV_PCT(100));
     lv_label_set_long_mode(name_label, LV_LABEL_LONG_CLIP);
     lv_label_set_text(name_label, display_name.c_str());
-    lv_obj_set_style_text_color(name_label, lv_color_hex(0xFAFAFA), LV_PART_MAIN);
+    lv_obj_set_style_text_color(name_label, lv_color_hex(powerui::COLOR_FG), LV_PART_MAIN);
     lv_obj_set_style_text_font(name_label, &lv_font_montserrat_14, LV_PART_MAIN);
 
     lv_obj_t *subtitle_label = lv_label_create(text_col);
@@ -587,13 +589,13 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_set_width(subtitle_label, LV_PCT(100));
     lv_label_set_long_mode(subtitle_label, LV_LABEL_LONG_CLIP);
     lv_label_set_text(subtitle_label, directory ? "Folder" : "");
-    lv_obj_set_style_text_color(subtitle_label, lv_color_hex(0xA1A1A1), LV_PART_MAIN);
+    lv_obj_set_style_text_color(subtitle_label, lv_color_hex(powerui::COLOR_MUTED), LV_PART_MAIN);
     lv_obj_set_style_text_font(subtitle_label, &lv_font_montserrat_12, LV_PART_MAIN);
 
     lv_obj_t *chevron = lv_label_create(card);
     lv_obj_clear_flag(chevron, LV_OBJ_FLAG_CLICKABLE);
     lv_label_set_text(chevron, LV_SYMBOL_RIGHT);
-    lv_obj_set_style_text_color(chevron, lv_color_hex(0xA1A1A1), LV_PART_MAIN);
+    lv_obj_set_style_text_color(chevron, lv_color_hex(powerui::COLOR_MUTED), LV_PART_MAIN);
     lv_obj_set_style_text_font(chevron, &lv_font_montserrat_14, LV_PART_MAIN);
 
     file_cards.push_back({card, thumbnail, path, node, directory, "", subtitle_label});
@@ -993,15 +995,15 @@ void PrintPanel::handle_btns(lv_event_t *event) {
 
 
 void PrintPanel::update_storage_buttons() {
-  const lv_color_t accent = lv_color_hex(0x4ADE80);
+  const lv_color_t accent = lv_color_hex(powerui::COLOR_ACCENT);
   lv_obj_t *buttons[2] = {local_btn, usb_btn};
   for (int i = 0; i < 2; ++i) {
     const bool selected = (i == 1) == usb_view;
-    lv_obj_set_style_bg_color(buttons[i], selected ? accent : lv_color_hex(0x262626), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(buttons[i], selected ? accent : lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(buttons[i], selected ? LV_OPA_20 : LV_OPA_COVER, LV_PART_MAIN);
-    lv_obj_set_style_border_color(buttons[i], selected ? accent : lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_border_color(buttons[i], selected ? accent : lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
     lv_obj_set_style_border_opa(buttons[i], selected ? LV_OPA_50 : LV_OPA_10, LV_PART_MAIN);
-    lv_obj_set_style_text_color(buttons[i], selected ? accent : lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_text_color(buttons[i], selected ? accent : lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
   }
 }
 
@@ -1050,15 +1052,15 @@ void PrintPanel::sync_usb_link() {
 }
 
 void PrintPanel::update_sort_buttons() {
-  const lv_color_t accent = lv_color_hex(0x4ADE80);
+  const lv_color_t accent = lv_color_hex(powerui::COLOR_ACCENT);
   lv_obj_t *buttons[2] = {modified_sort_btn, az_sort_btn};
   for (int i = 0; i < 2; ++i) {
     const bool selected = (i == 0) == sort_modified;
-    lv_obj_set_style_bg_color(buttons[i], selected ? accent : lv_color_hex(0x262626), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(buttons[i], selected ? accent : lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(buttons[i], selected ? LV_OPA_20 : LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_set_style_border_width(buttons[i], 1, LV_PART_MAIN);
-    lv_obj_set_style_border_color(buttons[i], selected ? accent : lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_border_color(buttons[i], selected ? accent : lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
     lv_obj_set_style_border_opa(buttons[i], selected ? LV_OPA_50 : LV_OPA_TRANSP, LV_PART_MAIN);
-    lv_obj_set_style_text_color(buttons[i], selected ? accent : lv_color_hex(0xFAFAFA), LV_PART_MAIN);
+    lv_obj_set_style_text_color(buttons[i], selected ? accent : lv_color_hex(powerui::COLOR_FG), LV_PART_MAIN);
   }
 }

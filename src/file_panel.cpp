@@ -32,11 +32,11 @@ FilePanel::FilePanel(lv_obj_t *parent)
   lv_obj_t *preview = plain(file_cont);
   lv_obj_set_size(preview, LV_PCT(100), px(168));
   lv_obj_set_pos(preview, 0, 0);
-  lv_obj_set_style_bg_color(preview, lv_color_hex(0x0A0A0A), 0);
+  lv_obj_set_style_bg_color(preview, lv_color_hex(COLOR_BG), 0);
   lv_obj_set_style_bg_opa(preview, LV_OPA_COVER, 0);
   lv_obj_set_style_radius(preview, px(10), 0);
   lv_obj_set_style_border_width(preview, 1, 0);
-  lv_obj_set_style_border_color(preview, lv_color_white(), 0);
+  lv_obj_set_style_border_color(preview, lv_color_hex(COLOR_WHITE), 0);
   lv_obj_set_style_border_opa(preview, LV_OPA_10, 0);
   lv_obj_set_parent(thumbnail, preview);
   lv_obj_center(thumbnail);
@@ -75,7 +75,7 @@ FilePanel::FilePanel(lv_obj_t *parent)
       lv_obj_t *line = plain(detail_cont);
       lv_obj_set_size(line, LV_PCT(100), 1);
       lv_obj_set_pos(line, 0, px(i * 34));
-      lv_obj_set_style_bg_color(line, lv_color_white(), 0);
+      lv_obj_set_style_bg_color(line, lv_color_hex(COLOR_WHITE), 0);
       lv_obj_set_style_bg_opa(line, LV_OPA_10, 0);
     }
     lv_obj_t *title = label(detail_cont, titles[i], &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));

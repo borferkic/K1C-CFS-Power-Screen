@@ -1,4 +1,5 @@
 #include "macro_item.h"
+#include "powerui.h"
 #include "spdlog/spdlog.h"
 
 MacroItem::MacroItem(KWebSocketClient &c,
@@ -43,10 +44,10 @@ MacroItem::MacroItem(KWebSocketClient &c,
 
   if (hidden) {
     lv_label_set_text(hide_show, "    " LV_SYMBOL_EYE_OPEN "    ");
-    lv_obj_set_style_text_color(hide_show, lv_palette_main(LV_PALETTE_GREEN), LV_PART_MAIN);
+    lv_obj_set_style_text_color(hide_show, lv_color_hex(powerui::COLOR_MAT_GREEN), LV_PART_MAIN);
   } else {
     lv_label_set_text(hide_show, "    " LV_SYMBOL_EYE_CLOSE "    ");
-    lv_obj_set_style_text_color(hide_show, lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_text_color(hide_show, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
   }
 
   lv_obj_align(hide_show_cont, LV_ALIGN_LEFT_MID, 0, 0);
@@ -178,11 +179,11 @@ void MacroItem::handle_hide_show(lv_event_t *e) {
 	lv_obj_add_flag(cont, LV_OBJ_FLAG_HIDDEN);
       }
       lv_label_set_text(hide_show, "    " LV_SYMBOL_EYE_OPEN "    ");
-      lv_obj_set_style_text_color(hide_show, lv_palette_main(LV_PALETTE_GREEN), LV_PART_MAIN);
+      lv_obj_set_style_text_color(hide_show, lv_color_hex(powerui::COLOR_MAT_GREEN), LV_PART_MAIN);
     } else {
       lv_obj_clear_flag(cont, LV_OBJ_FLAG_HIDDEN);
       lv_label_set_text(hide_show, "    " LV_SYMBOL_EYE_CLOSE "    ");
-      lv_obj_set_style_text_color(hide_show, lv_color_white(), LV_PART_MAIN);
+      lv_obj_set_style_text_color(hide_show, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
     }
   }
 }

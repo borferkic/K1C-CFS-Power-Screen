@@ -41,7 +41,7 @@ constexpr lv_coord_t BUTTON_VERTICAL_PAD = 6;
 constexpr lv_coord_t PROGRESS_LABEL_GAP = 2;
 
 lv_color_t system_background_color() {
-  return lv_color_hex(0x0A0A0A);
+  return lv_color_hex(powerui::COLOR_BG);
 }
 
 void style_detail_item(lv_obj_t *item) {
@@ -136,7 +136,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_size(title_bar, LV_PCT(100), 32);
   lv_obj_set_pos(title_bar, 0, 0);
   lv_obj_set_style_pad_all(title_bar, 0, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(title_bar, lv_color_hex(0x171717), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(title_bar, lv_color_hex(powerui::COLOR_CARD), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(title_bar, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_width(title_bar, 0, LV_PART_MAIN);
 
@@ -144,12 +144,12 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_width(title_label, LV_PCT(100));
   lv_label_set_long_mode(title_label, LV_LABEL_LONG_DOT);
   lv_obj_set_style_text_align(title_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-  lv_obj_set_style_text_color(title_label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_color(title_label, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
   lv_obj_set_style_text_font(title_label, &lv_font_montserrat_20, LV_PART_MAIN);
   lv_obj_align(title_label, LV_ALIGN_CENTER, 0, 0);
 
   lv_obj_set_width(time_label, LV_SIZE_CONTENT);
-  lv_obj_set_style_text_color(time_label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_color(time_label, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
   lv_obj_set_style_text_font(time_label, &lv_font_montserrat_20, LV_PART_MAIN);
   lv_obj_align(time_label, LV_ALIGN_RIGHT_MID, -10, 0);
   update_clock();
@@ -251,11 +251,11 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_width(cancel_btn.get_container(), PAUSE_CANCEL_BUTTON_WIDTH);
   lv_obj_set_width(emergency_btn.get_container(), SECONDARY_BUTTON_WIDTH);
   lv_obj_set_width(back_btn.get_container(), TUNE_BACK_BUTTON_WIDTH);
-  style_action_button(pause_btn.get_container(), 0x4ADE80, true);
-  style_action_button(resume_btn.get_container(), 0x4ADE80, true);
-  style_action_button(cancel_btn.get_container(), 0x4ADE80, true);
+  style_action_button(pause_btn.get_container(), powerui::COLOR_ACCENT, true);
+  style_action_button(resume_btn.get_container(), powerui::COLOR_ACCENT, true);
+  style_action_button(cancel_btn.get_container(), powerui::COLOR_ACCENT, true);
   style_action_button(finetune_btn.get_container(), 0, false);
-  style_action_button(emergency_btn.get_container(), 0xF44336, true);
+  style_action_button(emergency_btn.get_container(), powerui::COLOR_DANGER, true);
   style_action_button(back_btn.get_container(), 0, false);
 
   lv_obj_clear_flag(file_cont, LV_OBJ_FLAG_SCROLLABLE);
@@ -269,7 +269,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_img_set_src(file_icon, &sd_img);
   lv_img_set_size_mode(file_icon, LV_IMG_SIZE_MODE_REAL);
   lv_img_set_zoom(file_icon, 100);
-  lv_obj_set_style_img_recolor(file_icon, lv_color_hex(0x4ADE80), LV_PART_MAIN);
+  lv_obj_set_style_img_recolor(file_icon, lv_color_hex(powerui::COLOR_ACCENT), LV_PART_MAIN);
   lv_obj_set_style_img_recolor_opa(file_icon, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_align(file_icon, LV_ALIGN_LEFT_MID, 5, 0);
 
@@ -280,18 +280,18 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_style_text_align(file_label, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
   lv_obj_set_style_pad_left(file_label, 34, LV_PART_MAIN);
   lv_obj_set_style_pad_right(file_label, 5, LV_PART_MAIN);
-  lv_obj_set_style_text_color(file_label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_color(file_label, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
   lv_obj_set_style_text_font(file_label, &lv_font_montserrat_20, LV_PART_MAIN);
   lv_obj_align(file_label, LV_ALIGN_LEFT_MID, 0, 0);
 
   lv_obj_set_width(status_label, PROGRESS_WIDTH);
   lv_obj_set_height(status_label, status_height);
   lv_obj_set_style_text_align(status_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-  lv_obj_set_style_text_color(status_label, lv_color_hex(0x4ADE80), LV_PART_MAIN);
+  lv_obj_set_style_text_color(status_label, lv_color_hex(powerui::COLOR_ACCENT), LV_PART_MAIN);
   lv_obj_set_style_text_font(status_label, &lv_font_montserrat_20, LV_PART_MAIN);
 
   lv_obj_set_style_border_width(thumbnail, 2, LV_PART_MAIN);
-  lv_obj_set_style_border_color(thumbnail, lv_color_hex(0x4ADE80), LV_PART_MAIN);
+  lv_obj_set_style_border_color(thumbnail, lv_color_hex(powerui::COLOR_ACCENT), LV_PART_MAIN);
   lv_obj_set_style_border_opa(thumbnail, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_radius(thumbnail, 12, LV_PART_MAIN);
   lv_obj_set_style_clip_corner(thumbnail, true, LV_PART_MAIN);
@@ -347,7 +347,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
     lv_obj_add_flag(title_bar, LV_OBJ_FLAG_HIDDEN);  // the main title bar shows "Print Status"
     lv_obj_set_layout(status_cont, 0);                // drop the old grid
     lv_obj_set_layout(detail_cont, 0);
-    lv_obj_set_style_bg_color(status_cont, lv_color_hex(COLOR_BG), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(status_cont, lv_color_hex(powerui::COLOR_BG), LV_PART_MAIN);
     lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(detail_cont, LV_OBJ_FLAG_HIDDEN);
 
@@ -357,10 +357,10 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
     lv_obj_set_parent(thumbnail_cont, left);
     lv_obj_set_size(thumbnail_cont, px(248), px(150));
     lv_obj_set_pos(thumbnail_cont, px(11), px(11));
-    lv_obj_set_style_bg_color(thumbnail_cont, lv_color_hex(COLOR_BG), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(thumbnail_cont, lv_color_hex(powerui::COLOR_BG), LV_PART_MAIN);
     lv_obj_set_style_radius(thumbnail_cont, px(10), LV_PART_MAIN);
     lv_obj_set_style_border_width(thumbnail_cont, 1, LV_PART_MAIN);
-    lv_obj_set_style_border_color(thumbnail_cont, lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_border_color(thumbnail_cont, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
     lv_obj_set_style_border_opa(thumbnail_cont, LV_OPA_10, LV_PART_MAIN);
     lv_obj_set_style_border_width(thumbnail, 0, LV_PART_MAIN);
 
@@ -386,10 +386,10 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
     lv_obj_align(progress_label, LV_ALIGN_TOP_RIGHT, 0, 0);
     lv_obj_set_size(progress_bar, px(248), px(12));
     lv_obj_align(progress_bar, LV_ALIGN_BOTTOM_MID, 0, -px(10));
-    lv_obj_set_style_bg_color(progress_bar, lv_color_hex(COLOR_SECONDARY), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(progress_bar, lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(progress_bar, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_set_style_radius(progress_bar, LV_RADIUS_CIRCLE, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(progress_bar, lv_color_hex(COLOR_ACCENT), LV_PART_INDICATOR);
+    lv_obj_set_style_bg_color(progress_bar, lv_color_hex(powerui::COLOR_ACCENT), LV_PART_INDICATOR);
     lv_obj_set_style_bg_opa(progress_bar, LV_OPA_COVER, LV_PART_INDICATOR);
     lv_obj_set_style_radius(progress_bar, LV_RADIUS_CIRCLE, LV_PART_INDICATOR);
 
@@ -404,7 +404,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
     for (const auto &category : categories) {
       lv_obj_t *category_card = card(status_cont, 296, category.y, 428, category.h);
       lv_obj_move_to_index(category_card, 0);
-      lv_obj_t *title = label(category_card, category.title, &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
+      lv_obj_t *title = label(category_card, category.title, &lv_font_montserrat_12, lv_color_hex(powerui::COLOR_MUTED));
       lv_obj_set_pos(title, px(14), px(8));
       for (int i = 0; i < 3; ++i) {
         lv_obj_t *row = category.rows[i].item->get_container();
@@ -422,9 +422,9 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
         lv_obj_t *value = lv_obj_get_child(row, 1);
         if (value != NULL) {
           lv_obj_set_style_text_font(value, &lv_font_montserrat_16, LV_PART_MAIN);
-          lv_obj_set_style_text_color(value, lv_color_hex(COLOR_FG), LV_PART_MAIN);
+          lv_obj_set_style_text_color(value, lv_color_hex(powerui::COLOR_FG), LV_PART_MAIN);
         }
-        lv_obj_t *name = label(row, category.rows[i].name, &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+        lv_obj_t *name = label(row, category.rows[i].name, &lv_font_montserrat_14, lv_color_hex(powerui::COLOR_MUTED));
         lv_obj_align(name, LV_ALIGN_LEFT_MID, px(34), 0);
       }
     }
@@ -824,23 +824,23 @@ void PrintStatusPanel::handle_callback(lv_event_t *event) {
 
 void PrintStatusPanel::update_status_label(const std::string &status) {
   const char *text = "READY";
-  lv_color_t color = lv_color_white();
+  lv_color_t color = lv_color_hex(powerui::COLOR_WHITE);
 
   if (status == "printing") {
     text = "PRINTING";
-    color = lv_color_hex(0x4ADE80);
+    color = lv_color_hex(powerui::COLOR_ACCENT);
   } else if (status == "paused") {
     text = "PAUSED";
-    color = lv_palette_main(LV_PALETTE_ORANGE);
+    color = lv_color_hex(powerui::COLOR_MAT_ORANGE);
   } else if (status == "complete") {
     text = "COMPLETE";
-    color = lv_color_hex(0x4ADE80);
+    color = lv_color_hex(powerui::COLOR_ACCENT);
   } else if (status == "cancelled") {
     text = "CANCELLED";
-    color = lv_palette_main(LV_PALETTE_RED);
+    color = lv_color_hex(powerui::COLOR_MAT_RED);
   } else if (status == "error") {
     text = "ERROR";
-    color = lv_palette_main(LV_PALETTE_RED);
+    color = lv_color_hex(powerui::COLOR_MAT_RED);
   }
 
   lv_label_set_text(status_label, text);

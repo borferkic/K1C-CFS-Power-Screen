@@ -1,4 +1,5 @@
 #include "sensor_container.h"
+#include "powerui.h"
 #include "spdlog/spdlog.h"
 
 #include <string>
@@ -75,7 +76,7 @@ SensorContainer::SensorContainer(KWebSocketClient &c,
     if (can_edit) {      
       lv_obj_set_style_border_width(target_label, 2, LV_PART_MAIN);
       lv_obj_set_style_radius(target_label, 6, LV_PART_MAIN);
-      lv_obj_set_style_border_color(target_label, lv_palette_darken(LV_PALETTE_GREY, 1), LV_PART_MAIN);
+      lv_obj_set_style_border_color(target_label, lv_color_hex(powerui::COLOR_MAT_GREY_DARK), LV_PART_MAIN);
 
       spdlog::debug("sensor cb registered name {}, cont {}, this {}, np {}",
 		    id, fmt::ptr(sensor_cont), fmt::ptr(this), fmt::ptr(&np));

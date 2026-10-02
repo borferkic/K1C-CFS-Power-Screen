@@ -60,6 +60,14 @@ class SettingPanel {
   lv_obj_t *confirm_accept_btn;
   std::string confirm_method;
 
+  // Power Update is disabled while a print is running or paused (like CFS when it is offline).
+  lv_timer_t *update_lock_timer;
+  bool update_locked;
+  void refresh_update_lock();
+  static void _refresh_update_lock_cb(lv_timer_t *timer) {
+    static_cast<SettingPanel*>(timer->user_data)->refresh_update_lock();
+  }
+
   void create_confirm_overlay();
   void show_confirm(const std::string &title, const std::string &method);
 };

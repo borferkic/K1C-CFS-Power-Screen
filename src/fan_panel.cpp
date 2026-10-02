@@ -10,7 +10,7 @@
 LV_IMG_DECLARE(back);
 
 namespace {
-constexpr uint32_t FAN_PANEL_BACKGROUND = 0x0A0A0A;
+constexpr uint32_t FAN_PANEL_BACKGROUND = powerui::COLOR_BG;
 }
 
 FanPanel::FanPanel(KWebSocketClient &websocket_client, std::mutex &lock)

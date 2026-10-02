@@ -15,7 +15,7 @@
 #include "printer_select_panel.h"
 #include "spdlog/spdlog.h"
 #include "state.h"
-#include "theme.h"
+#include "powerui.h"
 
 PowerScreen *PowerScreen::instance = NULL;
 lv_style_t PowerScreen::style_container;
@@ -59,21 +59,9 @@ PowerScreen *PowerScreen::init(std::function<void(lv_color_t, lv_color_t)> hal_i
       ? "debug" 
       : conf->get<std::string>(ll_path));
 
-  auto selected_theme = conf->get_json("/theme").empty()
-          ? "green.json"
-          : conf->get<std::string>("/theme") + ".json";
-  auto theme_config = fs::canonical(conf->get_path()).parent_path() / "themes" / selected_theme;
-
-  ThemeConfig *theme_conf = ThemeConfig::get_instance();
-  theme_conf->init(theme_config);
-
-  auto primary_color = theme_conf->get_json("/primary_color").empty()
-          ? lv_color_hex(0x16A34A)
-          : lv_color_hex(std::stoul(theme_conf->get<std::string>("/primary_color"), nullptr, 16));
-
-  auto secondary_color = theme_conf->get_json("/secondary_color").empty()
-          ? lv_color_hex(0xF44336)
-          : lv_color_hex(std::stoul(theme_conf->get<std::string>("/secondary_color"), nullptr, 16));
+  // PowerUI has fixed colors: the accent is not selectable.
+  auto primary_color = lv_color_hex(powerui::COLOR_PRIMARY);
+  auto secondary_color = lv_color_hex(powerui::COLOR_LVGL_SECONDARY);
 
 #ifndef OS_ANDROID
   auto console_sink = std::make_shared<spdlog::sinks::stdout_sink_mt>();
@@ -116,7 +104,7 @@ PowerScreen *PowerScreen::init(std::function<void(lv_color_t, lv_color_t)> hal_i
 
 //  lv_style_init(&style_imgbtn_default);
 //  lv_style_set_img_recolor_opa(&style_imgbtn_default, LV_OPA_100);
-//  lv_style_set_img_recolor(&style_imgbtn_default, lv_color_black());
+//  lv_style_set_img_recolor(&style_imgbtn_default, lv_color_hex(powerui::COLOR_BLACK));
 
   lv_style_init(&style_imgbtn_pressed);
   lv_style_set_img_recolor_opa(&style_imgbtn_pressed, LV_OPA_100);
@@ -124,7 +112,7 @@ PowerScreen *PowerScreen::init(std::function<void(lv_color_t, lv_color_t)> hal_i
 
   lv_style_init(&style_imgbtn_disabled);
   lv_style_set_img_recolor_opa(&style_imgbtn_disabled, LV_OPA_100);
-  lv_style_set_img_recolor(&style_imgbtn_disabled, lv_palette_darken(LV_PALETTE_GREY, 1));
+  lv_style_set_img_recolor(&style_imgbtn_disabled, lv_color_hex(powerui::COLOR_MAT_GREY_DARK));
 
   /*Initia1ize the new theme from the current theme*/
 
@@ -234,7 +222,7 @@ std::mutex &PowerScreen::get_lock() {
 }
 
 void PowerScreen::connect_ws(const std::string &url) {
-  init_panel.set_message(LV_SYMBOL_WARNING " Waiting for printer to initialize...");
+  init_panel.set_message("Waiting for printer to initialize...");
   ws.connect(url.c_str(),
    [this]() { init_panel.connected(ws); },
    [this]() { init_panel.disconnected(ws); });
@@ -265,23 +253,6 @@ void PowerScreen::save_calibration_coeff(lv_tc_coeff_t coeff) {
   conf->set<std::vector<float>>("/touch_calibration_coeff",
                                 {coeff.a, coeff.b, coeff.c, coeff.d, coeff.e, coeff.f});
   conf->save();
-}
-
-void PowerScreen::refresh_theme() {
-  lv_theme_t *th = lv_theme_default_get();
-  ThemeConfig *theme_conf = ThemeConfig::get_instance();
-  auto primary_color = theme_conf->get_json("/primary_color").empty()
-                       ? lv_color_hex(0x16A34A)
-                       : lv_color_hex(std::stoul(theme_conf->get<std::string>("/primary_color"), nullptr, 16));
-
-  auto secondary_color = theme_conf->get_json("/secondary_color").empty()
-                         ? lv_color_hex(0xF44336)
-                         : lv_color_hex(std::stoul(theme_conf->get<std::string>("/secondary_color"), nullptr, 16));
-
-  lv_disp_t *disp = lv_disp_get_default();
-  lv_theme_t * new_theme =  lv_theme_default_init(disp, primary_color, secondary_color, true, th->font_normal);
-  lv_disp_set_theme(disp, new_theme);
-  lv_style_set_img_recolor(&style_imgbtn_pressed, primary_color);
 }
 
 /*Set in lv_conf.h as `LV_TICK_CUSTOM_SYS_TIME_EXPR`*/

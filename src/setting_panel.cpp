@@ -1,4 +1,5 @@
 #include "setting_panel.h"
+#include "powerui.h"
 #include "config.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
@@ -39,6 +40,8 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
   , confirm_label(NULL)
   , confirm_cancel_btn(NULL)
   , confirm_accept_btn(NULL)
+  , update_lock_timer(NULL)
+  , update_locked(false)
 {
   lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(cont, LV_PCT(100), LV_PCT(100));
@@ -54,7 +57,9 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
   powerscreen_update_btn.set_subtitle("PowerScreen and Script");
 
   spoolman_btn.disable();
-  spoolman_btn.set_pill("Offline", lv_color_hex(0xFF6467));
+  spoolman_btn.set_pill("Offline", lv_color_hex(powerui::COLOR_DESTRUCTIVE));
+  update_lock_timer = lv_timer_create(&SettingPanel::_refresh_update_lock_cb, 1000, this);
+  refresh_update_lock();
 #ifdef OS_ANDROID
   wifi_btn.disable();
 #endif
@@ -85,6 +90,11 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
 }
 
 SettingPanel::~SettingPanel() {
+  if (update_lock_timer != NULL) {
+    lv_timer_del(update_lock_timer);
+    update_lock_timer = NULL;
+  }
+
   if (confirm_overlay != NULL) {
     lv_obj_del(confirm_overlay);
     confirm_overlay = NULL;
@@ -147,6 +157,28 @@ void SettingPanel::handle_callback(lv_event_t *event) {
   }
 }
 
+// Disables the Power Update tile and shows a "Printing" pill while a print is running or paused; restores it when the
+// print ends. Runs every second on the LVGL thread.
+void SettingPanel::refresh_update_lock() {
+  bool busy = false;
+  auto &pstate = State::get_instance()->get_data("/printer_state/print_stats/state"_json_pointer);
+  if (pstate.is_string()) {
+    const std::string state = pstate.template get<std::string>();
+    busy = state == "printing" || state == "paused";
+  }
+  if (busy == update_locked) {
+    return;
+  }
+  update_locked = busy;
+  if (busy) {
+    powerscreen_update_btn.disable();
+    powerscreen_update_btn.set_pill("Printing", lv_color_hex(powerui::COLOR_WARNING));
+  } else {
+    powerscreen_update_btn.enable();
+    powerscreen_update_btn.hide_pill();
+  }
+}
+
 void SettingPanel::enable_spoolman() {
   spoolman_btn.enable();
   spoolman_btn.hide_pill();
@@ -172,7 +204,7 @@ void SettingPanel::create_confirm_overlay() {
   confirm_overlay = lv_obj_create(lv_layer_top());
   lv_obj_remove_style_all(confirm_overlay);
   lv_obj_set_size(confirm_overlay, LV_PCT(100), LV_PCT(100));
-  lv_obj_set_style_bg_color(confirm_overlay, lv_color_black(), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(confirm_overlay, lv_color_hex(powerui::COLOR_BLACK), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(confirm_overlay, LV_OPA_80, LV_PART_MAIN);
   lv_obj_add_flag(confirm_overlay, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_clear_flag(confirm_overlay, LV_OBJ_FLAG_SCROLLABLE);
@@ -181,9 +213,9 @@ void SettingPanel::create_confirm_overlay() {
   lv_obj_set_size(card, 460, 220);
   lv_obj_center(card);
   lv_obj_clear_flag(card, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_style_bg_color(card, lv_color_hex(0x0A0A0A), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(card, lv_color_hex(powerui::COLOR_BG), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(card, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_set_style_border_color(card, lv_color_hex(0x4ADE80), LV_PART_MAIN);
+  lv_obj_set_style_border_color(card, lv_color_hex(powerui::COLOR_ACCENT), LV_PART_MAIN);
   lv_obj_set_style_border_width(card, 2, LV_PART_MAIN);
   lv_obj_set_style_radius(card, 12, LV_PART_MAIN);
 
@@ -191,14 +223,14 @@ void SettingPanel::create_confirm_overlay() {
   lv_label_set_long_mode(confirm_label, LV_LABEL_LONG_WRAP);
   lv_obj_set_width(confirm_label, LV_PCT(100));
   lv_obj_set_style_text_align(confirm_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-  lv_obj_set_style_text_color(confirm_label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_set_style_text_color(confirm_label, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
   lv_obj_set_style_text_font(confirm_label, &lv_font_montserrat_20, LV_PART_MAIN);
   lv_obj_align(confirm_label, LV_ALIGN_TOP_MID, 0, 10);
 
-  confirm_cancel_btn = create_dialog_button(card, "Cancel", 0x262626,
+  confirm_cancel_btn = create_dialog_button(card, "Cancel", powerui::COLOR_SECONDARY,
                                             &SettingPanel::_handle_callback, this);
   lv_obj_align(confirm_cancel_btn, LV_ALIGN_BOTTOM_LEFT, 10, -6);
-  confirm_accept_btn = create_dialog_button(card, "Restart", 0xF44336,
+  confirm_accept_btn = create_dialog_button(card, "Restart", powerui::COLOR_DANGER,
                                             &SettingPanel::_handle_callback, this);
   lv_obj_align(confirm_accept_btn, LV_ALIGN_BOTTOM_RIGHT, -10, -6);
 

@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "state.h"
 #include "config.h"
+#include "powerui.h"
 #include "spdlog/spdlog.h"
 
 #include <algorithm>
@@ -9,27 +10,47 @@
 
 InitPanel::InitPanel(MainPanel &mp, BedMeshPanel &bmp, std::mutex& l)
   : cont(lv_obj_create(lv_scr_act()))
-  , label(lv_label_create(cont))
+  , spinner(NULL)
+  , label(NULL)
   , main_panel(mp)
   , bedmesh_panel(bmp)
   , lv_lock(l)
 {
-  lv_obj_set_size(cont, LV_PCT(55), LV_SIZE_CONTENT);
-  lv_obj_align(cont, LV_ALIGN_TOP_MID, 0, 15);  
-  
+  using namespace powerui;
+
+  // PowerUI notice: a card with a green spinner and the message, centered at the top.
   lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_style_bg_color(cont, lv_palette_darken(LV_PALETTE_GREY, 1), 0);
-  
-  lv_obj_set_size(label, LV_PCT(100), LV_SIZE_CONTENT);
+  lv_obj_set_size(cont, LV_SIZE_CONTENT, px(52));
+  lv_obj_align(cont, LV_ALIGN_TOP_MID, 0, px(14));
+  lv_obj_set_style_bg_color(cont, lv_color_hex(COLOR_CARD), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(cont, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_radius(cont, px(12), LV_PART_MAIN);
+  lv_obj_set_style_border_width(cont, 1, LV_PART_MAIN);
+  lv_obj_set_style_border_color(cont, lv_color_hex(COLOR_WHITE), LV_PART_MAIN);
+  lv_obj_set_style_border_opa(cont, LV_OPA_20, LV_PART_MAIN);
+  lv_obj_set_style_shadow_width(cont, 0, LV_PART_MAIN);
+  lv_obj_set_style_pad_hor(cont, px(20), LV_PART_MAIN);
+  lv_obj_set_style_pad_ver(cont, 0, LV_PART_MAIN);
+  lv_obj_set_style_pad_column(cont, px(14), LV_PART_MAIN);
+  lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(cont, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
   Config *conf = Config::get_instance();
-  if (!conf->get_json("/default_printer").is_null()) {
-    lv_label_set_text(label, LV_SYMBOL_WARNING " Waiting for printer to initialize...");
-  } else {
-    lv_label_set_text(label, "Welcome to PowerScreen. Use the Setting Panel to add your printers.");
+  bool waiting = !conf->get_json("/default_printer").is_null();
+
+  if (waiting) {
+    spinner = lv_spinner_create(cont, 1000, 60);
+    lv_obj_set_size(spinner, px(22), px(22));
+    lv_obj_set_style_arc_width(spinner, 3, LV_PART_MAIN);
+    lv_obj_set_style_arc_width(spinner, 3, LV_PART_INDICATOR);
+    lv_obj_set_style_arc_color(spinner, lv_color_hex(COLOR_SECONDARY), LV_PART_MAIN);
+    lv_obj_set_style_arc_color(spinner, lv_color_hex(COLOR_ACCENT), LV_PART_INDICATOR);
+    lv_obj_clear_flag(spinner, LV_OBJ_FLAG_CLICKABLE);
   }
-  lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
-  lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+
+  label = powerui::label(cont, waiting ? "Waiting for printer to initialize..."
+                                       : "Welcome to PowerScreen. Use the Setting Panel to add your printers.",
+                         &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
 }
 
 InitPanel::~InitPanel() {
