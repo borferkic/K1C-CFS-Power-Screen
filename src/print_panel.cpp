@@ -174,12 +174,13 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_set_flex_flow(storage_row, LV_FLEX_FLOW_ROW);
   auto make_storage_button = [this](const char *text) {
     lv_obj_t *button = lv_btn_create(storage_row);
-    lv_obj_set_size(button, LV_PCT(49), LV_PCT(100));
+    lv_obj_set_height(button, LV_PCT(100));
+    lv_obj_set_flex_grow(button, 1);
     lv_obj_set_style_radius(button, powerui::px(8), LV_PART_MAIN);
     lv_obj_set_style_shadow_width(button, 0, LV_PART_MAIN);
     lv_obj_set_style_border_width(button, 1, LV_PART_MAIN);
     lv_obj_t *button_label = lv_label_create(button);
-    lv_obj_set_style_text_font(button_label, &lv_font_montserrat_16, LV_PART_MAIN);
+    lv_obj_set_style_text_font(button_label, &lv_font_montserrat_14, LV_PART_MAIN);
     lv_label_set_text(button_label, text);
     lv_obj_center(button_label);
     lv_obj_add_event_cb(button, &PrintPanel::_handle_btns, LV_EVENT_CLICKED, this);
@@ -187,6 +188,8 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   };
   local_btn = make_storage_button("Local");
   usb_btn = make_storage_button("USB");
+  timelapse_btn = make_storage_button("Timelapse");
+  history_btn = make_storage_button("History");
   update_storage_buttons();
   lv_obj_move_to_index(storage_row, 0);
 
@@ -418,6 +421,12 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 0);
 
   ws.register_notify_update(this);
+
+  // Timelapse and History views (hidden until their segment is selected).
+  extra_view.reset(new FilesExtraView(ws, lv_lock, left_cont, files_cont, [this](const std::string &file) {
+    ws.send_jsonrpc("printer.print.start", json{{"filename", file}});
+    print_status.foreground();
+  }));
 }
 
 PrintPanel::~PrintPanel() {
@@ -483,6 +492,9 @@ void PrintPanel::foreground() {
 		pstat_state.is_null() ? "nil" : pstat_state.template get<std::string>());
     
   lv_obj_move_foreground(files_cont);
+  if (view_mode >= 2 && extra_view) {
+    show_extra(view_mode == 2 ? FilesExtraView::Mode::Timelapse : FilesExtraView::Mode::History);
+  }
 }
 
 void PrintPanel::background() {
@@ -981,6 +993,10 @@ void PrintPanel::handle_btns(lv_event_t *event) {
       set_storage(false);
     } else if (btn == usb_btn) {
       set_storage(true);
+    } else if (btn == timelapse_btn) {
+      show_extra(FilesExtraView::Mode::Timelapse);
+    } else if (btn == history_btn) {
+      show_extra(FilesExtraView::Mode::History);
     } else if (btn == refresh_btn) {
       subscribe();
       
@@ -996,9 +1012,9 @@ void PrintPanel::handle_btns(lv_event_t *event) {
 
 void PrintPanel::update_storage_buttons() {
   const lv_color_t accent = lv_color_hex(powerui::COLOR_ACCENT);
-  lv_obj_t *buttons[2] = {local_btn, usb_btn};
-  for (int i = 0; i < 2; ++i) {
-    const bool selected = (i == 1) == usb_view;
+  lv_obj_t *buttons[4] = {local_btn, usb_btn, timelapse_btn, history_btn};
+  for (int i = 0; i < 4; ++i) {
+    const bool selected = i == view_mode;
     lv_obj_set_style_bg_color(buttons[i], selected ? accent : lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(buttons[i], selected ? LV_OPA_20 : LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_set_style_border_color(buttons[i], selected ? accent : lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
@@ -1009,9 +1025,32 @@ void PrintPanel::update_storage_buttons() {
 
 void PrintPanel::set_storage(bool usb) {
   usb_view = usb;
+  view_mode = usb ? 1 : 0;
   cur_dir = &root;
+  extra_view->hide();
+  show_file_widgets(true);
   update_storage_buttons();
   subscribe();
+}
+
+void PrintPanel::show_file_widgets(bool visible) {
+  lv_obj_t *widgets[] = {file_table_btns, file_grid, file_view};
+  for (lv_obj_t *w : widgets) {
+    if (visible) {
+      lv_obj_clear_flag(w, LV_OBJ_FLAG_HIDDEN);
+    } else {
+      lv_obj_add_flag(w, LV_OBJ_FLAG_HIDDEN);
+    }
+  }
+}
+
+void PrintPanel::show_extra(FilesExtraView::Mode mode) {
+  view_mode = mode == FilesExtraView::Mode::Timelapse ? 2 : 3;
+  hide_delete_context();
+  hide_delete_confirmation();
+  show_file_widgets(false);
+  update_storage_buttons();
+  extra_view->show(mode);
 }
 
 // Make the USB drive visible to Moonraker: a "USB" link inside the gcodes folder pointing to the mounted drive.

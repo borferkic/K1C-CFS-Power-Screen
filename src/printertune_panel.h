@@ -9,6 +9,7 @@
 #include "tmc_tune_panel.h"
 #include "tmc_status_panel.h"
 #include "power_panel.h"
+#include "pid_tune_panel.h"
 #include "square_button.h"
 #include "lvgl/lvgl.h"
 
@@ -34,11 +35,14 @@ class PrinterTunePanel {
   };
 
  private:
+  KWebSocketClient &ws;
   lv_obj_t *cont;
   std::mutex &lv_lock;
   bool tmc_tune_available;
   bool tmc_status_available;
   bool power_devices_available;
+  // How "Nozzle Clean" runs: 0 = not available, 1 = BOX_NOZZLE_CLEAN (CFS), 2 = Power Script brush macro.
+  int nozzle_clean_mode;
   BedMeshPanel bedmesh_panel;
   FineTunePanel &finetune_panel;
   LimitsPanel limits_panel;
@@ -47,6 +51,7 @@ class PrinterTunePanel {
   TmcTunePanel tmc_tune_panel;
   TmcStatusPanel tmc_status_panel;
   PowerPanel power_panel;
+  PidTunePanel pid_tune_panel;
   SquareButton bedmesh_btn;
   SquareButton finetune_btn;
   SquareButton inputshaper_btn;
@@ -56,10 +61,13 @@ class PrinterTunePanel {
   SquareButton tmc_status_btn;
   SquareButton power_devices_btn;
   SquareButton console_btn;
+  SquareButton pid_tune_btn;
+  SquareButton nozzle_clean_btn;
   std::function<void()> console_callback;
 
   // Place in the grid only the buttons the printer supports.
   void relayout();
+  void clean_nozzle();
   
 };
 

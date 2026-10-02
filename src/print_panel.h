@@ -8,7 +8,9 @@
 #include "file_panel.h"
 #include "print_status_panel.h"
 #include "tree.h"
+#include "files_extra_view.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -68,6 +70,9 @@ class PrintPanel : public NotifyConsumer {
   void sync_usb_link();
   void set_storage(bool usb);
   void update_storage_buttons();
+  // Local / USB / Timelapse / History: 0..3. Timelapse and History replace the file list with FilesExtraView.
+  void show_extra(FilesExtraView::Mode mode);
+  void show_file_widgets(bool visible);
   void update_sort_buttons();
   void show_file_detail(Tree *f);
   void handle_file_card(lv_event_t *event);
@@ -93,6 +98,10 @@ class PrintPanel : public NotifyConsumer {
   lv_obj_t *storage_row = NULL;
   lv_obj_t *local_btn = NULL;
   lv_obj_t *usb_btn = NULL;
+  lv_obj_t *timelapse_btn = NULL;
+  lv_obj_t *history_btn = NULL;
+  int view_mode = 0;
+  std::unique_ptr<FilesExtraView> extra_view;
   bool usb_view = false;
   bool usb_missing = false;
   lv_obj_t *file_table_btns;

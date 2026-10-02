@@ -9,6 +9,8 @@
 #include "button_container.h"
 
 #include <map>
+#include <string>
+#include <vector>
 #include <memory>
 #include <mutex>
 #include <ctime>
@@ -28,6 +30,7 @@ class FanPanel : public NotifyConsumer {
   void handle_fan_update(lv_event_t *event);
   void handle_fan_update_part_fan(lv_event_t *event);
   void handle_fan_update_generic(lv_event_t *event);
+  void handle_target_selected(lv_event_t *event);
 
   static void _handle_callback(lv_event_t *event) {
     FanPanel *panel = (FanPanel*)event->user_data;
@@ -49,6 +52,11 @@ class FanPanel : public NotifyConsumer {
     panel->handle_fan_update_generic(event);
   };
 
+  static void _handle_target_selected(lv_event_t *event) {
+    FanPanel *panel = (FanPanel*)event->user_data;
+    panel->handle_target_selected(event);
+  };
+
   static void _update_clock_cb(lv_timer_t *timer) {
     FanPanel *panel = static_cast<FanPanel *>(timer->user_data);
     panel->update_clock();
@@ -68,6 +76,22 @@ class FanPanel : public NotifyConsumer {
   /* SliderContainer fan1; */
   /* SliderContainer fan2; */
   ButtonContainer back_btn;
+
+  // Temperature targets of the chamber and mainboard fans (Klipper temperature_fan objects).
+  struct TargetCard {
+    std::string object;      // e.g. "temperature_fan chamber_fan"
+    std::string fan_name;    // e.g. "chamber_fan"
+    std::vector<int> options;
+    std::vector<std::string> texts;
+    std::vector<const char *> map;
+    lv_obj_t *now_label = NULL;
+    lv_obj_t *target_label = NULL;
+    lv_obj_t *btnm = NULL;
+  };
+  std::vector<std::shared_ptr<TargetCard>> targets;
+
+  void create_target(const std::string &object, const char *title, const std::vector<int> &options, int y, int x);
+  void update_target(TargetCard &t, const json &state);
 };
 
 #endif // __FAN_PANEL_H__

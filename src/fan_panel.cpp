@@ -5,6 +5,7 @@
 #include "spdlog/spdlog.h"
 
 #include <algorithm>
+#include <cmath>
 #include <vector>
 
 LV_IMG_DECLARE(back);
@@ -64,6 +65,12 @@ FanPanel::~FanPanel() {
 
 void FanPanel::consume(json &j) {
   std::lock_guard<std::mutex> lock(lv_lock);
+  for (auto &t : targets) {
+    auto state = j.find("params");
+    if (state != j.end() && state->is_array() && !state->empty() && (*state)[0].contains(t->object)) {
+      update_target(*t, (*state)[0][t->object]);
+    }
+  }
   for (auto &f : fans) {
     // hack for output_pin fans
     auto fan_value = j[json::json_pointer(fmt::format("/params/0/{}/value", f.first))];
@@ -105,7 +112,8 @@ void FanPanel::create_fans(json &f) {
   }
 
   const int count = static_cast<int>(order.size());
-  const int card_height = count > 3 ? 132 : (416 - 12 * (count - 1)) / std::max(count, 1);
+  const int card_height = 84;
+  const int card_step = card_height + 12;
   int index = 0;
   for (const auto &entry : order) {
     const std::string &key = entry.first;
@@ -118,9 +126,24 @@ void FanPanel::create_fans(json &f) {
       // generic_fan, controller_fan, etc.
       fan_cb = &FanPanel::_handle_fan_update_generic;
     }
-    auto fptr = std::make_shared<FanControl>(fans_cont, entry.second.c_str(), 12 + index * (card_height + 12), card_height, fan_cb, this);
+    auto fptr = std::make_shared<FanControl>(fans_cont, entry.second.c_str(), 12 + index * card_step, card_height, fan_cb, this);
     fans.insert({key, fptr});
     index++;
+  }
+
+  // Temperature targets below the fans (only when the printer has those temperature_fan objects).
+  targets.clear();
+  bool has_chamber = false, has_board = false;
+  for (const auto &name : State::get_instance()->get_sensors()) {
+    has_chamber = has_chamber || name == "temperature_fan chamber_fan";
+    has_board = has_board || name == "temperature_fan soc_fan";
+  }
+  const int targets_y = 12 + count * card_step;
+  if (has_chamber) {
+    create_target("temperature_fan chamber_fan", "Chamber fan target", {35, 40, 45, 50}, targets_y, 12);
+  }
+  if (has_board) {
+    create_target("temperature_fan soc_fan", "Board fan target", {40, 45, 50, 55}, targets_y, 374);
   }
 
   if (fans.size() > 3) {
@@ -132,7 +155,79 @@ void FanPanel::create_fans(json &f) {
   lv_obj_move_foreground(back_btn.get_container());
 }
 
+void FanPanel::create_target(const std::string &object, const char *title, const std::vector<int> &options, int y, int x) {
+  using namespace powerui;
+  auto t = std::make_shared<TargetCard>();
+  t->object = object;
+  t->fan_name = KUtils::get_obj_name(object);
+  t->options = options;
+  for (int o : options) {
+    t->texts.push_back(std::to_string(o));
+  }
+  for (const auto &text : t->texts) {
+    t->map.push_back(text.c_str());
+  }
+  t->map.push_back("");
+
+  lv_obj_t *c = card(fans_cont, x, y, 350, 104);
+  lv_obj_t *name = label(c, title, &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
+  lv_obj_set_pos(name, px(16), px(12));
+  t->now_label = label(c, "", &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
+  lv_obj_align_to(t->now_label, name, LV_ALIGN_OUT_RIGHT_BOTTOM, px(10), -px(1));
+  t->target_label = label(c, "--", &lv_font_montserrat_24, lv_color_hex(COLOR_FG));
+  lv_obj_align(t->target_label, LV_ALIGN_TOP_RIGHT, -px(16), px(8));
+
+  t->btnm = lv_btnmatrix_create(c);
+  lv_btnmatrix_set_map(t->btnm, t->map.data());
+  lv_btnmatrix_set_btn_ctrl_all(t->btnm, LV_BTNMATRIX_CTRL_CHECKABLE);
+  lv_btnmatrix_set_one_checked(t->btnm, true);
+  lv_obj_set_size(t->btnm, px(318), px(40));
+  lv_obj_align(t->btnm, LV_ALIGN_BOTTOM_MID, 0, -px(12));
+  style_segmented(t->btnm);
+  lv_obj_set_style_text_font(t->btnm, &lv_font_montserrat_14, LV_PART_ITEMS);
+  lv_obj_add_event_cb(t->btnm, &FanPanel::_handle_target_selected, LV_EVENT_VALUE_CHANGED, this);
+  targets.push_back(t);
+}
+
+void FanPanel::update_target(TargetCard &t, const json &state) {
+  auto temperature = state.find("temperature");
+  if (temperature != state.end() && temperature->is_number()) {
+    lv_label_set_text(t.now_label, fmt::format("now {:.0f}\xC2\xB0", temperature->template get<double>()).c_str());
+  }
+  auto target = state.find("target");
+  if (target != state.end() && target->is_number()) {
+    const int value = static_cast<int>(std::lround(target->template get<double>()));
+    lv_label_set_text(t.target_label, fmt::format("{}", value).c_str());
+    lv_btnmatrix_clear_btn_ctrl_all(t.btnm, LV_BTNMATRIX_CTRL_CHECKED);
+    for (size_t i = 0; i < t.options.size(); i++) {
+      if (t.options[i] == value) {
+        lv_btnmatrix_set_btn_ctrl(t.btnm, i, LV_BTNMATRIX_CTRL_CHECKED);
+      }
+    }
+  }
+}
+
+void FanPanel::handle_target_selected(lv_event_t *event) {
+  lv_obj_t *btnm = lv_event_get_target(event);
+  const uint32_t idx = lv_btnmatrix_get_selected_btn(btnm);
+  for (auto &t : targets) {
+    if (t->btnm == btnm && idx < t->options.size()) {
+      const int value = t->options[idx];
+      spdlog::debug("set {} target to {}", t->fan_name, value);
+      ws.gcode_script(fmt::format("SET_TEMPERATURE_FAN_TARGET TEMPERATURE_FAN={} TARGET={}", t->fan_name, value));
+      lv_label_set_text(t->target_label, std::to_string(value).c_str());
+      break;
+    }
+  }
+}
+
 void FanPanel::foreground() {
+  for (auto &t : targets) {
+    auto state = State::get_instance()->get_data(json::json_pointer(fmt::format("/printer_state/{}", t->object)));
+    if (state.is_object()) {
+      update_target(*t, state);
+    }
+  }
   for (auto &f : fans) {
     // hack for output_pin fans
     auto fan_value = State::get_instance()

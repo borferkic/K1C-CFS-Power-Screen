@@ -377,6 +377,54 @@ lv_obj_t *action_button(lv_obj_t *parent, const lv_img_dsc_t *icon_src, const ch
   return btn;
 }
 
+namespace {
+struct ConfirmData {
+  std::function<void()> on_confirm;
+};
+
+void confirm_clicked(lv_event_t *e) {
+  lv_obj_t *overlay = (lv_obj_t *)e->user_data;
+  const bool confirmed = lv_event_get_target(e) == lv_obj_get_child(lv_obj_get_child(overlay, 0), 3);
+  ConfirmData *data = (ConfirmData *)lv_obj_get_user_data(overlay);
+  std::function<void()> fn = confirmed && data != NULL ? data->on_confirm : std::function<void()>();
+  lv_obj_del_async(overlay);
+  if (fn) {
+    fn();
+  }
+}
+
+void confirm_deleted(lv_event_t *e) {
+  delete (ConfirmData *)lv_obj_get_user_data(lv_event_get_target(e));
+}
+}  // namespace
+
+void confirm_dialog(const char *title, const char *message, const char *confirm_text, ActionKind kind,
+                    std::function<void()> on_confirm) {
+  lv_obj_t *overlay = lv_obj_create(lv_layer_top());
+  lv_obj_remove_style_all(overlay);
+  lv_obj_set_size(overlay, LV_PCT(100), LV_PCT(100));
+  lv_obj_set_style_bg_color(overlay, lv_color_hex(COLOR_BLACK), 0);
+  lv_obj_set_style_bg_opa(overlay, LV_OPA_60, 0);
+  lv_obj_add_flag(overlay, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_set_user_data(overlay, new ConfirmData{std::move(on_confirm)});
+  lv_obj_add_event_cb(overlay, &confirm_deleted, LV_EVENT_DELETE, NULL);
+
+  const int w = 460, h = 214;
+  lv_obj_t *dlg = card(overlay, 0, 0, w, h);
+  lv_obj_center(dlg);
+  lv_obj_set_style_border_opa(dlg, LV_OPA_30, 0);
+
+  lv_obj_t *t = label(dlg, title, &lv_font_montserrat_20, lv_color_hex(COLOR_FG));
+  lv_obj_set_pos(t, px(24), px(20));
+  lv_obj_t *m = label(dlg, message, &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+  lv_label_set_long_mode(m, LV_LABEL_LONG_WRAP);
+  lv_obj_set_width(m, px(w - 48));
+  lv_obj_set_pos(m, px(24), px(56));
+  // Child order matters: confirm_clicked identifies the confirm button as child 3 of the card.
+  action_button(dlg, NULL, "Cancel", ActionKind::Outline, 24, h - 74, 196, 50, &confirm_clicked, overlay);
+  action_button(dlg, NULL, confirm_text, kind, w - 24 - 196, h - 74, 196, 50, &confirm_clicked, overlay);
+}
+
 void style_overlay_root(lv_obj_t *cont) {
   lv_obj_set_style_pad_all(cont, 0, 0);
   lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
