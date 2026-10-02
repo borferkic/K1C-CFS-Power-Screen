@@ -69,6 +69,7 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   , network_timer(NULL)
   , main_cont(lv_obj_create(main_tab))
   , print_status_panel(websocket, lock, main_cont)
+  , exclude_object_panel(websocket, lock)
   , print_panel(ws, lock, print_status_panel, files_tab)
   , printertune_panel(ws, lock, printertune_tab, print_status_panel.get_finetune_panel())
   , numpad(Numpad(main_cont))
@@ -628,6 +629,9 @@ void MainPanel::create_main(lv_obj_t *parent)
       lv_obj_update_layout(chart_badge);
       lv_obj_align_to(chart_badge, chart_toggle, LV_ALIGN_OUT_LEFT_MID, -px(8), 0);
     });
+    // "Exclude objects" chip of the print card: opens the Exclude Object screen when the print has labeled objects.
+    print_card.set_exclude_action([this]() { exclude_object_panel.foreground(); });
+    exclude_object_panel.set_availability_callback([&print_card](bool available) { print_card.set_exclude_available(available); });
     set_home_view(print_card.is_active());
 }
 

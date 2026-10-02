@@ -36,6 +36,9 @@ class MiniPrintStatus {
 
   void set_state_callback(std::function<void(bool)> callback);
   void set_status_callback(std::function<void(const char *, lv_color_t)> callback);
+  // "Exclude objects" chip under the subtitle: shown only when the print has labeled objects.
+  void set_exclude_available(bool available);
+  void set_exclude_action(std::function<void()> action);
   void set_actions(std::function<void()> pause, std::function<void()> resume, std::function<void()> stop);
   bool is_active() const;
 
@@ -64,6 +67,7 @@ class MiniPrintStatus {
   lv_obj_t *pause_icon;
   lv_obj_t *pause_label;
   lv_obj_t *stop_btn;
+  lv_obj_t *exclude_row;
 
   std::string status;
   std::string material;
@@ -73,6 +77,7 @@ class MiniPrintStatus {
   std::function<void()> pause_action;
   std::function<void()> resume_action;
   std::function<void()> stop_action;
+  std::function<void()> exclude_action;
 };
 
 #endif //__MINI_PRINT_STATUS__

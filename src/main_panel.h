@@ -19,6 +19,7 @@
 #include "printertune_panel.h"
 #include "setting_panel.h"
 #include "print_status_panel.h"
+#include "exclude_object_panel.h"
 #include "spoolman_panel.h"
 #include "lvgl/lvgl.h"
 
@@ -163,6 +164,7 @@ class MainPanel : public NotifyConsumer {
   std::map<std::string, bool> filament_state;
   lv_obj_t *main_cont;
   PrintStatusPanel print_status_panel;
+  ExcludeObjectPanel exclude_object_panel;
   PrintPanel print_panel;
   PrinterTunePanel printertune_panel;
   Numpad numpad;

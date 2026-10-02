@@ -9,6 +9,7 @@ LV_IMG_DECLARE(clock_img);
 LV_IMG_DECLARE(pause_img);
 LV_IMG_DECLARE(resume);
 LV_IMG_DECLARE(cancel);
+LV_IMG_DECLARE(ui_icon_exclude);
 
 namespace {
 // Content area of the card is 366 x 374 design px (408 x 416 card, 20 padding, 1 border).
@@ -54,6 +55,7 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
   , pause_icon(NULL)
   , pause_label(NULL)
   , stop_btn(NULL)
+  , exclude_row(NULL)
   , status("n/a")
   , active(false)
 {
@@ -76,6 +78,23 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
   lv_label_set_long_mode(subtitle_label, LV_LABEL_LONG_DOT);
   lv_obj_align(subtitle_label, LV_ALIGN_TOP_LEFT, 0, px(23));
 
+  // "Exclude objects" chip: a 40 px tile (the size of the extruder icon tile) with the icon, and the text.
+  exclude_row = plain(cont);
+  lv_obj_add_flag(exclude_row, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_set_size(exclude_row, px(190), px(40));
+  lv_obj_align(exclude_row, LV_ALIGN_TOP_LEFT, 0, px(44));
+  lv_obj_t *exclude_tile = plain(exclude_row);
+  lv_obj_set_size(exclude_tile, px(40), px(40));
+  lv_obj_set_style_radius(exclude_tile, px(10), 0);
+  lv_obj_set_style_bg_color(exclude_tile, lv_color_hex(COLOR_SECONDARY), 0);
+  lv_obj_set_style_bg_opa(exclude_tile, LV_OPA_COVER, 0);
+  lv_obj_t *exclude_icon = icon(exclude_tile, &ui_icon_exclude, 26, fg);
+  lv_obj_center(exclude_icon);
+  lv_obj_t *exclude_text = label(exclude_row, "Exclude objects", &lv_font_montserrat_14, muted);
+  lv_obj_align(exclude_text, LV_ALIGN_LEFT_MID, px(52), 0);
+  lv_obj_add_event_cb(exclude_row, &MiniPrintStatus::_handle_action, LV_EVENT_CLICKED, this);
+  lv_obj_add_flag(exclude_row, LV_OBJ_FLAG_HIDDEN);
+
   toggle = view_toggle(cont, NULL, NULL);
   lv_obj_align(toggle, LV_ALIGN_TOP_RIGHT, 0, 0);
 
@@ -85,22 +104,22 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
 
   // Progress: big number, percent sign, ETA and bar.
   number_label = label(cont, "0", &powerui_font_number_88, fg);
-  lv_obj_align(number_label, LV_ALIGN_TOP_LEFT, 0, px(78));
+  lv_obj_align(number_label, LV_ALIGN_TOP_LEFT, 0, px(96));
 
   percent_label = label(cont, "%", &lv_font_montserrat_40, muted);
 
   lv_obj_t *eta_icon = icon(cont, &clock_img, 14, muted);
-  lv_obj_align(eta_icon, LV_ALIGN_TOP_RIGHT, -px(34), px(96));
+  lv_obj_align(eta_icon, LV_ALIGN_TOP_RIGHT, -px(34), px(114));
   lv_obj_t *eta_text = label(cont, "ETA", &lv_font_montserrat_14, muted);
-  lv_obj_align(eta_text, LV_ALIGN_TOP_RIGHT, 0, px(94));
+  lv_obj_align(eta_text, LV_ALIGN_TOP_RIGHT, 0, px(112));
 
   eta_label = label(cont, "...", &lv_font_montserrat_24, fg);
-  lv_obj_align(eta_label, LV_ALIGN_TOP_RIGHT, 0, px(114));
+  lv_obj_align(eta_label, LV_ALIGN_TOP_RIGHT, 0, px(132));
 
   progress_bar = lv_bar_create(cont);
   lv_bar_set_range(progress_bar, 0, 100);
   lv_obj_set_size(progress_bar, px(CONTENT_W), px(8));
-  lv_obj_align(progress_bar, LV_ALIGN_TOP_LEFT, 0, px(160));
+  lv_obj_align(progress_bar, LV_ALIGN_TOP_LEFT, 0, px(178));
   lv_obj_set_style_radius(progress_bar, px(4), LV_PART_MAIN);
   lv_obj_set_style_bg_color(progress_bar, lv_color_hex(COLOR_SECONDARY), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(progress_bar, LV_OPA_COVER, LV_PART_MAIN);
@@ -111,7 +130,7 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
   // Statistics box: Elapsed / Layer / Speed.
   lv_obj_t *stats = plain(cont);
   lv_obj_set_size(stats, px(CONTENT_W), px(68));
-  lv_obj_align(stats, LV_ALIGN_TOP_LEFT, 0, px(210));
+  lv_obj_align(stats, LV_ALIGN_TOP_LEFT, 0, px(216));
   lv_obj_set_style_radius(stats, px(10), 0);
   lv_obj_set_style_border_width(stats, 1, 0);
   lv_obj_set_style_border_color(stats, lv_color_hex(COLOR_WHITE), 0);
@@ -203,8 +222,27 @@ void MiniPrintStatus::set_actions(std::function<void()> pause, std::function<voi
   stop_action = stop;
 }
 
+void MiniPrintStatus::set_exclude_action(std::function<void()> action) {
+  exclude_action = action;
+}
+
+// Shows the "Exclude objects" chip only when the print has labeled objects.
+void MiniPrintStatus::set_exclude_available(bool available) {
+  if (available) {
+    lv_obj_clear_flag(exclude_row, LV_OBJ_FLAG_HIDDEN);
+  } else {
+    lv_obj_add_flag(exclude_row, LV_OBJ_FLAG_HIDDEN);
+  }
+}
+
 void MiniPrintStatus::handle_action(lv_event_t *event) {
   lv_obj_t *target = lv_event_get_target(event);
+  if (target == exclude_row) {
+    if (exclude_action) {
+      exclude_action();
+    }
+    return;
+  }
   if (target == pause_btn) {
     if (status == "paused" && resume_action) {
       resume_action();

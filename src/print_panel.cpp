@@ -298,9 +298,11 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_add_event_cb(delete_context_cont, &PrintPanel::_handle_btns,
                       LV_EVENT_CLICKED, this);
   lv_obj_set_size(delete_context_menu, 128, 52);
-  lv_obj_set_style_bg_color(delete_context_menu, file_button_grey, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(delete_context_menu, lv_color_hex(powerui::COLOR_CARD), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(delete_context_menu, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_set_style_border_width(delete_context_menu, 0, LV_PART_MAIN);
+  lv_obj_set_style_border_width(delete_context_menu, 1, LV_PART_MAIN);
+  lv_obj_set_style_border_color(delete_context_menu, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
+  lv_obj_set_style_border_opa(delete_context_menu, LV_OPA_30, LV_PART_MAIN);
   lv_obj_set_style_radius(delete_context_menu, 12, LV_PART_MAIN);
   lv_obj_set_style_clip_corner(delete_context_menu, true, LV_PART_MAIN);
   lv_obj_add_flag(delete_context_menu, LV_OBJ_FLAG_CLICKABLE);
@@ -308,7 +310,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
                       LV_EVENT_CLICKED, this);
   label = lv_label_create(delete_context_menu);
   lv_label_set_text(label, "Delete");
-  lv_obj_set_style_text_color(label, lv_color_hex(powerui::COLOR_MAT_RED), LV_PART_MAIN);
+  lv_obj_set_style_text_color(label, lv_color_hex(powerui::COLOR_DESTRUCTIVE), LV_PART_MAIN);
   lv_obj_set_style_text_font(label, &lv_font_montserrat_16, LV_PART_MAIN);
   lv_obj_center(label);
   lv_obj_add_flag(delete_context_cont, LV_OBJ_FLAG_HIDDEN);
@@ -325,54 +327,46 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_add_event_cb(delete_confirm_cont, &PrintPanel::_handle_btns,
                       LV_EVENT_CLICKED, this);
 
-  const auto width_scale = powerui::overlay_width_scale();
-  const auto height_scale = powerui::overlay_height_scale();
-  lv_obj_set_size(delete_confirm_box, static_cast<lv_coord_t>(440 * width_scale),
-                  static_cast<lv_coord_t>(190 * height_scale));
+  // PowerUI dialog: dark card, title, file name and a muted note; Cancel on the left, Delete (red) on the right.
+  using powerui::px;
+  lv_obj_set_size(delete_confirm_box, px(380), px(196));
   lv_obj_align(delete_confirm_box, LV_ALIGN_CENTER, 0, 0);
-  lv_obj_set_style_pad_all(delete_confirm_box, 12, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(delete_confirm_box, lv_color_hex(powerui::COLOR_MAT_GREY_DARK), LV_PART_MAIN);
+  lv_obj_set_style_pad_all(delete_confirm_box, 0, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(delete_confirm_box, lv_color_hex(powerui::COLOR_CARD), LV_PART_MAIN);
   lv_obj_set_style_bg_opa(delete_confirm_box, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_set_style_border_width(delete_confirm_box, 2, LV_PART_MAIN);
-  lv_obj_set_style_border_color(delete_confirm_box, file_button_grey, LV_PART_MAIN);
-  lv_obj_set_style_radius(delete_confirm_box, 12, LV_PART_MAIN);
+  lv_obj_set_style_border_width(delete_confirm_box, 1, LV_PART_MAIN);
+  lv_obj_set_style_border_color(delete_confirm_box, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
+  lv_obj_set_style_border_opa(delete_confirm_box, LV_OPA_30, LV_PART_MAIN);
+  lv_obj_set_style_radius(delete_confirm_box, px(14), LV_PART_MAIN);
   lv_obj_clear_flag(delete_confirm_box, LV_OBJ_FLAG_SCROLLABLE);
 
-  lv_obj_set_width(delete_confirm_label, LV_PCT(100));
-  lv_obj_set_height(delete_confirm_label, static_cast<lv_coord_t>(88 * height_scale));
-  lv_label_set_long_mode(delete_confirm_label, LV_LABEL_LONG_WRAP);
-  lv_obj_set_style_text_align(delete_confirm_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-  lv_obj_set_style_text_color(delete_confirm_label, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
-  lv_obj_set_style_text_font(delete_confirm_label, &lv_font_montserrat_20, LV_PART_MAIN);
-  lv_obj_align(delete_confirm_label, LV_ALIGN_TOP_MID, 0, 8);
+  lv_obj_t *delete_title = powerui::label(delete_confirm_box, "Delete file?", &lv_font_montserrat_20, lv_color_hex(powerui::COLOR_FG));
+  lv_obj_set_pos(delete_title, px(24), px(22));
 
-  lv_obj_set_size(delete_accept_btn, static_cast<lv_coord_t>(150 * width_scale),
-                  static_cast<lv_coord_t>(54 * height_scale));
-  lv_obj_align(delete_accept_btn, LV_ALIGN_BOTTOM_LEFT, 12, -12);
-  lv_obj_set_style_bg_color(delete_accept_btn, file_button_green,
-                            LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_bg_color(delete_accept_btn, file_button_green_pressed,
-                            LV_PART_MAIN | LV_STATE_PRESSED);
-  lv_obj_set_style_bg_opa(delete_accept_btn, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_set_style_radius(delete_accept_btn, 12, LV_PART_MAIN);
-  label = lv_label_create(delete_accept_btn);
-  lv_label_set_text(label, "Accept");
-  lv_obj_set_style_text_color(label, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
-  lv_obj_center(label);
+  lv_obj_set_width(delete_confirm_label, px(332));
+  lv_obj_set_height(delete_confirm_label, px(52));
+  lv_label_set_long_mode(delete_confirm_label, LV_LABEL_LONG_DOT);
+  lv_obj_set_style_text_align(delete_confirm_label, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
+  lv_obj_set_style_text_color(delete_confirm_label, lv_color_hex(powerui::COLOR_MUTED), LV_PART_MAIN);
+  lv_obj_set_style_text_font(delete_confirm_label, &lv_font_montserrat_14, LV_PART_MAIN);
+  lv_obj_set_pos(delete_confirm_label, px(24), px(58));
 
-  lv_obj_set_size(delete_cancel_btn, static_cast<lv_coord_t>(150 * width_scale),
-                  static_cast<lv_coord_t>(54 * height_scale));
-  lv_obj_align(delete_cancel_btn, LV_ALIGN_BOTTOM_RIGHT, -12, -12);
-  lv_obj_set_style_bg_color(delete_cancel_btn, lv_color_hex(powerui::COLOR_MAT_RED),
-                            LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_bg_color(delete_cancel_btn, lv_color_hex(powerui::COLOR_MAT_RED_DARK),
-                            LV_PART_MAIN | LV_STATE_PRESSED);
-  lv_obj_set_style_bg_opa(delete_cancel_btn, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_set_style_radius(delete_cancel_btn, 12, LV_PART_MAIN);
-  label = lv_label_create(delete_cancel_btn);
-  lv_label_set_text(label, "Cancel");
-  lv_obj_set_style_text_color(label, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
-  lv_obj_center(label);
+  auto style_dialog_button = [](lv_obj_t *btn, uint32_t bg, uint32_t pressed, int x) {
+    lv_obj_set_size(btn, px(156), px(44));
+    lv_obj_set_pos(btn, px(x), px(132));
+    lv_obj_set_style_bg_color(btn, lv_color_hex(bg), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(btn, lv_color_hex(pressed), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_opa(btn, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_border_width(btn, 0, LV_PART_MAIN);
+    lv_obj_set_style_shadow_width(btn, 0, LV_PART_MAIN);
+    lv_obj_set_style_radius(btn, px(10), LV_PART_MAIN);
+  };
+  style_dialog_button(delete_cancel_btn, powerui::COLOR_SECONDARY, powerui::COLOR_PRESSED, 24);
+  lv_obj_t *cancel_label = powerui::label(delete_cancel_btn, "Cancel", &lv_font_montserrat_16, lv_color_hex(powerui::COLOR_FG));
+  lv_obj_center(cancel_label);
+  style_dialog_button(delete_accept_btn, powerui::COLOR_DANGER, powerui::COLOR_MAT_RED_DARK, 200);
+  lv_obj_t *accept_label = powerui::label(delete_accept_btn, "Delete", &lv_font_montserrat_16, lv_color_hex(powerui::COLOR_WHITE));
+  lv_obj_center(accept_label);
 
   lv_obj_add_event_cb(delete_accept_btn, &PrintPanel::_handle_btns,
                       LV_EVENT_CLICKED, this);
@@ -388,7 +382,13 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
 
   lv_obj_set_size(msgbox, LV_PCT(60), LV_PCT(30));
   lv_obj_set_style_border_width(msgbox, 2, 0);
-  lv_obj_set_style_bg_color(msgbox, lv_color_hex(powerui::COLOR_MAT_GREY_DARK), 0);
+  lv_obj_set_style_bg_color(msgbox, lv_color_hex(powerui::COLOR_CARD), 0);
+  lv_obj_set_style_border_color(msgbox, lv_color_hex(powerui::COLOR_WHITE), 0);
+  lv_obj_set_style_border_opa(msgbox, LV_OPA_30, 0);
+  lv_obj_set_style_border_width(msgbox, 1, 0);
+  lv_obj_set_style_radius(msgbox, powerui::px(14), 0);
+  lv_obj_set_style_pad_all(msgbox, powerui::px(14), 0);
+  lv_obj_set_style_bg_color(prompt_cont, lv_color_hex(powerui::COLOR_BLACK), 0);
   
   lv_obj_align(msgbox, LV_ALIGN_CENTER, 0, 0);
 
@@ -741,7 +741,7 @@ void PrintPanel::show_delete_confirmation() {
     return;
   }
 
-  std::string message = "Do you want to delete this file?\n" + delete_target->name;
+  std::string message = delete_target->name + "\nThis cannot be undone.";
   lv_label_set_text(delete_confirm_label, message.c_str());
   hide_delete_context();
   lv_obj_clear_state(delete_accept_btn, LV_STATE_DISABLED);

@@ -13,6 +13,11 @@ class Numpad {
   void handle_input(lv_event_t *event);
   /* void handle_defocused(lv_event_t *event); */
   void foreground_reset();
+  void close();  // hides the panel without sending anything
+
+  static void _handle_close(lv_event_t *event) {
+    static_cast<Numpad*>(event->user_data)->close();
+  };
 
   static void _handle_input(lv_event_t *event) {
     Numpad *panel = (Numpad*)event->user_data;
@@ -26,6 +31,8 @@ class Numpad {
 
  private:
   lv_obj_t *edit_cont;
+  lv_obj_t *header;       // title and close button
+  lv_obj_t *close_btn;
   lv_obj_t *input;
   lv_obj_t *kb;
   std::function<void(double)> ready_cb;
