@@ -38,13 +38,16 @@ class SysInfoPanel {
   lv_obj_t *script_suffix_label = NULL;
   lv_obj_t *script_status_label = NULL;
   lv_obj_t *script_button = NULL;
+  lv_obj_t *script_button_label = NULL;
+  uint32_t script_check_started = 0;  // lv_tick of the running check (0 = none), to give up when Moonraker never answers
   std::mutex script_mutex;
   std::string script_base = "...";
   std::string script_suffix;
   std::string script_message;
   int script_state = 0;  // 0 unknown, 1 up to date, 2 update available, 3 error, 4 updating, 5 updated
   std::atomic<bool> script_dirty{false};
-  void check_script_update();
+  void check_script_update();   // asks Moonraker to look for a new version (machine.update.refresh), then reads the result
+  void read_script_status();
   void start_script_update();
   void apply_script_state();
   lv_obj_t *about_row = NULL;

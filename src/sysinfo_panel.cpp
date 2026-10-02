@@ -811,7 +811,8 @@ void SysInfoPanel::create_tabs() {
   make_version_block(script_card, "CFS POWER SCRIPT", &script_version_label, &script_suffix_label, script_base, script_suffix);
   script_status_label = make_status(script_card, NULL);
 
-  script_button = make_update_button(script_card, "UPDATE");
+  script_button = make_update_button(script_card, "Check for updates");
+  script_button_label = lv_obj_get_child(script_button, 0);
   lv_obj_align(script_button, LV_ALIGN_BOTTOM_MID, 0, -px(16));
   lv_obj_add_state(script_button, LV_STATE_DISABLED);
   lv_obj_add_event_cb(script_button, &SysInfoPanel::_handle_callback, LV_EVENT_CLICKED, this);
@@ -931,7 +932,7 @@ std::string phase_text(const std::string &status) {
 }
 
 void SysInfoPanel::check_for_update() {
-  lv_label_set_text(update_status, "Checking for updates...");
+  lv_label_set_text(update_status, "CHECKING...");
   lv_obj_set_style_text_color(update_status, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
   lv_obj_add_state(update_button, LV_STATE_DISABLED);
 
@@ -1019,6 +1020,17 @@ void SysInfoPanel::start_update() {
 }
 
 void SysInfoPanel::poll_update() {
+  if (script_check_started != 0 && lv_tick_elaps(script_check_started) > 25000) {
+    {
+      std::lock_guard<std::mutex> guard(script_mutex);
+      if (script_state == 0) {
+        script_state = 3;
+        script_message = "CHECK FAILED";
+        script_dirty = true;
+      }
+    }
+    script_check_started = 0;
+  }
   if (script_dirty.exchange(false)) {
     apply_script_state();
   }
@@ -1031,11 +1043,11 @@ void SysInfoPanel::poll_update() {
       lv_obj_clear_state(update_button, LV_STATE_DISABLED);
       break;
     case 2:
-      lv_label_set_text(update_status, "PowerScreen is up to date.");
+      lv_label_set_text(update_status, "UP TO DATE");
       lv_obj_set_style_text_color(update_status, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
       break;
     default:
-      lv_label_set_text(update_status, "Could not check for updates.");
+      lv_label_set_text(update_status, "CHECK FAILED");
       lv_obj_set_style_text_color(update_status, lv_color_hex(powerui::COLOR_DANGER), LV_PART_MAIN);
       break;
     }
@@ -1108,9 +1120,33 @@ void SysInfoPanel::check_script_update() {
   if (ws_client == NULL) {
     return;
   }
-  lv_label_set_text(script_status_label, "Checking for updates...");
+  {
+    std::lock_guard<std::mutex> guard(script_mutex);
+    if (script_state == 4) {
+      return;  // an update is running
+    }
+    script_state = 0;
+    script_message = "CHECKING...";
+  }
+  script_check_started = lv_tick_get();
+  lv_label_set_text(script_status_label, "CHECKING...");
   lv_obj_add_state(script_button, LV_STATE_DISABLED);
+  lv_label_set_text(script_button_label, "Checking...");
 
+  // Moonraker only looks at GitHub by itself every few hours: ask it to do it now, and read the result either way
+  // (if the refresh is refused, for instance during a print, the last known state is shown).
+  ws_client->send_jsonrpc("machine.update.refresh", json{{"name", POWER_SCRIPT_NAME}}, [this](json &j) {
+    if (j.contains("error")) {
+      spdlog::debug("power script refresh refused: {}", j["error"].dump());
+    }
+    read_script_status();
+  });
+}
+
+void SysInfoPanel::read_script_status() {
+  if (ws_client == NULL) {
+    return;
+  }
   ws_client->send_jsonrpc("machine.update.status", json{{"refresh", false}}, [this](json &j) {
     std::lock_guard<std::mutex> guard(script_mutex);
     if (j.contains("result") && j["result"].contains("version_info")) {
@@ -1132,15 +1168,23 @@ void SysInfoPanel::check_script_update() {
       const std::string remote = info.value("remote_version", std::string());
       const std::string full = info.value("full_version_string", version);
       const bool behind = info.contains("commits_behind") && info["commits_behind"].is_array() && !info["commits_behind"].empty();
+      const bool valid = info.value("is_valid", true) && !info.value("corrupt", false);
       const auto parts = split_version(version);
       script_base = parts.first.empty() ? "unknown" : parts.first;
       script_suffix = full;
-      script_state = (behind || (!remote.empty() && remote != version)) ? 2 : 1;
-      script_message = script_state == 2 ? "New version " + remote + " available." : "Power Script is up to date.";
+      if (!valid) {
+        // Dirty or detached repository: Moonraker cannot compare versions, so do not claim it is up to date.
+        script_state = 3;
+        script_message = "UNAVAILABLE";
+      } else {
+        script_state = (behind || (!remote.empty() && remote != version)) ? 2 : 1;
+        script_message = script_state == 2 ? "NEW UPDATE AVAILABLE!" : "UP TO DATE";
+      }
     } else {
       script_state = 3;
-      script_message = "Not in the update manager.";
+      script_message = "NO UPDATE ENTRY";
     }
+    script_check_started = 0;
     script_dirty = true;
   });
 }
@@ -1152,24 +1196,25 @@ void SysInfoPanel::start_script_update() {
   if (is_printing()) {
     std::lock_guard<std::mutex> guard(script_mutex);
     script_state = 3;
-    script_message = "It cannot be updated while a print is in progress.";
+    script_message = "PRINT IN PROGRESS";
     script_dirty = true;
     return;
   }
   {
     std::lock_guard<std::mutex> guard(script_mutex);
     script_state = 4;
-    script_message = "Updating the Power Script...";
+    script_message = "UPDATING...";
     script_dirty = true;
   }
   ws_client->send_jsonrpc("machine.update.upgrade", json{{"name", POWER_SCRIPT_NAME}}, [this](json &j) {
     std::lock_guard<std::mutex> guard(script_mutex);
     if (j.contains("error")) {
       script_state = 3;
-      script_message = j["error"].is_object() ? j["error"].value("message", std::string("Update failed.")) : "Update failed.";
+      spdlog::warn("power script update failed: {}", j["error"].dump());
+      script_message = "UPDATE FAILED";
     } else {
       script_state = 5;
-      script_message = "Power Script updated.";
+      script_message = "UPDATED!";
     }
     script_dirty = true;
   });
@@ -1185,10 +1230,18 @@ void SysInfoPanel::apply_script_state() {
   lv_obj_set_style_text_color(script_status_label,
                               lv_color_hex(script_state == 2 || script_state == 5 ? powerui::COLOR_ACCENT : (script_state == 3 ? powerui::COLOR_DESTRUCTIVE : powerui::COLOR_FG)),
                               LV_PART_MAIN);
-  if (script_state == 2) {
-    lv_obj_clear_state(script_button, LV_STATE_DISABLED);
-  } else {
+  // "UPDATE" when there is a new version; otherwise the button checks again ("Checking..." and "Updating..." wait).
+  const bool update_mode = script_state == 2 || script_state == 4;
+  const bool busy = script_state == 0 || script_state == 4;
+  lv_label_set_text(script_button_label, script_state == 0 ? "Checking..." : (update_mode ? "UPDATE" : "Check for updates"));
+  lv_obj_set_style_bg_color(script_button, lv_color_hex(update_mode ? powerui::COLOR_PRIMARY : powerui::COLOR_SECONDARY),
+                            LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_bg_color(script_button, lv_color_hex(update_mode ? powerui::COLOR_PRIMARY_PRESSED : powerui::COLOR_PRESSED),
+                            LV_PART_MAIN | LV_STATE_PRESSED);
+  if (busy) {
     lv_obj_add_state(script_button, LV_STATE_DISABLED);
+  } else {
+    lv_obj_clear_state(script_button, LV_STATE_DISABLED);
   }
 }
 
@@ -1426,7 +1479,11 @@ void SysInfoPanel::handle_callback(lv_event_t *e)
       start_update();
     } else if (btn == script_button) {
       if (!lv_obj_has_state(script_button, LV_STATE_DISABLED)) {
-        start_script_update();
+        if (script_state == 2) {
+          start_script_update();
+        } else {
+          check_script_update();  // manual check
+        }
       }
     } else if (btn == update_close_btn) {
       lv_obj_add_flag(update_overlay, LV_OBJ_FLAG_HIDDEN);
