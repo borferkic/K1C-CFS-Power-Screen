@@ -54,11 +54,6 @@ class SettingPanel {
   SquareButton printer_select_btn;
 
   // Confirmation before restarting Klipper or the firmware.
-  lv_obj_t *confirm_overlay;
-  lv_obj_t *confirm_label;
-  lv_obj_t *confirm_cancel_btn;
-  lv_obj_t *confirm_accept_btn;
-  std::string confirm_method;
 
   // Power Update is disabled while a print is running or paused (like CFS when it is offline).
   lv_timer_t *update_lock_timer;
@@ -68,7 +63,6 @@ class SettingPanel {
     static_cast<SettingPanel*>(timer->user_data)->refresh_update_lock();
   }
 
-  void create_confirm_overlay();
   void show_confirm(const std::string &title, const std::string &method);
 };
 

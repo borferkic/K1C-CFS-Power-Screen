@@ -97,6 +97,7 @@ PowerScreen *PowerScreen::init(std::function<void(lv_color_t, lv_color_t)> hal_i
 
   hal_init(primary_color, secondary_color);
   lv_png_init();
+  lv_split_jpeg_init();
 
   lv_style_init(&style_container);
   lv_style_set_border_width(&style_container, 0);

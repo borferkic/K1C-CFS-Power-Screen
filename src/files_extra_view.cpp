@@ -1,12 +1,15 @@
 #include "files_extra_view.h"
 #include "powerui.h"
 #include "state.h"
+#include "config.h"
+#include "utils.h"
 #include "spdlog/spdlog.h"
 
 #include <algorithm>
 #include <cctype>
 #include <utility>
 #include <cmath>
+#include <set>
 #include <ctime>
 
 LV_IMG_DECLARE(print);
@@ -155,6 +158,10 @@ void FilesExtraView::show(Mode m) {
 
 void FilesExtraView::hide() {
   shown = false;
+  if (!thumb_src.empty()) {
+    lv_img_cache_invalidate_src(thumb_src.c_str());
+    thumb_src.clear();
+  }
   lv_obj_add_flag(toolbar, LV_OBJ_FLAG_HIDDEN);
   lv_obj_add_flag(list, LV_OBJ_FLAG_HIDDEN);
   lv_obj_add_flag(detail, LV_OBJ_FLAG_HIDDEN);
@@ -205,10 +212,16 @@ void FilesExtraView::refresh() {
       videos.clear();
       auto result = j.find("result");
       if (result != j.end() && result->is_array()) {
+        std::set<std::string> files;
+        for (auto &f : *result) {
+          files.insert(f.value("path", ""));
+        }
         for (auto &f : *result) {
           const std::string path = f.value("path", "");
           if (path.size() > 4 && path.compare(path.size() - 4, 4, ".mp4") == 0) {
-            videos.push_back({path, f.value("modified", 0.0), f.value("size", 0.0)});
+            // moonraker-timelapse leaves a preview image with the same name next to each rendered video.
+            const std::string preview = path.substr(0, path.size() - 4) + ".jpg";
+            videos.push_back({path, f.value("modified", 0.0), f.value("size", 0.0), files.count(preview) ? preview : ""});
           }
         }
         std::sort(videos.begin(), videos.end(), [](const Video &a, const Video &b) { return a.modified > b.modified; });
@@ -336,6 +349,10 @@ void FilesExtraView::add_info_row(int y, const char *name, const std::string &va
 }
 
 void FilesExtraView::rebuild_detail() {
+  if (!thumb_src.empty()) {
+    lv_img_cache_invalidate_src(thumb_src.c_str());  // a decoded 1280x720 preview is large: do not keep old ones
+    thumb_src.clear();
+  }
   lv_obj_clean(detail);
   primary_btn = NULL;
   delete_btn = NULL;
@@ -352,7 +369,26 @@ void FilesExtraView::rebuild_detail() {
   lv_obj_set_style_border_width(preview, 1, 0);
   lv_obj_set_style_border_color(preview, lv_color_hex(COLOR_WHITE), 0);
   lv_obj_set_style_border_opa(preview, LV_OPA_10, 0);
-  lv_obj_center(icon(preview, mode == Mode::Timelapse ? &ui_icon_camera : &print, 56, lv_color_hex(COLOR_MUTED)));
+  lv_obj_clear_flag(preview, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_style_clip_corner(preview, true, 0);
+  std::string preview_file;
+  if (mode == Mode::Timelapse && have && !videos[selected].thumb.empty()) {
+    const std::string &thumb = videos[selected].thumb;
+    preview_file = KUtils::is_running_local()
+                       ? KUtils::get_root_path("timelapse") + "/" + thumb
+                       : KUtils::download_file("timelapse", thumb, Config::get_instance()->get_thumbnail_path());
+  }
+  if (!preview_file.empty()) {
+    thumb_src = "A:" + preview_file;
+    lv_img_cache_invalidate_src(thumb_src.c_str());
+    lv_obj_t *shot = lv_img_create(preview);
+    lv_img_set_src(shot, thumb_src.c_str());
+    lv_img_set_zoom(shot, 256 * px(260) / 1280);  // the camera frame is 1280x720: scale it to the 260 px box
+    lv_obj_clear_flag(shot, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_center(shot);
+  } else {
+    lv_obj_center(icon(preview, mode == Mode::Timelapse ? &ui_icon_camera : &print, 56, lv_color_hex(COLOR_MUTED)));
+  }
 
   if (!have) {
     lv_obj_t *hint = label(detail, mode == Mode::History ? "Select a print to see its details" : "Select a video to see its details",

@@ -405,20 +405,23 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_add_event_cb(queue_btn, &PrintPanel::_handle_btns, LV_EVENT_CLICKED, this);
   lv_obj_align(queue_btn, LV_ALIGN_BOTTOM_LEFT, 0, 0);
   
-  label = lv_label_create(job_btn);
-  lv_label_set_text(label, "View Job");
-  lv_obj_center(label);
-
-  label = lv_label_create(cancel_btn);
-  lv_label_set_text(label, "Cancel");
-  lv_obj_center(label);
-
-  label = lv_label_create(queue_btn);
-  lv_label_set_text(label, "Queue Job");
-  lv_obj_center(label);
+  // PowerUI look: View Job is the main action (soft green), Queue Job and Cancel are outline.
+  const int dlg_btn_w = LV_PCT(30);
+  lv_obj_t *dlg_btns[] = {job_btn, cancel_btn, queue_btn};
+  const char *dlg_texts[] = {"View Job", "Cancel", "Queue Job"};
+  for (int i = 0; i < 3; i++) {
+    lv_obj_set_size(dlg_btns[i], dlg_btn_w, powerui::px(44));
+    label = lv_label_create(dlg_btns[i]);
+    lv_label_set_text(label, dlg_texts[i]);
+    lv_obj_set_style_text_font(label, &lv_font_montserrat_16, 0);
+    lv_obj_center(label);
+    powerui::style_button(dlg_btns[i], label, i == 0 ? powerui::ButtonKind::Soft : powerui::ButtonKind::Outline);
+  }
 
   label = lv_label_create(msgbox);
   lv_label_set_text(label, "Printing in progress...");
+  lv_obj_set_style_text_font(label, &lv_font_montserrat_20, 0);
+  lv_obj_set_style_text_color(label, lv_color_hex(powerui::COLOR_FG), 0);
   lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 0);
 
   ws.register_notify_update(this);

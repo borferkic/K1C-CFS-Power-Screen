@@ -48,6 +48,7 @@ class FilesExtraView {
     std::string path;
     double modified = 0;
     double size = 0;
+    std::string thumb;  // preview image next to the video in the timelapse root (empty when there is none)
   };
   struct RowContext {
     FilesExtraView *view;
@@ -83,6 +84,7 @@ class FilesExtraView {
   std::vector<Video> videos;
   std::string totals_text;
   std::vector<std::unique_ptr<RowContext>> row_contexts;
+  std::string thumb_src;  // LVGL source of the preview currently shown (to drop it from the image cache)
 };
 
 #endif // __FILES_EXTRA_VIEW_H__
