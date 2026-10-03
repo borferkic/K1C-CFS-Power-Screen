@@ -238,6 +238,12 @@ std::string ExcludeObjectPanel::signature() const {
 }
 
 void ExcludeObjectPanel::update_availability() {
+  if (objects.size() != last_count) {
+    last_count = objects.size();
+    if (count_cb) {
+      count_cb(last_count);
+    }
+  }
   const bool available = !objects.empty();
   if (available != last_available) {
     last_available = available;

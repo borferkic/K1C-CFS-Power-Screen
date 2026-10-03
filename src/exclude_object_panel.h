@@ -24,6 +24,8 @@ class ExcludeObjectPanel : public NotifyConsumer {
   void consume(json &j);  // notify_status_update
 
   // Called (with the LVGL lock held) when the print gains or loses labeled objects.
+  // Called with the number of labeled objects every time it changes.
+  void set_count_callback(std::function<void(size_t)> callback) { count_cb = callback; }
   void set_availability_callback(std::function<void(bool)> callback);
 
   void handle_event(lv_event_t *event);
@@ -50,6 +52,7 @@ class ExcludeObjectPanel : public NotifyConsumer {
   lv_timer_t *sync_timer;
   std::string last_signature;
   bool last_available = false;
+  size_t last_count = 0;
   std::vector<lv_obj_t *> exclude_buttons;
 
   std::vector<Object> objects;
@@ -57,6 +60,7 @@ class ExcludeObjectPanel : public NotifyConsumer {
   double bed_min_x = 0, bed_min_y = 0, bed_max_x = 220, bed_max_y = 220;
   int pending = -1;  // object waiting for the confirmation
   std::function<void(bool)> availability_cb;
+  std::function<void(size_t)> count_cb;
 
   void merge(const json &status);
   void sync_from_state();   // reads the full state (also loads a print that was already running)

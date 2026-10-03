@@ -632,6 +632,9 @@ void MainPanel::create_main(lv_obj_t *parent)
     // "Exclude objects" chip of the print card: opens the Exclude Object screen when the print has labeled objects.
     print_card.set_exclude_action([this]() { exclude_object_panel.foreground(); });
     exclude_object_panel.set_availability_callback([&print_card](bool available) { print_card.set_exclude_available(available); });
+    // "Exclude objects" button of Print Status: needs two or more labeled objects.
+    print_status_panel.set_exclude_action([this]() { exclude_object_panel.foreground(); });
+    exclude_object_panel.set_count_callback([this](size_t count) { print_status_panel.set_exclude_count(count); });
     set_home_view(print_card.is_active());
 }
 

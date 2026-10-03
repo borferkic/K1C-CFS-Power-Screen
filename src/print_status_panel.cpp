@@ -3,11 +3,18 @@
 #include "finetune_panel.h"
 #include "state.h"
 #include "utils.h"
+#include "config.h"
 #include "spdlog/spdlog.h"
 
 #include <cmath>
 
 
+LV_IMG_DECLARE(ui_icon_pause);
+LV_IMG_DECLARE(ui_icon_play);
+LV_IMG_DECLARE(ui_icon_close);
+LV_IMG_DECLARE(ui_icon_tune);
+LV_IMG_DECLARE(ui_icon_exclude);
+LV_IMG_DECLARE(ui_icon_estop);
 LV_IMG_DECLARE(extruder);
 LV_IMG_DECLARE(speed_up_img);
 LV_IMG_DECLARE(extrude);
@@ -61,6 +68,17 @@ void style_action_button(lv_obj_t *button, uint32_t border_color, bool show_bord
 }
 
 double pi() { return std::atan(1)*4; }
+
+namespace {
+// "3h 41m 20s" -> "3h 41m": the seconds only add noise once there are hours or minutes.
+std::string without_seconds(const std::string &text) {
+  const size_t space = text.find_last_of(' ');
+  if (space != std::string::npos && !text.empty() && text.back() == 's' && text.find_first_of("hm") != std::string::npos) {
+    return text.substr(0, space);
+  }
+  return text;
+}
+}
 
 PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 				   std::mutex &lock,
@@ -341,7 +359,8 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_grid_cell(pause_cancel_group, LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
   lv_obj_set_grid_cell(secondary_buttons_group, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
   
-  // ---- PowerUI layout: thumbnail and progress on the left, three category cards on the right, actions below.
+  // ---- PowerUI layout: the job card on the left (thumbnail, name, status, progress, Pause and Cancel); on the right
+  // Progress (large text), Temperature and cooling next to Motion, and Tune / Exclude objects / Emergency Stop below.
   {
     using namespace powerui;
     lv_obj_add_flag(title_bar, LV_OBJ_FLAG_HIDDEN);  // the main title bar shows "Print Status"
@@ -350,12 +369,13 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
     lv_obj_set_style_bg_color(status_cont, lv_color_hex(powerui::COLOR_BG), LV_PART_MAIN);
     lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(detail_cont, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(buttons_cont, LV_OBJ_FLAG_HIDDEN);  // old icon-over-text buttons (kept for their prompts)
 
-    // Left card: thumbnail, file name, status and progress.
-    lv_obj_t *left = card(status_cont, 12, 12, 272, 308);
+    // Left card: 272 x 416.
+    lv_obj_t *left = card(status_cont, 12, 12, 272, 416);
     lv_obj_move_to_index(left, 0);
     lv_obj_set_parent(thumbnail_cont, left);
-    lv_obj_set_size(thumbnail_cont, px(248), px(150));
+    lv_obj_set_size(thumbnail_cont, px(248), px(140));
     lv_obj_set_pos(thumbnail_cont, px(11), px(11));
     lv_obj_set_style_bg_color(thumbnail_cont, lv_color_hex(powerui::COLOR_BG), LV_PART_MAIN);
     lv_obj_set_style_radius(thumbnail_cont, px(10), LV_PART_MAIN);
@@ -364,28 +384,37 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
     lv_obj_set_style_border_opa(thumbnail_cont, LV_OPA_10, LV_PART_MAIN);
     lv_obj_set_style_border_width(thumbnail, 0, LV_PART_MAIN);
 
+    // File name on its own (the SD card icon overlapped it).
     lv_obj_set_parent(file_cont, left);
     lv_obj_set_size(file_cont, px(248), px(28));
-    lv_obj_set_pos(file_cont, px(11), px(170));
+    lv_obj_set_pos(file_cont, px(11), px(160));
     lv_obj_set_style_bg_opa(file_cont, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_set_style_border_width(file_cont, 0, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(file_cont, 0, LV_PART_MAIN);
+    lv_obj_add_flag(file_icon, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_set_width(file_label, px(248));
+    lv_label_set_long_mode(file_label, LV_LABEL_LONG_DOT);
+    lv_obj_align(file_label, LV_ALIGN_LEFT_MID, 0, 0);
     lv_obj_set_style_text_font(file_label, &lv_font_montserrat_16, LV_PART_MAIN);
+    lv_obj_set_style_text_color(file_label, lv_color_hex(powerui::COLOR_FG), LV_PART_MAIN);
 
     lv_obj_set_parent(pbar_cont, left);
-    lv_obj_set_size(pbar_cont, px(248), px(86));
-    lv_obj_set_pos(pbar_cont, px(11), px(206));
+    lv_obj_set_size(pbar_cont, px(248), px(72));
+    lv_obj_set_pos(pbar_cont, px(11), px(200));
     lv_obj_set_style_bg_opa(pbar_cont, LV_OPA_TRANSP, LV_PART_MAIN);
+    lv_obj_set_style_border_width(pbar_cont, 0, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(pbar_cont, 0, LV_PART_MAIN);
     lv_obj_set_width(status_label, px(150));
     lv_obj_set_style_text_align(status_label, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
     lv_obj_set_style_text_font(status_label, &lv_font_montserrat_16, LV_PART_MAIN);
-    lv_obj_align(status_label, LV_ALIGN_TOP_LEFT, 0, px(4));
+    lv_obj_align(status_label, LV_ALIGN_TOP_LEFT, 0, px(6));
     lv_obj_set_width(progress_label, px(90));
     lv_obj_set_style_text_align(progress_label, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN);
-    lv_obj_set_style_text_font(progress_label, &lv_font_montserrat_24, LV_PART_MAIN);
+    lv_obj_set_style_text_font(progress_label, &lv_font_montserrat_28, LV_PART_MAIN);
     lv_obj_set_height(progress_label, LV_SIZE_CONTENT);
     lv_obj_align(progress_label, LV_ALIGN_TOP_RIGHT, 0, 0);
-    lv_obj_set_size(progress_bar, px(248), px(12));
-    lv_obj_align(progress_bar, LV_ALIGN_BOTTOM_MID, 0, -px(10));
+    lv_obj_set_size(progress_bar, px(248), px(10));
+    lv_obj_align(progress_bar, LV_ALIGN_BOTTOM_MID, 0, -px(4));
     lv_obj_set_style_bg_color(progress_bar, lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(progress_bar, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_set_style_radius(progress_bar, LV_RADIUS_CIRCLE, LV_PART_MAIN);
@@ -393,30 +422,72 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
     lv_obj_set_style_bg_opa(progress_bar, LV_OPA_COVER, LV_PART_INDICATOR);
     lv_obj_set_style_radius(progress_bar, LV_RADIUS_CIRCLE, LV_PART_INDICATOR);
 
-    // Right: one card per category; every row is icon, name and value, so no tile has empty space.
+    // Pause / Resume (one visible at a time) and Cancel inside the job card.
+    act_pause = action_button(left, &ui_icon_pause, "Pause", ActionKind::Outline, 12, 356, 120, 48, &PrintStatusPanel::_handle_action, this);
+    act_resume = action_button(left, &ui_icon_play, "Resume", ActionKind::Primary, 12, 356, 120, 48, &PrintStatusPanel::_handle_action, this);
+    lv_obj_add_flag(act_resume, LV_OBJ_FLAG_HIDDEN);
+    act_cancel = action_button(left, &ui_icon_close, "Cancel", ActionKind::Outline, 140, 356, 120, 48, &PrintStatusPanel::_handle_action, this);
+
+    // Right column. Progress: three large values side by side (no bar: it is already in the job card).
+    lv_obj_t *progress_card = card(status_cont, 296, 12, 428, 132);
+    lv_obj_move_to_index(progress_card, 0);
+    lv_obj_t *progress_title = label(progress_card, "Progress", &lv_font_montserrat_14, lv_color_hex(powerui::COLOR_MUTED));
+    lv_obj_set_pos(progress_title, px(14), px(10));
+    struct Stat { ImageLabel *item; const char *name; };
+    Stat stats[3] = {{&layers, "Layer"}, {&elapsed, "Elapsed"}, {&time_left, "Remaining"}};
+    const int column = (428 - 28) / 3;
+    for (int i = 0; i < 3; ++i) {
+      lv_obj_t *cell = stats[i].item->get_container();
+      lv_obj_set_parent(cell, progress_card);
+      lv_obj_set_size(cell, px(column - 6), px(82));
+      lv_obj_set_pos(cell, px(14 + i * column), px(38));
+      lv_obj_set_style_bg_opa(cell, LV_OPA_TRANSP, LV_PART_MAIN);
+      lv_obj_set_style_border_width(cell, 0, LV_PART_MAIN);
+      lv_obj_set_style_pad_all(cell, 0, LV_PART_MAIN);
+      lv_obj_t *cell_icon = lv_obj_get_child(cell, 0);
+      if (cell_icon != NULL) {
+        lv_img_set_zoom(cell_icon, 80);
+        lv_obj_align(cell_icon, LV_ALIGN_TOP_LEFT, 0, 0);
+      }
+      lv_obj_t *cell_name = label(cell, stats[i].name, &lv_font_montserrat_14, lv_color_hex(powerui::COLOR_MUTED));
+      lv_obj_align(cell_name, LV_ALIGN_TOP_LEFT, px(28), px(2));
+      lv_obj_t *cell_value = lv_obj_get_child(cell, 1);
+      if (cell_value != NULL) {
+        lv_obj_set_width(cell_value, px(column - 6));
+        lv_label_set_long_mode(cell_value, LV_LABEL_LONG_CLIP);
+        lv_obj_set_style_text_font(cell_value, &lv_font_montserrat_28, LV_PART_MAIN);
+        lv_obj_set_style_text_color(cell_value, lv_color_hex(powerui::COLOR_FG), LV_PART_MAIN);
+        lv_obj_align(cell_value, LV_ALIGN_TOP_LEFT, 0, px(34));
+      }
+    }
+
+    // Temperature and cooling | Motion: two list cards side by side.
     struct Row { ImageLabel *item; const char *name; };
-    struct Category { const char *title; int y; int h; Row rows[3]; };
-    Category categories[3] = {
-      {"Temperature and cooling", 12, 96, {{&extruder_temp, "Extruder"}, {&bed_temp, "Bed"}, {&fan0, "Fans"}}},
-      {"Motion", 118, 96, {{&print_speed, "Speed"}, {&flow_rate, "Flow"}, {&z_offset, "Z offset"}}},
-      {"Progress", 224, 96, {{&layers, "Layer"}, {&elapsed, "Elapsed"}, {&time_left, "Remaining"}}},
+    struct Category { const char *title; int x; Row rows[3]; };
+    Category categories[2] = {
+      {"Temperature and cooling", 296, {{&extruder_temp, "Extruder"}, {&bed_temp, "Bed"}, {&fan0, "Fans"}}},
+      {"Motion", 514, {{&print_speed, "Speed"}, {&flow_rate, "Flow"}, {&z_offset, "Z offset"}}},
     };
+    const int list_top = 12 + 132 + 8;
+    const int list_height = 428 - 56 - 8 - list_top;
+    const int list_width = (428 - 8) / 2;
+    const int row_step = (list_height - 38) / 3;
     for (const auto &category : categories) {
-      lv_obj_t *category_card = card(status_cont, 296, category.y, 428, category.h);
+      lv_obj_t *category_card = card(status_cont, category.x, list_top, list_width, list_height);
       lv_obj_move_to_index(category_card, 0);
-      lv_obj_t *title = label(category_card, category.title, &lv_font_montserrat_12, lv_color_hex(powerui::COLOR_MUTED));
-      lv_obj_set_pos(title, px(14), px(8));
+      lv_obj_t *title = label(category_card, category.title, &lv_font_montserrat_14, lv_color_hex(powerui::COLOR_MUTED));
+      lv_obj_set_pos(title, px(14), px(10));
       for (int i = 0; i < 3; ++i) {
         lv_obj_t *row = category.rows[i].item->get_container();
         lv_obj_set_parent(row, category_card);
-        lv_obj_set_size(row, px(400), px(22));
-        lv_obj_set_pos(row, px(14), px(24 + i * 22));
+        lv_obj_set_size(row, px(list_width - 28), px(row_step));
+        lv_obj_set_pos(row, px(14), px(34 + i * row_step));
         lv_obj_set_style_bg_opa(row, LV_OPA_TRANSP, LV_PART_MAIN);
         lv_obj_set_style_border_width(row, 0, LV_PART_MAIN);
         lv_obj_set_style_pad_all(row, 0, LV_PART_MAIN);
         lv_obj_t *row_icon = lv_obj_get_child(row, 0);
         if (row_icon != NULL) {
-          lv_img_set_zoom(row_icon, 72);
+          lv_img_set_zoom(row_icon, 80);
           lv_obj_align(row_icon, LV_ALIGN_LEFT_MID, 0, 0);
         }
         lv_obj_t *value = lv_obj_get_child(row, 1);
@@ -425,34 +496,15 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
           lv_obj_set_style_text_color(value, lv_color_hex(powerui::COLOR_FG), LV_PART_MAIN);
         }
         lv_obj_t *name = label(row, category.rows[i].name, &lv_font_montserrat_14, lv_color_hex(powerui::COLOR_MUTED));
-        lv_obj_align(name, LV_ALIGN_LEFT_MID, px(34), 0);
+        lv_obj_align(name, LV_ALIGN_LEFT_MID, px(30), 0);
       }
     }
 
-    // Actions: pause/resume and cancel on the left, tune and emergency stop on the right.
-    lv_obj_set_layout(buttons_cont, 0);
-    lv_obj_set_size(buttons_cont, px(712), px(96));
-    lv_obj_set_pos(buttons_cont, px(12), px(332));
-    lv_obj_set_style_bg_opa(buttons_cont, LV_OPA_TRANSP, LV_PART_MAIN);
-    lv_obj_set_style_pad_all(buttons_cont, 0, LV_PART_MAIN);
-    lv_obj_set_size(pause_cancel_group, px(350), px(96));
-    lv_obj_set_pos(pause_cancel_group, 0, 0);
-    lv_obj_set_style_pad_left(pause_cancel_group, 0, LV_PART_MAIN);
-    lv_obj_set_style_pad_right(pause_cancel_group, 0, LV_PART_MAIN);
-    lv_obj_set_style_pad_column(pause_cancel_group, px(12), LV_PART_MAIN);
-    lv_obj_set_flex_align(pause_cancel_group, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
-    lv_obj_set_size(secondary_buttons_group, px(350), px(96));
-    lv_obj_set_pos(secondary_buttons_group, px(362), 0);
-    lv_obj_set_style_pad_column(secondary_buttons_group, px(12), LV_PART_MAIN);
-    lv_obj_set_flex_align(secondary_buttons_group, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
-    for (ButtonContainer *button : {&pause_btn, &resume_btn, &cancel_btn, &finetune_btn, &emergency_btn}) {
-      button->set_fixed_size(px(169), px(96));
-    }
-    style_button(pause_btn.get_container(), pause_btn.get_button(), ButtonKind::Outline);
-    style_button(resume_btn.get_container(), resume_btn.get_button(), ButtonKind::Soft);
-    style_button(cancel_btn.get_container(), cancel_btn.get_button(), ButtonKind::Outline);
-    style_button(finetune_btn.get_container(), finetune_btn.get_button(), ButtonKind::Outline);
-    style_button(emergency_btn.get_container(), emergency_btn.get_button(), ButtonKind::Destructive);
+    // Bottom actions of the right column.
+    act_tune = action_button(status_cont, &ui_icon_tune, "Tune", ActionKind::Outline, 296, 372, 96, 56, &PrintStatusPanel::_handle_action, this);
+    act_exclude = action_button(status_cont, &ui_icon_exclude, "Exclude objects", ActionKind::Outline, 404, 372, 152, 56, &PrintStatusPanel::_handle_action, this);
+    lv_obj_add_state(act_exclude, LV_STATE_DISABLED);
+    act_estop = action_button(status_cont, &ui_icon_estop, "Emergency Stop", ActionKind::Destructive, 568, 372, 156, 56, &PrintStatusPanel::_handle_action, this);
   }
 
   ws.register_notify_update(this);
@@ -591,9 +643,11 @@ void PrintStatusPanel::populate() {
   if (!pstate.is_null() && pstate.template get<std::string>() == "paused") {
     lv_obj_clear_flag(resume_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(pause_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
+    update_pause_resume(true);
   } else {
     lv_obj_add_flag(resume_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(pause_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
+    update_pause_resume(false);
   }
 
   // progress percentage
@@ -781,6 +835,7 @@ void PrintStatusPanel::consume(json &j) {
       
       pause_btn.disable();
       lv_obj_add_flag(pause_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
+      update_pause_resume(true);
 
     } else {
       pause_btn.enable();
@@ -788,12 +843,77 @@ void PrintStatusPanel::consume(json &j) {
 
       resume_btn.disable();
       lv_obj_add_flag(resume_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
+      update_pause_resume(false);
     }
   }
 
   // layers
   v = j["/params/0/print_stats/info"_json_pointer];
   update_layers(v);
+}
+
+void PrintStatusPanel::update_pause_resume(bool paused) {
+  if (act_pause == NULL || act_resume == NULL) {
+    return;
+  }
+  lv_obj_clear_state(act_pause, LV_STATE_DISABLED);
+  lv_obj_clear_state(act_resume, LV_STATE_DISABLED);
+  if (paused) {
+    lv_obj_add_flag(act_pause, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(act_resume, LV_OBJ_FLAG_HIDDEN);
+  } else {
+    lv_obj_clear_flag(act_pause, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(act_resume, LV_OBJ_FLAG_HIDDEN);
+  }
+}
+
+void PrintStatusPanel::set_exclude_count(size_t count) {
+  if (act_exclude == NULL) {
+    return;
+  }
+  if (count >= 2) {
+    lv_obj_clear_state(act_exclude, LV_STATE_DISABLED);
+  } else {
+    lv_obj_add_state(act_exclude, LV_STATE_DISABLED);
+  }
+}
+
+// The same setting the ButtonContainer prompts use: ask before cancelling or stopping.
+bool PrintStatusPanel::prompt_enabled() {
+  auto prompt = Config::get_instance()->get_json("/prompt_emergency_stop");
+  return !prompt.is_null() && prompt.template get<bool>();
+}
+
+void PrintStatusPanel::handle_action(lv_event_t *event) {
+  if (lv_event_get_code(event) != LV_EVENT_CLICKED) {
+    return;
+  }
+  lv_obj_t *btn = lv_event_get_current_target(event);
+  if (btn == act_pause) {
+    ws.send_jsonrpc("printer.print.pause");
+    lv_obj_add_state(act_pause, LV_STATE_DISABLED);
+  } else if (btn == act_resume) {
+    ws.send_jsonrpc("printer.print.resume");
+    lv_obj_add_state(act_resume, LV_STATE_DISABLED);
+  } else if (btn == act_cancel) {
+    if (prompt_enabled()) {
+      cancel_btn.handle_prompt();
+    } else {
+      ws.send_jsonrpc("printer.print.cancel");
+    }
+  } else if (btn == act_tune) {
+    finetune_panel.foreground();
+  } else if (btn == act_exclude) {
+    if (exclude_action) {
+      exclude_action();
+    }
+  } else if (btn == act_estop) {
+    if (prompt_enabled()) {
+      emergency_btn.handle_prompt();
+    } else {
+      ws.send_jsonrpc("printer.emergency_stop");
+    }
+  }
 }
 
 void PrintStatusPanel::handle_callback(lv_event_t *event) {
@@ -863,11 +983,11 @@ void PrintStatusPanel::update_time_progress(uint32_t time_passed) {
       mini_print_status.update_eta_unknown();
     } else {
       auto eta_str = KUtils::eta_string(remaining);
-      time_left.update_label(eta_str.c_str());
+      time_left.update_label(without_seconds(eta_str).c_str());
       mini_print_status.update_eta(static_cast<uint32_t>(remaining));
     }
 
-    elapsed.update_label(KUtils::eta_string(time_passed).c_str());
+    elapsed.update_label(without_seconds(KUtils::eta_string(time_passed)).c_str());
     mini_print_status.update_elapsed(time_passed);
 }
 

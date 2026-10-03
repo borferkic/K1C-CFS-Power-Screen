@@ -83,6 +83,14 @@ class PrintPanel : public NotifyConsumer {
   void show_delete_confirmation();
   void hide_delete_context();
   void hide_delete_confirmation();
+
+  // Start print: asks for the bed mesh mode and the adaptive purge line (KAMP pins of the Power Script) before sending
+  // the print. Printers without those pins start the print straight away.
+  struct StartDialog;
+  void begin_print_flow(const std::string &path);
+  void show_start_dialog(const std::string &path, bool has_mesh, int mesh_mode, bool has_purge, bool purge_on);
+  void start_print_now(const std::string &path, const std::string &prepare_script);
+  static void _start_dialog_event(lv_event_t *event);
   
   KWebSocketClient &ws;
   lv_obj_t *files_cont;

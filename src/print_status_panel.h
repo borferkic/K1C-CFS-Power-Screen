@@ -30,9 +30,18 @@ class PrintStatusPanel : public NotifyConsumer {
 
   void handle_metadata(const std::string &gcode_file, json &j);
   void handle_callback(lv_event_t *event);
+  void handle_action(lv_event_t *event);
+  // "Exclude objects" button: enabled only when the print has two or more labeled objects.
+  void set_exclude_action(std::function<void()> action) { exclude_action = action; }
+  void set_exclude_count(size_t count);
   void update_status_label(const std::string &status);
   void update_clock();
   
+  static void _handle_action(lv_event_t *event) {
+    PrintStatusPanel *panel = (PrintStatusPanel*)event->user_data;
+    panel->handle_action(event);
+  }
+
   static void _handle_callback(lv_event_t *event) {
     PrintStatusPanel *panel = (PrintStatusPanel*)event->user_data;
     panel->handle_callback(event);
@@ -57,6 +66,18 @@ class PrintStatusPanel : public NotifyConsumer {
   KWebSocketClient &ws;
   FineTunePanel finetune_panel;
   MiniPrintStatus mini_print_status;
+
+  // PowerUI action buttons (line icon and text on one line). The ButtonContainers below stay hidden: they keep the
+  // confirmation prompts and the state the rest of the code already uses.
+  lv_obj_t *act_pause = NULL;
+  lv_obj_t *act_resume = NULL;
+  lv_obj_t *act_cancel = NULL;
+  lv_obj_t *act_tune = NULL;
+  lv_obj_t *act_exclude = NULL;
+  lv_obj_t *act_estop = NULL;
+  std::function<void()> exclude_action;
+  void update_pause_resume(bool paused);
+  bool prompt_enabled();
   lv_obj_t *status_cont;
   lv_obj_t *title_bar;
   lv_obj_t *title_label;

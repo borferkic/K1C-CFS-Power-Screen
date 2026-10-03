@@ -32,6 +32,7 @@ std::string usb_mount_point() {
 }
 
 LV_IMG_DECLARE(print);
+LV_IMG_DECLARE(ui_icon_play);
 LV_IMG_DECLARE(back);
 
 constexpr uint32_t CREALITY_GREEN = powerui::COLOR_ACCENT;
@@ -424,8 +425,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
 
   // Timelapse and History views (hidden until their segment is selected).
   extra_view.reset(new FilesExtraView(ws, lv_lock, left_cont, files_cont, [this](const std::string &file) {
-    ws.send_jsonrpc("printer.print.start", json{{"filename", file}});
-    print_status.foreground();
+    begin_print_flow(file);
   }));
 }
 
@@ -902,9 +902,7 @@ void PrintPanel::handle_print_callback(lv_event_t *event) {
       // ws.send_jsonrpc("printer.gcode.script",
       // 		    json::parse(R"({"script":"PRINT_PREPARE_CLEAR"})"));
 
-      json fname_input = {{"filename", cur_file->full_path }};
-      ws.send_jsonrpc("printer.print.start", fname_input);
-      print_status.foreground();
+      begin_print_flow(cur_file->full_path);
 
     } else {
       lv_obj_clear_flag(prompt_cont, LV_OBJ_FLAG_HIDDEN);
@@ -1101,5 +1099,167 @@ void PrintPanel::update_sort_buttons() {
     lv_obj_set_style_border_color(buttons[i], selected ? accent : lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
     lv_obj_set_style_border_opa(buttons[i], selected ? LV_OPA_50 : LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_set_style_text_color(buttons[i], selected ? accent : lv_color_hex(powerui::COLOR_FG), LV_PART_MAIN);
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Start print dialog
+
+struct PrintPanel::StartDialog {
+  PrintPanel *panel;
+  std::string path;
+  bool has_mesh;
+  bool has_purge;
+  int current_mesh;
+  bool current_purge;
+  lv_obj_t *overlay;
+  lv_obj_t *mesh_selector;
+  lv_obj_t *purge_switch;
+};
+
+namespace {
+const char *MESH_MAP[] = {"Off", "Adaptive", "Full", ""};
+}
+
+void PrintPanel::begin_print_flow(const std::string &path) {
+  State *s = State::get_instance();
+  auto adaptive = s->get_data("/printer_state/output_pin ADAPTIVE_BED_MESH/value"_json_pointer);
+  auto full = s->get_data("/printer_state/output_pin FULL_BED_MESH/value"_json_pointer);
+  auto purge = s->get_data("/printer_state/output_pin ADAPTIVE_PURGE_LINE/value"_json_pointer);
+  const bool has_mesh = adaptive.is_number() && full.is_number();
+  const bool has_purge = purge.is_number();
+  if (!has_mesh && !has_purge) {
+    start_print_now(path, "");
+    return;
+  }
+  int mesh_mode = 0;
+  if (has_mesh) {
+    mesh_mode = adaptive.template get<double>() > 0.5 ? 1 : (full.template get<double>() > 0.5 ? 2 : 0);
+  }
+  show_start_dialog(path, has_mesh, mesh_mode, has_purge, has_purge && purge.template get<double>() > 0.5);
+}
+
+void PrintPanel::start_print_now(const std::string &path, const std::string &prepare_script) {
+  auto start = [this, path]() {
+    ws.send_jsonrpc("printer.print.start", json{{"filename", path}});
+    print_status.foreground();
+  };
+  if (prepare_script.empty()) {
+    start();
+    return;
+  }
+  // Set the pins first; the print starts once Klipper has run them.
+  ws.send_jsonrpc("printer.gcode.script", json{{"script", prepare_script}}, [this, start](json &) {
+    std::lock_guard<std::mutex> lock(lv_lock);
+    start();
+  });
+}
+
+void PrintPanel::show_start_dialog(const std::string &path, bool has_mesh, int mesh_mode, bool has_purge, bool purge_on) {
+  using namespace powerui;
+  StartDialog *dialog = new StartDialog{this, path, has_mesh, has_purge, mesh_mode, purge_on, NULL, NULL, NULL};
+
+  lv_obj_t *overlay = lv_obj_create(lv_layer_top());
+  lv_obj_remove_style_all(overlay);
+  lv_obj_set_size(overlay, LV_PCT(100), LV_PCT(100));
+  lv_obj_set_style_bg_color(overlay, lv_color_hex(COLOR_BLACK), 0);
+  lv_obj_set_style_bg_opa(overlay, LV_OPA_60, 0);
+  lv_obj_add_flag(overlay, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_set_user_data(overlay, dialog);
+  dialog->overlay = overlay;
+  lv_obj_add_event_cb(overlay, [](lv_event_t *e) { delete (StartDialog *)lv_obj_get_user_data(lv_event_get_target(e)); },
+                      LV_EVENT_DELETE, NULL);
+
+  const int rows = (has_mesh ? 1 : 0) + (has_purge ? 1 : 0);
+  const int w = 540, h = 150 + rows * 62 + 70;
+  lv_obj_t *dlg = card(overlay, 0, 0, w, h);
+  lv_obj_center(dlg);
+  lv_obj_set_style_border_opa(dlg, LV_OPA_30, 0);
+
+  lv_obj_t *title = label(dlg, "Start print", &lv_font_montserrat_20, lv_color_hex(COLOR_FG));
+  lv_obj_set_pos(title, px(24), px(18));
+
+  // File card.
+  std::string name = path.substr(path.find_last_of('/') == std::string::npos ? 0 : path.find_last_of('/') + 1);
+  lv_obj_t *file_card = plain(dlg);
+  lv_obj_set_size(file_card, px(w - 48), px(56));
+  lv_obj_set_pos(file_card, px(24), px(56));
+  lv_obj_set_style_radius(file_card, px(10), 0);
+  lv_obj_set_style_bg_color(file_card, lv_color_hex(COLOR_SECONDARY), 0);
+  lv_obj_set_style_bg_opa(file_card, LV_OPA_COVER, 0);
+  lv_obj_t *file_label = label(file_card, name.c_str(), &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
+  lv_label_set_long_mode(file_label, LV_LABEL_LONG_DOT);
+  lv_obj_set_width(file_label, px(w - 48 - 28));
+  lv_obj_align(file_label, LV_ALIGN_LEFT_MID, px(14), 0);
+
+  int y = 126;
+  auto row_title = [&](const char *text, const char *sub) {
+    lv_obj_t *t = label(dlg, text, &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
+    lv_obj_set_pos(t, px(24), px(y + 6));
+    lv_obj_t *s = label(dlg, sub, &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
+    lv_obj_set_pos(s, px(24), px(y + 30));
+  };
+  if (has_mesh) {
+    row_title("Bed mesh", "Adaptive meshes only the area of the part");
+    dialog->mesh_selector = lv_btnmatrix_create(dlg);
+    lv_btnmatrix_set_map(dialog->mesh_selector, MESH_MAP);
+    lv_btnmatrix_set_btn_ctrl_all(dialog->mesh_selector, LV_BTNMATRIX_CTRL_CHECKABLE);
+    lv_btnmatrix_set_one_checked(dialog->mesh_selector, true);
+    lv_btnmatrix_set_btn_ctrl(dialog->mesh_selector, mesh_mode, LV_BTNMATRIX_CTRL_CHECKED);
+    lv_obj_set_size(dialog->mesh_selector, px(250), px(44));
+    lv_obj_set_pos(dialog->mesh_selector, px(w - 24 - 250), px(y + 4));
+    style_segmented(dialog->mesh_selector);
+    lv_obj_set_style_text_font(dialog->mesh_selector, &lv_font_montserrat_14, LV_PART_ITEMS);
+    y += 62;
+  }
+  if (has_purge) {
+    row_title("Adaptive purge line", "Purges next to the part");
+    dialog->purge_switch = lv_switch_create(dlg);
+    style_switch(dialog->purge_switch);
+    lv_obj_set_pos(dialog->purge_switch, px(w - 24 - 46), px(y + 14));
+    if (purge_on) {
+      lv_obj_add_state(dialog->purge_switch, LV_STATE_CHECKED);
+    }
+    y += 62;
+  }
+
+  action_button(dlg, NULL, "Cancel", ActionKind::Outline, 24, h - 74, 196, 50, &PrintPanel::_start_dialog_event, dialog);
+  action_button(dlg, &ui_icon_play, "Start", ActionKind::Primary, w - 24 - 292, h - 74, 292, 50, &PrintPanel::_start_dialog_event, dialog);
+}
+
+void PrintPanel::_start_dialog_event(lv_event_t *event) {
+  StartDialog *dialog = (StartDialog *)event->user_data;
+  lv_obj_t *btn = lv_event_get_current_target(event);
+  // Child order of the dialog card: Cancel is followed by Start (the last two children).
+  lv_obj_t *card_obj = lv_obj_get_parent(btn);
+  const uint32_t count = lv_obj_get_child_cnt(card_obj);
+  const bool start = btn == lv_obj_get_child(card_obj, count - 1);
+
+  PrintPanel *panel = dialog->panel;
+  const std::string path = dialog->path;
+  std::string script;
+  if (start) {
+    if (dialog->has_mesh) {
+      const int mode = lv_btnmatrix_get_selected_btn(dialog->mesh_selector);
+      const int checked = lv_btnmatrix_has_btn_ctrl(dialog->mesh_selector, 0, LV_BTNMATRIX_CTRL_CHECKED) ? 0
+                        : lv_btnmatrix_has_btn_ctrl(dialog->mesh_selector, 1, LV_BTNMATRIX_CTRL_CHECKED) ? 1 : 2;
+      (void)mode;
+      if (checked != dialog->current_mesh) {
+        script += checked == 0 ? "_BED_MESH_OFF\n" : (checked == 1 ? "_ADAPTIVE_BED_MESH_ON\n" : "_FULL_BED_MESH_ON\n");
+      }
+    }
+    if (dialog->has_purge) {
+      const bool on = lv_obj_has_state(dialog->purge_switch, LV_STATE_CHECKED);
+      if (on != dialog->current_purge) {
+        script += on ? "_ADAPTIVE_PURGE_LINE_ON\n" : "_ADAPTIVE_PURGE_LINE_OFF\n";
+      }
+    }
+    if (!script.empty()) {
+      script.pop_back();
+    }
+  }
+  lv_obj_del_async(dialog->overlay);
+  if (start) {
+    panel->start_print_now(path, script);
   }
 }
