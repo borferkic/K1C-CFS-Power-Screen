@@ -16,7 +16,8 @@ namespace fs = std::experimental::filesystem;
 
 LV_IMG_DECLARE(bedmesh_img);
 LV_IMG_DECLARE(fine_tune_img);
-LV_IMG_DECLARE(inputshaper_img);
+LV_IMG_DECLARE(ui_resonance_img);
+LV_IMG_DECLARE(ui_belts_img);
 LV_IMG_DECLARE(limit_img);
 LV_IMG_DECLARE(motor_img);
 LV_IMG_DECLARE(chart_img);
@@ -48,8 +49,8 @@ PrinterTunePanel::PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t 
   , pid_tune_panel(c, l)
   , bedmesh_btn(cont, &bedmesh_img, "Bed Mesh", &PrinterTunePanel::_handle_callback, this)
   , finetune_btn(cont, &fine_tune_img, "Fine Tune", &PrinterTunePanel::_handle_callback, this)
-  , inputshaper_btn(cont, &inputshaper_img, "Input Shaper", &PrinterTunePanel::_handle_callback, this)
-  , belts_calibration_btn(cont, &inputshaper_img, "Belts / Shake", &PrinterTunePanel::_handle_callback, this)
+  , inputshaper_btn(cont, &ui_resonance_img, "Input Shaper", &PrinterTunePanel::_handle_callback, this)
+  , belts_calibration_btn(cont, &ui_belts_img, "Belts / Shake", &PrinterTunePanel::_handle_callback, this)
   , limits_btn(cont, &limit_img, "Limits", &PrinterTunePanel::_handle_callback, this)
   , tmc_tune_btn(cont, &motor_img, "TMC Autotune", &PrinterTunePanel::_handle_callback, this)
   , tmc_status_btn(cont, &chart_img, "TMC Metrics", &PrinterTunePanel::_handle_callback, this)

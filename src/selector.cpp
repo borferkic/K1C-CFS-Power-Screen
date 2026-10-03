@@ -23,6 +23,11 @@ Selector::Selector(lv_obj_t *parent,
   lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_style_pad_all(cont, 0, 0);
   lv_obj_set_style_pad_row(cont, 0, 0);
+  // The container only groups the label and the button matrix: the parent card provides the background.
+  lv_obj_set_style_bg_opa(cont, LV_OPA_TRANSP, 0);
+  lv_obj_set_style_border_width(cont, 0, 0);
+  lv_obj_set_style_shadow_width(cont, 0, 0);
+  lv_obj_set_style_outline_width(cont, 0, 0);
 
   auto height = (double)lv_disp_get_physical_ver_res(NULL) * (height_pct / 100.0);
   height = height < 50 ? 50 : height;

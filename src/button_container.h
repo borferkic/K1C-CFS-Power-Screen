@@ -19,6 +19,7 @@ class ButtonContainer {
 
   lv_obj_t *get_container();
   lv_obj_t *get_button();
+  lv_obj_t *get_label();
   void set_fixed_size(lv_coord_t width, lv_coord_t height);
   void disable();
   void enable();

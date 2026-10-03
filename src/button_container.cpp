@@ -123,6 +123,10 @@ lv_obj_t *ButtonContainer::get_button() {
   return btn;
 }
 
+lv_obj_t *ButtonContainer::get_label() {
+  return label;
+}
+
 void ButtonContainer::set_fixed_size(lv_coord_t width, lv_coord_t height) {
   if (compact) {
     // Back keeps its compact size even if the panel asks for another one.

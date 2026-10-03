@@ -12,13 +12,13 @@ LV_IMG_DECLARE(arrow_left);
 LV_IMG_DECLARE(arrow_up);
 LV_IMG_DECLARE(arrow_right);
 LV_IMG_DECLARE(arrow_down);
-LV_IMG_DECLARE(home);
+LV_IMG_DECLARE(ui_crosshair_img);
 LV_IMG_DECLARE(home_z);
 LV_IMG_DECLARE(back);
 LV_IMG_DECLARE(z_closer);
 LV_IMG_DECLARE(z_farther);
-LV_IMG_DECLARE(emergency);
-LV_IMG_DECLARE(motor_off_img);
+LV_IMG_DECLARE(ui_estop_img);
+LV_IMG_DECLARE(ui_motor_off_slash_img);
 
 HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   : NotifyConsumer(lock)
@@ -32,22 +32,22 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   , motion_top_cont(lv_obj_create(motion_cont))
   , motion_bottom_cont(lv_obj_create(motion_cont))
   , safety_cont(lv_obj_create(homing_cont))
-  , home_all_btn(motion_top_cont, &home, "Home All", &HomingPanel::_handle_callback, this)
+  , home_all_btn(motion_top_cont, &ui_crosshair_img, "Home All", &HomingPanel::_handle_callback, this)
   , y_up_btn(motion_top_cont, &arrow_up, "Y+", &HomingPanel::_handle_callback, this)
-  , home_xy_btn(motion_top_cont, &home, "Home XY", &HomingPanel::_handle_callback, this)
+  , home_xy_btn(motion_top_cont, &ui_crosshair_img, "Home XY", &HomingPanel::_handle_callback, this)
   , z_down_btn(motion_top_cont, &z_farther, "Z-", &HomingPanel::_handle_callback, this)
   , home_z_btn(motion_top_cont, &home_z, "Home Z", &HomingPanel::_handle_callback, this)
   , x_down_btn(motion_bottom_cont, &arrow_left, "X-", &HomingPanel::_handle_callback, this)
   , y_down_btn(motion_bottom_cont, &arrow_down, "Y-", &HomingPanel::_handle_callback, this)
   , x_up_btn(motion_bottom_cont, &arrow_right, "X+", &HomingPanel::_handle_callback, this)
   , z_up_btn(motion_bottom_cont, &z_closer, "Z+", &HomingPanel::_handle_callback, this)
-  , emergency_btn(safety_cont, &emergency, "Emergency\nStop", &HomingPanel::_handle_callback, this,
+  , emergency_btn(safety_cont, &ui_estop_img, "Emergency Stop", &HomingPanel::_handle_callback, this,
 		  "Do you want to emergency stop?",
 		  [&websocket_client]() {
 		    spdlog::debug("emergency stop pressed");
 		    websocket_client.send_jsonrpc("printer.emergency_stop");
 		  })
-  , motoroff_btn(safety_cont, &motor_off_img, "Motor Off", &HomingPanel::_handle_callback, this)
+  , motoroff_btn(safety_cont, &ui_motor_off_slash_img, "Motor Off", &HomingPanel::_handle_callback, this)
   , back_btn(safety_cont, &back, "Back", &HomingPanel::_handle_callback, this)
   , distance_selector(motion_cont, "Move Distance (mm)",
 		     {".1", ".5", "1", "5", "10", "25", "50", ""}, 2, 70, 15, &HomingPanel::_handle_selector_cb, this)
