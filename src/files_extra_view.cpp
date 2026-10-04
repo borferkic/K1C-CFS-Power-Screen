@@ -17,6 +17,7 @@ LV_IMG_DECLARE(sd_img);
 LV_IMG_DECLARE(ui_icon_camera);
 LV_IMG_DECLARE(ui_icon_folder);
 LV_IMG_DECLARE(ui_icon_trash);
+LV_IMG_DECLARE(ui_file_cube_img);
 
 using namespace powerui;
 
@@ -279,7 +280,7 @@ lv_obj_t *FilesExtraView::add_row(const char *title, const std::string &subtitle
   lv_obj_set_style_border_width(tile, 1, 0);
   lv_obj_set_style_border_color(tile, lv_color_hex(COLOR_WHITE), 0);
   lv_obj_set_style_border_opa(tile, LV_OPA_10, 0);
-  lv_obj_center(icon(tile, video ? &ui_icon_camera : &print, 22, lv_color_hex(COLOR_MUTED)));
+  lv_obj_center(icon(tile, video ? &ui_icon_camera : &ui_file_cube_img, 22, lv_color_hex(COLOR_MUTED)));
 
   lv_obj_t *text = plain(row);
   lv_obj_set_height(text, LV_SIZE_CONTENT);
@@ -387,7 +388,7 @@ void FilesExtraView::rebuild_detail() {
     lv_obj_clear_flag(shot, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_center(shot);
   } else {
-    lv_obj_center(icon(preview, mode == Mode::Timelapse ? &ui_icon_camera : &print, 56, lv_color_hex(COLOR_MUTED)));
+    lv_obj_center(icon(preview, mode == Mode::Timelapse ? &ui_icon_camera : &ui_file_cube_img, 56, lv_color_hex(COLOR_MUTED)));
   }
 
   if (!have) {
