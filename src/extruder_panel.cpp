@@ -14,7 +14,7 @@ LV_IMG_DECLARE(unload_filament_img);
 LV_IMG_DECLARE(load_filament_img);
 LV_IMG_DECLARE(filament_img);
 LV_IMG_DECLARE(extruder);
-LV_IMG_DECLARE(ui_icon_filament);
+LV_IMG_DECLARE(ui_hand_img);
 
 ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
 			     std::mutex &lock,
@@ -149,7 +149,7 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   // CFS: icon (four spools) to the left of the label; red while the CFS is not available.
   spoolman_btn.set_disabled_text_color(lv_color_hex(powerui::COLOR_DESTRUCTIVE));
   spoolman_icon = stack_icon(spoolman_btn, &ui_cfs_img, 44, lv_color_hex(powerui::COLOR_DESTRUCTIVE));
-  stack_icon(manual_change_btn, &ui_icon_filament, 38, lv_color_hex(powerui::COLOR_FG));
+  stack_icon(manual_change_btn, &ui_hand_img, 38, lv_color_hex(powerui::COLOR_FG));
   stack_icon(load_btn, &load_filament_img, 38, lv_color_hex(powerui::COLOR_FG));
   stack_icon(unload_btn, &unload_filament_img, 38, lv_color_hex(powerui::COLOR_FG));
   stack_icon(cooldown_btn, &extruder, 38, lv_color_hex(powerui::COLOR_CHAMBER));
