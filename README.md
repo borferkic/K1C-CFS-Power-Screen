@@ -161,7 +161,7 @@ It is recommended to restart the printer after removing PowerScreen.
 - `CLOSE` action to close the dialog.
 - Icons for load, unload, resume, and stop actions.
 - Button layout reorganized for comfortable touchscreen use on the K1C.
-- **PowerUI** visual theme on every screen, created by Boris Fernández (Boris SdK) and based on [shadcn/ui](https://github.com/shadcn-ui/ui). Its design guidelines will be published in a separate repository.
+- **[PowerUI](https://github.com/borferkic/PowerUI)** visual theme on every screen, created by Boris Fernández (Boris SdK) and based on [shadcn/ui](https://github.com/shadcn-ui/ui). Its design guidelines and implementation instructions live in the [PowerUI](https://github.com/borferkic/PowerUI) repository.
 
 ## Pending work
 
@@ -191,8 +191,8 @@ The projects and resources used by the original foundation are also acknowledged
 ## License and credits
 
 - **Source code:** GNU GPL-3.0 (see [LICENSE](LICENSE)). PowerScreen is a modification of [GuppyScreen](https://github.com/ballaswag/guppyscreen) by ballaswag.
-- **PowerUI** (design system, visual guide, mockups, line icons and theme) was structured, created and standardized for 3D printing by **Boris Fernández (Boris SdK)**. It is intended for **Creality K1 series** printers with root access, is free to use by people and **not for commercial purposes** (use by companies for commercial purposes requires the author's permission). Keep the credit when you reuse it (see [NOTICE.md](NOTICE.md) and [LICENSE-POWERUI.md](LICENSE-POWERUI.md)).
-- PowerUI is based on [shadcn/ui](https://github.com/shadcn-ui/ui) by [shadcn](https://github.com/shadcn) (MIT).
+- **[PowerUI](https://github.com/borferkic/PowerUI)** (design system, visual guide, mockups, line icons and theme) was structured, created and standardized for 3D printing by **Boris Fernández (Boris SdK)**. It is intended for **Creality K1 series** printers with root access, is free to use by people and **not for commercial purposes** (use by companies for commercial purposes requires the author's permission). Keep the credit when you reuse it (see [NOTICE.md](NOTICE.md) and [LICENSE-POWERUI.md](LICENSE-POWERUI.md)).
+- [PowerUI](https://github.com/borferkic/PowerUI) is based on [shadcn/ui](https://github.com/shadcn-ui/ui) by [shadcn](https://github.com/shadcn) (MIT).
 
 ---
 
@@ -331,7 +331,7 @@ Se recomienda reiniciar la impresora después de quitar PowerScreen.
 - Acción `CLOSE` para cerrar el diálogo.
 - Iconos para las acciones de carga, descarga, reanudación y detención.
 - Botones reorganizados para facilitar el uso táctil en la K1C.
-- Tema visual **PowerUI** en todas las pantallas, creado por Boris Fernández (Boris SdK) y basado en [shadcn/ui](https://github.com/shadcn-ui/ui). Sus lineamientos de diseño se publicarán en un repositorio aparte.
+- Tema visual **[PowerUI](https://github.com/borferkic/PowerUI)** en todas las pantallas, creado por Boris Fernández (Boris SdK) y basado en [shadcn/ui](https://github.com/shadcn-ui/ui). Sus lineamientos de diseño y las instrucciones de implementación están en el repositorio [PowerUI](https://github.com/borferkic/PowerUI).
 
 ## Pendientes
 
@@ -361,5 +361,5 @@ También se reconocen los proyectos y recursos utilizados por la base original:
 ## Licencia y créditos
 
 - **Código fuente:** GNU GPL-3.0 (ver [LICENSE](LICENSE)). PowerScreen es una modificación de [GuppyScreen](https://github.com/ballaswag/guppyscreen) de ballaswag.
-- **PowerUI** (sistema de diseño, guía visual, bocetos, iconos de línea y tema) fue estructurado, creado y estandarizado para impresión 3D por **Boris Fernández (Boris SdK)**. Está pensado para impresoras de la **serie K1 de Creality** con root, es de libre uso para las personas y **sin fines comerciales** (el uso por empresas con fines comerciales requiere el permiso del autor). Conserva el crédito si lo reutilizas (ver [NOTICE.md](NOTICE.md) y [LICENSE-POWERUI.md](LICENSE-POWERUI.md)).
-- PowerUI se basa en [shadcn/ui](https://github.com/shadcn-ui/ui) de [shadcn](https://github.com/shadcn) (MIT).
+- **[PowerUI](https://github.com/borferkic/PowerUI)** (sistema de diseño, guía visual, bocetos, iconos de línea y tema) fue estructurado, creado y estandarizado para impresión 3D por **Boris Fernández (Boris SdK)**. Está pensado para impresoras de la **serie K1 de Creality** con root, es de libre uso para las personas y **sin fines comerciales** (el uso por empresas con fines comerciales requiere el permiso del autor). Conserva el crédito si lo reutilizas (ver [NOTICE.md](NOTICE.md) y [LICENSE-POWERUI.md](LICENSE-POWERUI.md)).
+- [PowerUI](https://github.com/borferkic/PowerUI) se basa en [shadcn/ui](https://github.com/shadcn-ui/ui) de [shadcn](https://github.com/shadcn) (MIT).
