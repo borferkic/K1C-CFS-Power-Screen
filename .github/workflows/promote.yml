@@ -73,6 +73,8 @@ jobs:
         unzip -p out/powerscreen-zbolt.zip release_info.json | jq -e --arg v "$STABLE" '.version == $v'
 
     - name: Publish stable release
+      env:
+        GH_DEBUG: api
       run: |
         TARGET="$(gh release view "$NIGHTLY" --repo "$REPO" --json targetCommitish --jq .targetCommitish)"
         # Use release-notes/<version>.md (a summary of the previous nightlies, rule 12) when it exists.
