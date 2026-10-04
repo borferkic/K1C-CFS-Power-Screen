@@ -4,7 +4,7 @@ Nombre: `README.md`
 Fecha de creación: `2026-09-10`
 Descripción: Presentación pública, alcance e instrucciones de PowerScreen para la Creality K1C.
 Proyecto: `PowerScreen`
-Última modificación: `2026-10-01`
+Última modificación: `2026-10-04`
 -->
 
 <div align="center">
@@ -19,7 +19,7 @@ Proyecto: `PowerScreen`
   <a href="https://github.com/borferkic/K1C-CFS-POWER-SCREEN/releases/latest"><img src="https://img.shields.io/github/v/release/borferkic/K1C-CFS-POWER-SCREEN?style=flat-square&color=2ea44f" alt="Latest release" /></a>
   <a href="https://github.com/borferkic/K1C-CFS-POWER-SCREEN/releases"><img src="https://img.shields.io/github/downloads/borferkic/K1C-CFS-POWER-SCREEN/total?style=flat-square&color=555" alt="Downloads" /></a>
   <img src="https://img.shields.io/badge/Printer-Creality%20K1C-0078D6?style=flat-square" alt="Printer: Creality K1C" />
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue?style=flat-square" alt="License: GPL-3.0" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0%20%2B%20PowerUI%20NC-blue?style=flat-square" alt="License: GPL-3.0 + PowerUI non-commercial" /></a>
 </div>
 
 [English](#english) | [Español](#espanol)
@@ -161,6 +161,7 @@ It is recommended to restart the printer after removing PowerScreen.
 - `CLOSE` action to close the dialog.
 - Icons for load, unload, resume, and stop actions.
 - Button layout reorganized for comfortable touchscreen use on the K1C.
+- **PowerUI** visual theme on every screen, created by Boris Fernández (Boris SdK) and based on [shadcn/ui](https://github.com/shadcn-ui/ui). Its design guidelines will be published in a separate repository.
 
 ## Pending work
 
@@ -177,6 +178,8 @@ This repository is maintained as K1C CFS POWER SCREEN and contains project-speci
 The projects and resources used by the original foundation are also acknowledged:
 
 - [GuppyScreen](https://github.com/ballaswag/guppyscreen) — native touchscreen UI for Klipper/Moonraker, created by [ballaswag](https://github.com/ballaswag).
+- [shadcn/ui](https://github.com/shadcn-ui/ui) — created by [shadcn](https://github.com/shadcn) (MIT); thank you for its UI guidelines, which made it possible to build PowerUI.
+- [Lucide](https://lucide.dev/) — general line icons.
 - [LVGL](https://github.com/lvgl/lvgl)
 - [Z-Bolt Icons](https://github.com/Z-Bolt/OctoScreen)
 - [k1-discovery](https://github.com/ballaswag/k1-discovery) — MIPS toolchain and compatible `curl` helper used by the K1C workflow; thanks to `ballaswag`.
@@ -185,9 +188,11 @@ The projects and resources used by the original foundation are also acknowledged
 - [Fluidd](https://github.com/fluidd-core/fluidd)
 - [Klippain Shake&Tune](https://github.com/Frix-x/klippain-shaketune)
 
-## License
+## License and credits
 
-See [LICENSE](LICENSE) for the terms applicable to the original foundation and this modification.
+- **Source code:** GNU GPL-3.0 (see [LICENSE](LICENSE)). PowerScreen is a modification of [GuppyScreen](https://github.com/ballaswag/guppyscreen) by ballaswag.
+- **PowerUI** (design system, visual guide, mockups, line icons and theme) was structured, created and standardized for 3D printing by **Boris Fernández (Boris SdK)**. It is free to use, only for **Creality K1 series** printers, and **not for commercial purposes**. Keep the credit when you reuse it (see [NOTICE.md](NOTICE.md) and [LICENSE-POWERUI.md](LICENSE-POWERUI.md)).
+- PowerUI is based on [shadcn/ui](https://github.com/shadcn-ui/ui) by [shadcn](https://github.com/shadcn) (MIT).
 
 ---
 
@@ -326,6 +331,7 @@ Se recomienda reiniciar la impresora después de quitar PowerScreen.
 - Acción `CLOSE` para cerrar el diálogo.
 - Iconos para las acciones de carga, descarga, reanudación y detención.
 - Botones reorganizados para facilitar el uso táctil en la K1C.
+- Tema visual **PowerUI** en todas las pantallas, creado por Boris Fernández (Boris SdK) y basado en [shadcn/ui](https://github.com/shadcn-ui/ui). Sus lineamientos de diseño se publicarán en un repositorio aparte.
 
 ## Pendientes
 
@@ -342,6 +348,8 @@ Este repositorio se mantiene como K1C CFS POWER SCREEN e incluye modificaciones 
 También se reconocen los proyectos y recursos utilizados por la base original:
 
 - [GuppyScreen](https://github.com/ballaswag/guppyscreen) — interfaz táctil nativa para Klipper/Moonraker, creada por [ballaswag](https://github.com/ballaswag).
+- [shadcn/ui](https://github.com/shadcn-ui/ui) — creada por [shadcn](https://github.com/shadcn) (MIT); gracias por sus lineamientos de UI, que permitieron construir PowerUI.
+- [Lucide](https://lucide.dev/) — iconos de línea generales.
 - [LVGL](https://github.com/lvgl/lvgl)
 - [Z-Bolt Icons](https://github.com/Z-Bolt/OctoScreen)
 - [k1-discovery](https://github.com/ballaswag/k1-discovery) — toolchain MIPS y helper `curl` compatible usados por el flujo de la K1C; agradecimiento a `ballaswag`.
@@ -350,6 +358,8 @@ También se reconocen los proyectos y recursos utilizados por la base original:
 - [Fluidd](https://github.com/fluidd-core/fluidd)
 - [Klippain Shake&Tune](https://github.com/Frix-x/klippain-shaketune)
 
-## Licencia
+## Licencia y créditos
 
-Consulta [LICENSE](LICENSE) para conocer los términos aplicables a la base original y a esta modificación.
+- **Código fuente:** GNU GPL-3.0 (ver [LICENSE](LICENSE)). PowerScreen es una modificación de [GuppyScreen](https://github.com/ballaswag/guppyscreen) de ballaswag.
+- **PowerUI** (sistema de diseño, guía visual, bocetos, iconos de línea y tema) fue estructurado, creado y estandarizado para impresión 3D por **Boris Fernández (Boris SdK)**. Es de libre uso, solo para impresoras de la **serie K1 de Creality** y **sin fines comerciales**. Conserva el crédito si lo reutilizas (ver [NOTICE.md](NOTICE.md) y [LICENSE-POWERUI.md](LICENSE-POWERUI.md)).
+- PowerUI se basa en [shadcn/ui](https://github.com/shadcn-ui/ui) de [shadcn](https://github.com/shadcn) (MIT).
