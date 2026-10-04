@@ -25,6 +25,12 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
     steps:
+    - name: Checkout (release notes)
+      uses: actions/checkout@v4
+      with:
+        sparse-checkout: release-notes
+        sparse-checkout-cone-mode: false
+
     - name: Validate inputs
       run: |
         STABLE="${{ inputs.stable_version }}"
@@ -75,9 +81,17 @@ jobs:
     - name: Publish stable release
       run: |
         TARGET="$(gh release view "$NIGHTLY" --repo "$REPO" --json targetCommitish --jq .targetCommitish)"
+        # Use release-notes/<version>.md (a summary of the previous nightlies, rule 12) when it exists.
+        if [ -f "release-notes/$STABLE.md" ]; then
+          NOTES=(--notes-file "release-notes/$STABLE.md")
+          echo "Using release-notes/$STABLE.md"
+        else
+          NOTES=(--notes "Official release promoted from nightly \`$NIGHTLY\` (same binary, tested on the K1C).")
+          echo "No release notes file for $STABLE: using the default note"
+        fi
         gh release create "$STABLE" out/powerscreen-zbolt.tar.gz out/powerscreen-zbolt.zip \
           --repo "$REPO" \
           --title "$STABLE" \
           --target "$TARGET" \
           --latest \
-          --notes "Official release promoted from nightly \`$NIGHTLY\` (same binary, tested on the K1C)."
+          "${NOTES[@]}"
