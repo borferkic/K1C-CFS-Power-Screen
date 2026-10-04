@@ -4,6 +4,10 @@ name: promote nightly to stable
 # rebuilding: the binary is exactly the nightly one. Only the version in
 # .version and release_info.json is rewritten.
 
+# Limitation: GitHub requires the "workflows" permission to create the tag when the nightly history
+# changed workflow files after the previous stable, and the workflow GITHUB_TOKEN cannot have it (HTTP 403).
+# In that case run the same steps locally with the owner token (see PENDIENTES SC-026).
+
 on:
   workflow_dispatch:
     inputs:
@@ -73,8 +77,6 @@ jobs:
         unzip -p out/powerscreen-zbolt.zip release_info.json | jq -e --arg v "$STABLE" '.version == $v'
 
     - name: Publish stable release
-      env:
-        GH_DEBUG: api
       run: |
         TARGET="$(gh release view "$NIGHTLY" --repo "$REPO" --json targetCommitish --jq .targetCommitish)"
         # Use release-notes/<version>.md (a summary of the previous nightlies, rule 12) when it exists.
