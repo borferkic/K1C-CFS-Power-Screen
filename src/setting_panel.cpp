@@ -6,15 +6,43 @@
 #include "subprocess.hpp"
 
 #include <experimental/filesystem>
+#include <fstream>
 
 namespace fs = std::experimental::filesystem;
 namespace sp = subprocess;
+
+#ifdef POWERSCREEN_VERSION
+#define SETTINGS_VERSION POWERSCREEN_VERSION
+#else
+#define SETTINGS_VERSION "dev-snapshot"
+#endif
+
+namespace {
+// Installed package version without the nightly suffix (".version" next to the executable, like System).
+std::string package_version() {
+  try {
+    const fs::path file = fs::canonical("/proc/self/exe").parent_path() / ".version";
+    std::ifstream in(file.string());
+    if (in) {
+      const json data = json::parse(in);
+      if (data.contains("version") && data["version"].is_string()) {
+        const std::string version = data["version"].get<std::string>();
+        return version.substr(0, version.find('-'));
+      }
+    }
+  } catch (const std::exception &) {
+  }
+  const std::string fallback = SETTINGS_VERSION;
+  return fallback.substr(0, fallback.find('-'));
+}
+}  // namespace
 
 LV_IMG_DECLARE(network_img);
 LV_IMG_DECLARE(refresh_img);
 LV_IMG_DECLARE(ui_cfs_img);
 LV_IMG_DECLARE(ui_cpu_img);
 LV_IMG_DECLARE(ui_logo_white_img);
+LV_IMG_DECLARE(ui_logo_watermark_img);
 LV_IMG_DECLARE(update_img);
 
 LV_IMG_DECLARE(info_img);
@@ -83,6 +111,20 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
   lv_obj_set_grid_cell(restart_klipper_btn.get_button(), S, 1, 1, S, 1, 1);
   lv_obj_set_grid_cell(restart_firmware_btn.get_button(), S, 2, 1, S, 1, 1);
   lv_obj_add_flag(printer_select_btn.get_button(), LV_OBJ_FLAG_HIDDEN);
+
+  // Watermark in the free grid cell: the PowerScreen logo at low opacity with the installed version below.
+  lv_obj_t *mark = powerui::plain(cont);
+  lv_obj_set_grid_cell(mark, S, 3, 1, S, 1, 1);
+  lv_obj_clear_flag(mark, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_t *mark_logo = lv_img_create(mark);
+  lv_img_set_src(mark_logo, &ui_logo_watermark_img);
+  lv_obj_clear_flag(mark_logo, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_set_style_img_opa(mark_logo, LV_OPA_10, 0);
+  lv_obj_align(mark_logo, LV_ALIGN_CENTER, 0, -powerui::px(12));
+  lv_obj_t *mark_version = powerui::label(mark, fmt::format("PowerScreen {}", package_version()).c_str(),
+                                          &lv_font_montserrat_12, lv_color_hex(powerui::COLOR_MUTED));
+  lv_obj_set_style_text_opa(mark_version, LV_OPA_60, 0);
+  lv_obj_align(mark_version, LV_ALIGN_BOTTOM_MID, 0, -powerui::px(14));
 
 }
 
