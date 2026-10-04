@@ -4,9 +4,10 @@ PowerScreen for the Creality K1 series
 Copyright (c) 2026 Boris Fernández (Boris SdK)
 
 PowerUI (design system, visual guide, mockups, line icons and theme) was structured, created and
-standardized for 3D printing by Boris Fernández (Boris SdK). It is free to use, only for Creality
-K1 series printers, and must not be used for commercial purposes. Keep this notice and give credit
-when you reuse it.
+standardized for 3D printing by Boris Fernández (Boris SdK). It is intended for Creality K1
+series printers with root access, is free to use by people, and must not be used for commercial
+purposes; use by companies for commercial purposes requires the author's permission. Keep this
+notice and give credit when you reuse it.
 
 Third-party work:
 

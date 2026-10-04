@@ -191,7 +191,7 @@ The projects and resources used by the original foundation are also acknowledged
 ## License and credits
 
 - **Source code:** GNU GPL-3.0 (see [LICENSE](LICENSE)). PowerScreen is a modification of [GuppyScreen](https://github.com/ballaswag/guppyscreen) by ballaswag.
-- **PowerUI** (design system, visual guide, mockups, line icons and theme) was structured, created and standardized for 3D printing by **Boris Fernández (Boris SdK)**. It is free to use, only for **Creality K1 series** printers, and **not for commercial purposes**. Keep the credit when you reuse it (see [NOTICE.md](NOTICE.md) and [LICENSE-POWERUI.md](LICENSE-POWERUI.md)).
+- **PowerUI** (design system, visual guide, mockups, line icons and theme) was structured, created and standardized for 3D printing by **Boris Fernández (Boris SdK)**. It is intended for **Creality K1 series** printers with root access, is free to use by people and **not for commercial purposes** (use by companies for commercial purposes requires the author's permission). Keep the credit when you reuse it (see [NOTICE.md](NOTICE.md) and [LICENSE-POWERUI.md](LICENSE-POWERUI.md)).
 - PowerUI is based on [shadcn/ui](https://github.com/shadcn-ui/ui) by [shadcn](https://github.com/shadcn) (MIT).
 
 ---
@@ -361,5 +361,5 @@ También se reconocen los proyectos y recursos utilizados por la base original:
 ## Licencia y créditos
 
 - **Código fuente:** GNU GPL-3.0 (ver [LICENSE](LICENSE)). PowerScreen es una modificación de [GuppyScreen](https://github.com/ballaswag/guppyscreen) de ballaswag.
-- **PowerUI** (sistema de diseño, guía visual, bocetos, iconos de línea y tema) fue estructurado, creado y estandarizado para impresión 3D por **Boris Fernández (Boris SdK)**. Es de libre uso, solo para impresoras de la **serie K1 de Creality** y **sin fines comerciales**. Conserva el crédito si lo reutilizas (ver [NOTICE.md](NOTICE.md) y [LICENSE-POWERUI.md](LICENSE-POWERUI.md)).
+- **PowerUI** (sistema de diseño, guía visual, bocetos, iconos de línea y tema) fue estructurado, creado y estandarizado para impresión 3D por **Boris Fernández (Boris SdK)**. Está pensado para impresoras de la **serie K1 de Creality** con root, es de libre uso para las personas y **sin fines comerciales** (el uso por empresas con fines comerciales requiere el permiso del autor). Conserva el crédito si lo reutilizas (ver [NOTICE.md](NOTICE.md) y [LICENSE-POWERUI.md](LICENSE-POWERUI.md)).
 - PowerUI se basa en [shadcn/ui](https://github.com/shadcn-ui/ui) de [shadcn](https://github.com/shadcn) (MIT).
