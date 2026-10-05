@@ -78,6 +78,15 @@ constexpr int SLOT_GAP = 10;
 const uint32_t PALETTE[12] = {0xFFFFFF, 0x2B2B2B, 0xEF4444, 0xF97316, 0xEAB308, 0x22C55E,
                               0x06B6D4, 0x3B82F6, 0x8B5CF6, 0xEC4899, 0x9CA3AF, 0xA16207};
 
+// The CFS stores the color without "#" (Klipper treats "#" as the start of a comment and drops the value, which
+// left color_value empty in the first tests). The formats are tried in this order until the CFS reports the color.
+constexpr int COLOR_FORMATS = 2;
+std::string color_data(uint32_t color, int format) {
+  char buf[16];
+  std::snprintf(buf, sizeof(buf), format == 0 ? "0%06X" : "%06X", static_cast<unsigned>(color & 0xFFFFFF));
+  return std::string(buf);
+}
+
 std::string slot_letter(int i) { return std::string(1, static_cast<char>('A' + i)); }
 
 std::string hex_text(uint32_t color) {
@@ -698,16 +707,15 @@ void CfsPanel::save_edit() {
     return;
   }
   const std::string num(1, static_cast<char>('A' + edit_slot));
-  const std::string color = hex_text(edit_color);
   // The same two commands the Creality interface sends: the other fields of the slot follow from the material id.
   ws.gcode_script(fmt::format("BOX_MODIFY_TN_DATA ADDR={} NUM={} PART=material_type DATA={}", state.box, num,
                               edit_material_id));
-  ws.gcode_script(fmt::format("BOX_MODIFY_TN_DATA ADDR={} NUM={} PART=color_value DATA={}", state.box, num, color));
-  spdlog::info("cfs: slot {} set to material {} color {}", num, edit_material_id, color);
-
   pending.slot = edit_slot;
   pending.material_id = edit_material_id;
   pending.color = edit_color & 0xFFFFFF;
+  pending.format = color_format;
+  pending.tries = 1;
+  send_color(edit_slot, pending.color, pending.format);
   close_edit();
   show_status("Saving slot " + num + "...", COLOR_MUTED, 0);
   if (verify_timer != NULL) {
@@ -725,13 +733,36 @@ void CfsPanel::check_saved() {
   const std::string num = slot_letter(pending.slot);
   const bool ok = s.material_id == pending.material_id && s.has_color && s.color == pending.color;
   if (ok) {
+    color_format = pending.format;  // remember the format the CFS accepted
+    spdlog::info("cfs: slot {} saved, color format {} accepted", num, pending.format);
     show_status("Slot " + num + " saved", COLOR_ACCENT, 6000);
-  } else {
-    show_status("Slot " + num + ": the CFS has not reported the change", COLOR_WARNING, 8000);
-    spdlog::warn("cfs: slot {} did not report material {} color {} (has id '{}')", num, pending.material_id,
-                 hex_text(pending.color), s.material_id);
+    pending.slot = -1;
+    return;
   }
+  spdlog::warn("cfs: slot {} did not report material {} color {} sent as '{}' (has id '{}')", num, pending.material_id,
+               hex_text(pending.color), color_data(pending.color, pending.format), s.material_id);
+  if (pending.tries < COLOR_FORMATS) {
+    // The color did not arrive: try the next format once.
+    pending.format = (pending.format + 1) % COLOR_FORMATS;
+    ++pending.tries;
+    send_color(pending.slot, pending.color, pending.format);
+    show_status("Retrying slot " + num + "...", COLOR_MUTED, 0);
+    if (verify_timer != NULL) {
+      lv_timer_del(verify_timer);
+    }
+    verify_timer = lv_timer_create(&CfsPanel::verify_timer_cb, 2500, this);
+    lv_timer_set_repeat_count(verify_timer, 1);
+    return;
+  }
+  show_status("Slot " + num + ": the CFS has not reported the change", COLOR_WARNING, 8000);
   pending.slot = -1;
+}
+
+void CfsPanel::send_color(int slot, uint32_t color, int format) {
+  const std::string num(1, static_cast<char>('A' + slot));
+  const std::string data = color_data(color, format);
+  ws.gcode_script(fmt::format("BOX_MODIFY_TN_DATA ADDR={} NUM={} PART=color_value DATA={}", state.box, num, data));
+  spdlog::info("cfs: slot {} color sent as '{}' (format {})", num, data, format);
 }
 
 void CfsPanel::show_status(const std::string &text, uint32_t color, uint32_t clear_after_ms) {

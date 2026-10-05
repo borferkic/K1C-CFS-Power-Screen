@@ -42,6 +42,8 @@ class CfsPanel {
   void close_color_dialog(bool apply);
   void handle_color_slider();
   void check_saved();
+  // Sends the color of a slot in the given format (see color_formats in the .cpp).
+  void send_color(int slot, uint32_t color, int format);
 
  private:
   void select_slot(int index);
@@ -127,7 +129,10 @@ class CfsPanel {
     int slot = -1;
     std::string material_id;
     uint32_t color = 0;
+    int format = 0;  // color format in use
+    int tries = 0;   // formats tried so far
   } pending;
+  int color_format = 0;  // format that worked last time (starts with the first one)
   lv_timer_t *status_timer;
   lv_timer_t *verify_timer;
 };
