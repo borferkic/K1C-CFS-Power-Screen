@@ -25,6 +25,9 @@ class SettingPanel {
 
   lv_obj_t *get_container();
   void enable_spoolman();
+  // The "CFS" tile opens the CFS screen while the CFS is connected, else Spoolman when it is available.
+  void set_cfs_available(bool available);
+  void set_cfs_opener(std::function<void()> opener);
 
   void handle_callback(lv_event_t *event);
 
@@ -43,6 +46,10 @@ class SettingPanel {
 
   SysInfoPanel sysinfo_panel;
   SpoolmanPanel &spoolman_panel;
+  bool cfs_available = false;
+  bool spoolman_available = false;
+  std::function<void()> open_cfs;
+  void refresh_cfs_button();
   PrinterSelectPanel printer_select_panel;
   SquareButton wifi_btn;
   SquareButton restart_klipper_btn;

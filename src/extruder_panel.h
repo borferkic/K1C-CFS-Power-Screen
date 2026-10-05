@@ -4,6 +4,7 @@
 #include "websocket_client.h"
 #include "notify_consumer.h"
 #include "spoolman_panel.h"
+#include <functional>
 #include "selector.h"
 #include "button_container.h"
 #include "sensor_container.h"
@@ -18,7 +19,10 @@ class ExtruderPanel : public NotifyConsumer {
   ~ExtruderPanel();
 
   void foreground();
-  void enable_spoolman();  
+  void enable_spoolman();
+  // The "CFS" button opens the CFS screen while the CFS is connected, else Spoolman when it is available.
+  void set_cfs_available(bool available);
+  void set_cfs_opener(std::function<void()> opener);
   void consume(json &j);
   void handle_callback(lv_event_t *e);
   void update_clock();
@@ -42,6 +46,10 @@ class ExtruderPanel : public NotifyConsumer {
   lv_obj_t *time_label;
   lv_timer_t *clock_timer;
   SpoolmanPanel &spoolman_panel;
+  bool cfs_available = false;
+  bool spoolman_available = false;
+  std::function<void()> open_cfs;
+  void refresh_cfs_button();
   SensorContainer extruder_temp;
   Selector temp_selector;
   Selector length_selector;

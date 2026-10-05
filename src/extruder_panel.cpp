@@ -223,8 +223,27 @@ void ExtruderPanel::show_manual_filament_change() {
 }
 
 void ExtruderPanel::enable_spoolman() {
-  spoolman_btn.enable();
-  powerui::icon_set_color(spoolman_icon, lv_color_hex(powerui::COLOR_FG));
+  spoolman_available = true;
+  refresh_cfs_button();
+}
+
+void ExtruderPanel::set_cfs_available(bool available) {
+  cfs_available = available;
+  refresh_cfs_button();
+}
+
+void ExtruderPanel::set_cfs_opener(std::function<void()> opener) {
+  open_cfs = std::move(opener);
+}
+
+void ExtruderPanel::refresh_cfs_button() {
+  if (cfs_available || spoolman_available) {
+    spoolman_btn.enable();
+    powerui::icon_set_color(spoolman_icon, lv_color_hex(powerui::COLOR_FG));
+  } else {
+    spoolman_btn.disable();
+    powerui::icon_set_color(spoolman_icon, lv_color_hex(powerui::COLOR_DESTRUCTIVE));
+  }
 }
 
 void ExtruderPanel::consume(json& j) {
@@ -324,7 +343,11 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
     }
 
     if (btn == spoolman_btn.get_container()) {
-      spoolman_panel.foreground();
+      if (cfs_available && open_cfs) {
+        open_cfs();
+      } else {
+        spoolman_panel.foreground();
+      }
     }
   }
 }

@@ -21,6 +21,7 @@
 #include "print_status_panel.h"
 #include "exclude_object_panel.h"
 #include "spoolman_panel.h"
+#include "cfs_panel.h"
 #include "lvgl/lvgl.h"
 
 #include <functional>
@@ -122,6 +123,11 @@ class MainPanel : public NotifyConsumer {
   void update_nav_indicator();
   void update_clock();
   void update_filament_state(json &root, const std::string &prefix);
+  // CFS: refreshes the Home strip, the CFS screen and the CFS buttons from the merged "box" object.
+  void update_cfs();
+  // Home right column with (60 px cards, CFS strip) or without (72 px cards) the CFS.
+  void apply_home_layout(bool with_cfs);
+  void place_quick(QuickButton &button, int x, int y, int w, int h);
   void poll_network();
   static void _update_clock_cb(lv_timer_t *timer) {
     MainPanel *panel = static_cast<MainPanel *>(timer->user_data);
@@ -165,6 +171,7 @@ class MainPanel : public NotifyConsumer {
   lv_obj_t *main_cont;
   PrintStatusPanel print_status_panel;
   ExcludeObjectPanel exclude_object_panel;
+  CfsPanel cfs_panel;
   PrintPanel print_panel;
   PrinterTunePanel printertune_panel;
   Numpad numpad;
@@ -179,6 +186,13 @@ class MainPanel : public NotifyConsumer {
   bool print_view;
 
   std::map<std::string, std::shared_ptr<TempCard>> sensors;
+  std::map<std::string, int> sensor_slot;
+  lv_obj_t *cfs_pill = NULL;
+  lv_obj_t *cfs_spools[4] = {NULL, NULL, NULL, NULL};
+  bool home_with_cfs = false;
+  bool home_layout_ready = false;
+  json box_cache;
+  cfs::State cfs_state;
 
   QuickButton homing_btn;
   QuickButton extrude_btn;

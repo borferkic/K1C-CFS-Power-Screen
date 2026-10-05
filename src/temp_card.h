@@ -29,6 +29,8 @@ class TempCard {
   void update_value(int new_value);
   void update_series(int value);
   void handle_edit(lv_event_t *event);
+  // Moves the card to design-pixel y and gives it height h (the Home resizes its cards with and without the CFS).
+  void set_geometry(int y, int h);
 
   static void _handle_edit(lv_event_t *event) {
     TempCard *card = (TempCard *)event->user_data;
@@ -38,6 +40,9 @@ class TempCard {
  private:
   KWebSocketClient &ws;
   lv_obj_t *cont;
+  lv_obj_t *bar;
+  lv_obj_t *tile;
+  lv_obj_t *name_label;
   lv_obj_t *value_label;
   lv_obj_t *target_label;
   int value;

@@ -163,8 +163,12 @@ void SettingPanel::handle_callback(lv_event_t *event) {
       spdlog::trace("setting restart firmware pressed");
       show_confirm("Restart Firmware?", "printer.firmware_restart");
     } else if (btn == spoolman_btn.get_button()) {
-      spdlog::trace("setting spoolman pressed");
-      spoolman_panel.foreground();
+      spdlog::trace("setting CFS pressed");
+      if (cfs_available && open_cfs) {
+        open_cfs();
+      } else {
+        spoolman_panel.foreground();
+      }
     } else if (btn == powerscreen_restart_btn.get_button()) {
       spdlog::trace("restart powerscreen pressed");
       Config *conf = Config::get_instance();
@@ -208,8 +212,27 @@ void SettingPanel::refresh_update_lock() {
 }
 
 void SettingPanel::enable_spoolman() {
-  spoolman_btn.enable();
-  spoolman_btn.hide_pill();
+  spoolman_available = true;
+  refresh_cfs_button();
+}
+
+void SettingPanel::set_cfs_available(bool available) {
+  cfs_available = available;
+  refresh_cfs_button();
+}
+
+void SettingPanel::set_cfs_opener(std::function<void()> opener) {
+  open_cfs = std::move(opener);
+}
+
+void SettingPanel::refresh_cfs_button() {
+  if (cfs_available || spoolman_available) {
+    spoolman_btn.enable();
+    spoolman_btn.hide_pill();
+  } else {
+    spoolman_btn.disable();
+    spoolman_btn.set_pill("Offline", lv_color_hex(powerui::COLOR_DESTRUCTIVE));
+  }
 }
 
 void SettingPanel::show_confirm(const std::string &title, const std::string &method) {

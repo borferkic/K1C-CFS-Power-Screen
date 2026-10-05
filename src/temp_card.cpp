@@ -17,6 +17,9 @@ TempCard::TempCard(KWebSocketClient &c,
                    lv_chart_series_t *chart_series)
   : ws(c)
   , cont(card(parent, x, y, w, h))
+  , bar(NULL)
+  , tile(NULL)
+  , name_label(NULL)
   , value_label(NULL)
   , target_label(NULL)
   , value(-1)
@@ -30,14 +33,14 @@ TempCard::TempCard(KWebSocketClient &c,
   // Layout inside the card (design px): 14 air | 4x32 color bar | 12 | 40x40 icon tile | 12 | name ... value / target | 16
   const int content_h = h - 2;
 
-  lv_obj_t *bar = plain(cont);
+  bar = plain(cont);
   lv_obj_set_size(bar, px(4), px(32));
   lv_obj_set_pos(bar, px(13), px((content_h - 32) / 2));
   lv_obj_set_style_radius(bar, px(2), 0);
   lv_obj_set_style_bg_color(bar, color, 0);
   lv_obj_set_style_bg_opa(bar, LV_OPA_COVER, 0);
 
-  lv_obj_t *tile = plain(cont);
+  tile = plain(cont);
   lv_obj_set_size(tile, px(40), px(40));
   lv_obj_set_pos(tile, px(29), px((content_h - 40) / 2));
   lv_obj_set_style_radius(tile, px(10), 0);
@@ -46,7 +49,7 @@ TempCard::TempCard(KWebSocketClient &c,
   lv_obj_t *ic = icon(tile, icon_src, 26, color);
   lv_obj_center(ic);
 
-  lv_obj_t *name_label = label(cont, name, &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+  name_label = label(cont, name, &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
   lv_obj_set_width(name_label, px(100));
   lv_label_set_long_mode(name_label, LV_LABEL_LONG_DOT);
   lv_obj_align(name_label, LV_ALIGN_LEFT_MID, px(81), 0);
@@ -66,6 +69,17 @@ TempCard::TempCard(KWebSocketClient &c,
     lv_obj_set_style_bg_color(cont, lv_color_hex(COLOR_SECONDARY), LV_STATE_PRESSED);
     lv_obj_add_event_cb(cont, &TempCard::_handle_edit, LV_EVENT_CLICKED, this);
   }
+}
+
+void TempCard::set_geometry(int y, int h) {
+  const int content_h = h - 2;
+  lv_obj_set_y(cont, px(y));
+  lv_obj_set_height(cont, px(h));
+  lv_obj_set_y(bar, px((content_h - 32) / 2));
+  lv_obj_set_y(tile, px((content_h - 40) / 2));
+  lv_obj_align(name_label, LV_ALIGN_LEFT_MID, px(81), 0);
+  lv_obj_align(target_label, LV_ALIGN_RIGHT_MID, -px(15), px(2));
+  lv_obj_align_to(value_label, target_label, LV_ALIGN_OUT_LEFT_MID, -px(4), -px(2));
 }
 
 TempCard::~TempCard() {

@@ -70,6 +70,7 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   , main_cont(lv_obj_create(main_tab))
   , print_status_panel(websocket, lock, main_cont)
   , exclude_object_panel(websocket, lock)
+  , cfs_panel(websocket, lock)
   , print_panel(ws, lock, print_status_panel, files_tab)
   , printertune_panel(ws, lock, printertune_tab, print_status_panel.get_finetune_panel())
   , numpad(Numpad(main_cont))
@@ -174,6 +175,8 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
     printertune_panel.set_console_callback([this]() { open_console(); });
 
     ws.register_notify_update(this);
+    setting_panel.set_cfs_opener([this]() { cfs_panel.foreground(); });
+    extruder_panel.set_cfs_opener([this]() { cfs_panel.foreground(); });
     led_panel.set_state_callback([this](bool active) {
       set_quick_active(led_btn, active, active ? "LED On" : "LED Off");
     });
@@ -307,6 +310,11 @@ void MainPanel::init(json &j) {
   }
 
   update_filament_state(j, "/result/status");
+  if (j.contains("result") && j["result"].is_object() && j["result"].contains("status")
+      && j["result"]["status"].is_object() && j["result"]["status"].contains("box")) {
+    box_cache = j["result"]["status"]["box"];
+  }
+  update_cfs();
   poll_network();
   if (network_timer == NULL) {
     network_timer = lv_timer_create(&MainPanel::_poll_network_cb, 30000, this);
@@ -335,6 +343,11 @@ void MainPanel::consume(json &j) {
   }
 
   update_filament_state(j, "/params/0");
+  if (j.contains("params") && j["params"].is_array() && !j["params"].empty() && j["params"][0].is_object()
+      && j["params"][0].contains("box")) {
+    box_cache.merge_patch(j["params"][0]["box"]);
+    update_cfs();
+  }
 }
 
 static void scroll_begin_event(lv_event_t * e)
@@ -611,7 +624,22 @@ void MainPanel::create_main(lv_obj_t *parent)
 
     create_chart_card(main_cont);
 
-    // Right column: quick actions (the CFS strip is not shown until its data is wired).
+    // Right column: CFS strip (shown while the CFS is connected, between the temperatures and the quick actions)
+    // and quick actions. The positions here are the ones without the CFS; apply_home_layout() moves them.
+    cfs_pill = card(main_cont, 432, 228, 292, 56);
+    lv_obj_set_style_radius(cfs_pill, LV_RADIUS_CIRCLE, 0);
+    lv_obj_t *cfs_title = label(cfs_pill, "CFS", &lv_font_montserrat_14, lv_color_hex(COLOR_MUTED));
+    lv_obj_align(cfs_title, LV_ALIGN_LEFT_MID, px(22), 0);
+    for (int i = 0; i < 4; ++i) {
+      cfs_spools[i] = cfs_ui::spool_create(cfs_pill, 36, lv_color_hex(COLOR_CARD), i + 1);
+      lv_obj_set_pos(cfs_spools[i], px(86 + i * 50), px(9));
+    }
+    lv_obj_add_flag(cfs_pill, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_event_cb(cfs_pill, [](lv_event_t *e) {
+      static_cast<MainPanel *>(e->user_data)->cfs_panel.foreground();
+    }, LV_EVENT_CLICKED, this);
+    lv_obj_add_flag(cfs_pill, LV_OBJ_FLAG_HIDDEN);
+
     homing_btn = create_quick_button(main_cont, 432, 264, 140, 76, &move, "Homing", &MainPanel::_handle_homing_cb);
     extrude_btn = create_quick_button(main_cont, 584, 264, 140, 76, &ui_icon_filament, "Filament", &MainPanel::_handle_extrude_cb);
     action_btn = create_quick_button(main_cont, 432, 352, 140, 76, &fan, "Fans", &MainPanel::_handle_fanpanel_cb);
@@ -708,6 +736,7 @@ void MainPanel::update_clock() {
 void MainPanel::create_sensors(json &temp_sensors) {
   std::lock_guard<std::mutex> lock(lv_lock);
   sensors.clear();
+  sensor_slot.clear();
 
   // The Home shows three temperature cards: extruder, bed and chamber, top to bottom. Slots are assigned by
   // sensor key (the json is sorted alphabetically); any other sensor takes a slot that is still free.
@@ -751,6 +780,7 @@ void MainPanel::create_sensors(json &temp_sensors) {
       continue;
     }
     const int slot = slot_it->second;
+    sensor_slot[key] = slot;
     bool controllable = sensor.value()["controllable"].template get<bool>();
 
     lv_color_t color_code = lv_color_hex(COLOR_MAT_ORANGE);
@@ -777,6 +807,61 @@ void MainPanel::create_sensors(json &temp_sensors) {
 						    display_name.c_str(), color_code, controllable, numpad, key,
 						    temp_chart, temp_series)});
   }
+  apply_home_layout(home_with_cfs);
+}
+
+void MainPanel::place_quick(QuickButton &button, int x, int y, int w, int h) {
+  if (button.btn == NULL) {
+    return;
+  }
+  lv_obj_set_pos(button.btn, px(x), px(y));
+  lv_obj_set_size(button.btn, px(w), px(h));
+}
+
+void MainPanel::apply_home_layout(bool with_cfs) {
+  home_with_cfs = with_cfs;
+  // 3 cards + 2 rows of buttons + (strip) fill the 416 px column: 60/60/56 with the CFS, 72/76 without it.
+  const int card_h = with_cfs ? 60 : 72;
+  for (const auto &el : sensors) {
+    auto slot = sensor_slot.find(el.first);
+    if (slot != sensor_slot.end()) {
+      el.second->set_geometry(12 + slot->second * (card_h + 12), card_h);
+    }
+  }
+  const int quick_h = with_cfs ? 60 : 76;
+  const int row1 = with_cfs ? 296 : 264;
+  const int row2 = with_cfs ? 368 : 352;
+  place_quick(homing_btn, 432, row1, 140, quick_h);
+  place_quick(extrude_btn, 584, row1, 140, quick_h);
+  place_quick(action_btn, 432, row2, 140, quick_h);
+  place_quick(led_btn, 584, row2, 140, quick_h);
+  if (cfs_pill != NULL) {
+    if (with_cfs) {
+      lv_obj_clear_flag(cfs_pill, LV_OBJ_FLAG_HIDDEN);
+    } else {
+      lv_obj_add_flag(cfs_pill, LV_OBJ_FLAG_HIDDEN);
+    }
+  }
+}
+
+void MainPanel::update_cfs() {
+  cfs::State next = cfs::parse(box_cache);
+  const bool connection_changed = next.connected != cfs_state.connected || !home_layout_ready;
+  const bool changed = !cfs::same(next, cfs_state);
+  cfs_state = next;
+  if (!changed && !connection_changed) {
+    return;
+  }
+  for (int i = 0; i < 4; ++i) {
+    cfs_ui::spool_set(cfs_spools[i], cfs_state.slots[i], cfs_state.active == i);
+  }
+  if (connection_changed) {
+    apply_home_layout(cfs_state.connected);
+    home_layout_ready = true;
+  }
+  cfs_panel.update(cfs_state);
+  setting_panel.set_cfs_available(cfs_state.connected);
+  extruder_panel.set_cfs_available(cfs_state.connected);
 }
 
 void MainPanel::create_fans(json &fans) {
