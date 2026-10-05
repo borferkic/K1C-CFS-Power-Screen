@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 // Read-only model of the Klipper "box" object (the CFS): connection state and the four slots of the box.
 namespace cfs {
@@ -17,6 +18,7 @@ struct Slot {
   SlotKind kind = SlotKind::Empty;
   std::string name;      // "Hyper PLA" or "Not set"
   std::string material;  // "PLA"
+  std::string material_id;  // id in the Creality material database ("01001"), empty when unknown
   std::string brand;     // "Creality"
   bool has_color = false;
   uint32_t color = 0;    // 0xRRGGBB
@@ -30,6 +32,20 @@ struct State {
   Slot slots[4];
   int active = -1;         // slot index 0..3 of the last T command, -1 when unknown
 };
+
+// One entry of the Creality material database (what the CFS stores in `material_type`).
+struct Material {
+  std::string id;     // "01001"
+  std::string brand;  // "Creality"
+  std::string name;   // "Hyper PLA"
+  std::string type;   // "PLA"
+  bool has_color = false;
+  uint32_t color = 0;  // default color, 0xRRGGBB
+};
+
+// All materials of the database in file order (empty when the database is not on the printer).
+const std::vector<Material> &materials();
+bool find_material(const std::string &id, Material &out);
 
 // Builds the state from the (merged) "box" object of Moonraker's printer objects.
 State parse(const nlohmann::json &box);

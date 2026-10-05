@@ -19,6 +19,8 @@ struct MaterialEntry {
   std::string color;
 };
 
+std::vector<Material> g_materials;
+
 // Creality material database (id -> brand, name, type), read once from the printer. The path can be overridden
 // with POWERSCREEN_CFS_MATERIAL_DB (used by the emulator).
 const std::map<std::string, MaterialEntry> &material_db() {
@@ -65,6 +67,13 @@ const std::map<std::string, MaterialEntry> &material_db() {
     const std::string id = base.value("id", std::string());
     if (!id.empty()) {
       db[id] = m;
+      Material item;
+      item.id = id;
+      item.brand = m.brand;
+      item.name = m.name;
+      item.type = m.type;
+      item.has_color = false;
+      g_materials.push_back(item);
     }
   }
   spdlog::debug("cfs: {} materials loaded from {}", db.size(), path);
@@ -134,6 +143,7 @@ Slot parse_slot(const json &box_obj, int i) {
   const bool any_unknown = vender == "unknown" || mat == "unknown" || col == "unknown";
   if (has_material) {
     slot.kind = SlotKind::Defined;
+    slot.material_id = mat;
     const auto &db = material_db();
     auto it = db.find(mat);
     if (it != db.end()) {
@@ -163,6 +173,31 @@ Slot parse_slot(const json &box_obj, int i) {
 }
 
 }  // namespace
+
+const std::vector<Material> &materials() {
+  const auto &db = material_db();  // loads the database once
+  static bool colors_filled = false;
+  if (!colors_filled) {
+    colors_filled = true;
+    for (auto &item : g_materials) {
+      auto it = db.find(item.id);
+      if (it != db.end()) {
+        item.has_color = parse_color(it->second.color, item.color);
+      }
+    }
+  }
+  return g_materials;
+}
+
+bool find_material(const std::string &id, Material &out) {
+  for (const auto &m : materials()) {
+    if (m.id == id) {
+      out = m;
+      return true;
+    }
+  }
+  return false;
+}
 
 State parse(const json &box) {
   State state;
@@ -214,7 +249,8 @@ bool same(const State &a, const State &b) {
     const Slot &x = a.slots[i];
     const Slot &y = b.slots[i];
     if (x.kind != y.kind || x.name != y.name || x.material != y.material || x.brand != y.brand
-        || x.has_color != y.has_color || x.color != y.color || x.remain_len != y.remain_len) {
+        || x.has_color != y.has_color || x.color != y.color || x.remain_len != y.remain_len
+        || x.material_id != y.material_id) {
       return false;
     }
   }
