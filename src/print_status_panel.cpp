@@ -34,9 +34,11 @@ LV_IMG_DECLARE(emergency);
 LV_IMG_DECLARE(back);
 
 namespace {
-constexpr lv_coord_t PREVIEW_SIZE = 225;
 constexpr lv_coord_t THUMBNAIL_CONTAINER_SIZE = 245;
 constexpr lv_coord_t PREVIEW_AREA_EXTRA_HEIGHT = 5;
+// Job card (PowerUI): the thumbnail box is as tall as the card allows, so the name, the status, the percentage and the
+// bar sit right above Pause and Cancel. Design pixels, like the rest of that layout.
+constexpr int JOB_THUMB_HEIGHT = 212;
 constexpr lv_coord_t PROGRESS_WIDTH = 311;
 constexpr lv_coord_t PAUSE_CANCEL_BUTTON_WIDTH = 152;
 constexpr lv_coord_t PAUSE_CANCEL_SIDE_PAD = 10;
@@ -375,7 +377,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
     lv_obj_t *left = card(status_cont, 12, 12, 272, 416);
     lv_obj_move_to_index(left, 0);
     lv_obj_set_parent(thumbnail_cont, left);
-    lv_obj_set_size(thumbnail_cont, px(248), px(140));
+    lv_obj_set_size(thumbnail_cont, px(248), px(JOB_THUMB_HEIGHT));
     lv_obj_set_pos(thumbnail_cont, px(11), px(11));
     lv_obj_set_style_bg_color(thumbnail_cont, lv_color_hex(powerui::COLOR_BG), LV_PART_MAIN);
     lv_obj_set_style_radius(thumbnail_cont, px(10), LV_PART_MAIN);
@@ -387,7 +389,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
     // File name on its own (the SD card icon overlapped it).
     lv_obj_set_parent(file_cont, left);
     lv_obj_set_size(file_cont, px(248), px(28));
-    lv_obj_set_pos(file_cont, px(11), px(160));
+    lv_obj_set_pos(file_cont, px(11), px(11 + JOB_THUMB_HEIGHT + 9));
     lv_obj_set_style_bg_opa(file_cont, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_set_style_border_width(file_cont, 0, LV_PART_MAIN);
     lv_obj_set_style_pad_all(file_cont, 0, LV_PART_MAIN);
@@ -400,7 +402,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 
     lv_obj_set_parent(pbar_cont, left);
     lv_obj_set_size(pbar_cont, px(248), px(72));
-    lv_obj_set_pos(pbar_cont, px(11), px(200));
+    lv_obj_set_pos(pbar_cont, px(11), px(11 + JOB_THUMB_HEIGHT + 9 + 28 + 12));  // 12 px below the name, 16 above the buttons
     lv_obj_set_style_bg_opa(pbar_cont, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_set_style_border_width(pbar_cont, 0, LV_PART_MAIN);
     lv_obj_set_style_pad_all(pbar_cont, 0, LV_PART_MAIN);
@@ -714,7 +716,9 @@ void PrintStatusPanel::handle_metadata(const std::string &gcode_file, json &j) {
     std::lock_guard<std::mutex> lock(lv_lock);
     const std::string img_path = "A:" + fullpath;
 
-    uint32_t normalized_thumb_scale = ((double)PREVIEW_SIZE / (double)thumb_detail.second) * 256;
+    // The image fits the thumbnail box of the job card (its smaller side, less the border) instead of being cropped.
+    const lv_coord_t preview_size = powerui::px(JOB_THUMB_HEIGHT) - 2;
+    uint32_t normalized_thumb_scale = ((double)preview_size / (double)thumb_detail.second) * 256;
     lv_img_set_src(thumbnail, img_path.c_str());
     lv_img_set_zoom(thumbnail, normalized_thumb_scale);
   }
