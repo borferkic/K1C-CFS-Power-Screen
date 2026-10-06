@@ -9,7 +9,24 @@ LV_IMG_DECLARE(network_img);
 
 namespace {
 const lv_point_t slash_points[2] = {{3, 3}, {19, 19}};
+
+// The touch must reach the wrapper: its children (icon, slash) are not clickable.
+void make_children_untouchable(lv_obj_t *parent) {
+  const uint32_t count = lv_obj_get_child_cnt(parent);
+  for (uint32_t i = 0; i < count; ++i) {
+    lv_obj_t *child = lv_obj_get_child(parent, i);
+    lv_obj_clear_flag(child, LV_OBJ_FLAG_CLICKABLE);
+    make_children_untouchable(child);
+  }
 }
+
+void camera_clicked(lv_event_t *e) {
+  auto *handler = static_cast<std::function<void()> *>(lv_event_get_user_data(e));
+  if (handler != NULL && *handler) {
+    (*handler)();
+  }
+}
+}  // namespace
 
 StatusIcons::StatusIcons(lv_obj_t *bar, lv_obj_t *anchor) {
   wifi = create_item(bar, &network_img);
@@ -61,5 +78,13 @@ void StatusIcons::apply(Item &item, bool active) {
 }
 
 void StatusIcons::set_camera(bool active) { apply(camera, active); }
+
+void StatusIcons::set_camera_handler(std::function<void()> handler) {
+  camera_handler = std::move(handler);
+  lv_obj_add_flag(camera.wrapper, LV_OBJ_FLAG_CLICKABLE);
+  make_children_untouchable(camera.wrapper);
+  lv_obj_set_ext_click_area(camera.wrapper, px(10));
+  lv_obj_add_event_cb(camera.wrapper, &camera_clicked, LV_EVENT_CLICKED, &camera_handler);
+}
 void StatusIcons::set_filament(bool active) { apply(filament, active); }
 void StatusIcons::set_wifi(bool active) { apply(wifi, active); }

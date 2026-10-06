@@ -129,6 +129,15 @@ class MainPanel : public NotifyConsumer {
   void apply_home_layout(bool with_cfs);
   void place_quick(QuickButton &button, int x, int y, int w, int h);
   void poll_network();
+  // Camera icon of the title bar: shows whether the camera service answers and, when touched, turns it off or on with the
+  // CAMERA_OFF / CAMERA_ON macros of the CFS Power Script.
+  void toggle_camera();
+  void send_camera_macro(bool turn_off);
+  bool camera_running = false;
+  static void _camera_check_cb(lv_timer_t *timer) {
+    MainPanel *panel = static_cast<MainPanel *>(timer->user_data);
+    panel->poll_network();
+  }
   static void _update_clock_cb(lv_timer_t *timer) {
     MainPanel *panel = static_cast<MainPanel *>(timer->user_data);
     panel->update_clock();

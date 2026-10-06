@@ -3,6 +3,8 @@
 
 #include "lvgl/lvgl.h"
 
+#include <functional>
+
 // Camera, filament and wifi indicators for the title bar.
 // Active = accent green; inactive = muted gray with a diagonal slash.
 class StatusIcons {
@@ -13,6 +15,9 @@ class StatusIcons {
   void set_camera(bool active);
   void set_filament(bool active);
   void set_wifi(bool active);
+
+  // The camera icon can be touched (the title bar is small, so the touch area is larger than the icon).
+  void set_camera_handler(std::function<void()> handler);
 
  private:
   struct Item {
@@ -27,6 +32,7 @@ class StatusIcons {
   Item camera;
   Item filament;
   Item wifi;
+  std::function<void()> camera_handler;
 };
 
 #endif // __STATUS_ICONS_H__

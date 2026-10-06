@@ -5,6 +5,15 @@
 #include "spdlog/spdlog.h"
 #include "utils.h"
 
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+#include <cerrno>
+#include <cstring>
+#include <cstdlib>
 #include <ctime>
 #include <experimental/filesystem>
 #include <fstream>
@@ -148,6 +157,7 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
     clock_timer = lv_timer_create(&MainPanel::_update_clock_cb, 1000, this);
     lv_obj_update_layout(title_bar);
     status_icons = std::make_unique<StatusIcons>(title_bar, time_label);
+    status_icons->set_camera_handler([this]() { toggle_camera(); });
 
     lv_obj_set_style_bg_color(lv_scr_act(), screen_background, LV_PART_MAIN);
     lv_obj_set_style_bg_opa(lv_scr_act(), LV_OPA_COVER, LV_PART_MAIN);
@@ -250,8 +260,57 @@ void MainPanel::update_filament_state(json &root, const std::string &prefix) {
   status_icons->set_filament(known && detected);
 }
 
+namespace {
+// True when something listens on a port of this printer (the camera service answers on its streaming port).
+bool local_port_open(int port) {
+  const int fd = socket(AF_INET, SOCK_STREAM, 0);
+  if (fd < 0) {
+    return false;
+  }
+  fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
+  sockaddr_in address;
+  memset(&address, 0, sizeof(address));
+  address.sin_family = AF_INET;
+  address.sin_port = htons(static_cast<uint16_t>(port));
+  inet_pton(AF_INET, "127.0.0.1", &address.sin_addr);
+  bool open = false;
+  const int rc = connect(fd, reinterpret_cast<sockaddr *>(&address), sizeof(address));
+  if (rc == 0) {
+    open = true;
+  } else if (errno == EINPROGRESS) {
+    fd_set writable;
+    FD_ZERO(&writable);
+    FD_SET(fd, &writable);
+    timeval wait = {0, 300000};
+    if (select(fd + 1, NULL, &writable, NULL, &wait) > 0) {
+      int error = 1;
+      socklen_t length = sizeof(error);
+      getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &length);
+      open = (error == 0);
+    }
+  }
+  close(fd);
+  return open;
+}
+
+// Port of a stream URL like "http://192.168.0.189:8080/?action=stream"; `fallback` when it has none.
+int stream_port(const std::string &url, int fallback) {
+  const auto scheme = url.find("://");
+  if (scheme == std::string::npos) {
+    return fallback;
+  }
+  const auto colon = url.find(':', scheme + 3);
+  const auto slash = url.find('/', scheme + 3);
+  if (colon == std::string::npos || (slash != std::string::npos && colon > slash)) {
+    return fallback;
+  }
+  const int port = std::atoi(url.c_str() + colon + 1);
+  return port > 0 && port < 65536 ? port : fallback;
+}
+}  // namespace
+
 void MainPanel::poll_network() {
-  // Wifi: any non-loopback interface with a routable IPv4 address. Camera: an enabled Moonraker webcam.
+  // Wifi: any non-loopback interface with a routable IPv4 address. Camera: its streaming port answers.
   ws.send_jsonrpc("machine.system_info", [this](json &d) {
     bool connected = false;
     auto networks = d["/result/system_info/network"_json_pointer];
@@ -274,18 +333,57 @@ void MainPanel::poll_network() {
   });
 
   ws.send_jsonrpc("server.webcams.list", [this](json &d) {
-    bool enabled = false;
+    int port = 8080;  // the mjpg-streamer of the K1C
     auto webcams = d["/result/webcams"_json_pointer];
     if (webcams.is_array()) {
       for (auto &cam : webcams) {
         if (cam.value("enabled", false)) {
-          enabled = true;
+          port = stream_port(cam.value("stream_url", std::string()), port);
+          break;
         }
       }
     }
+    const bool running = local_port_open(port);  // before taking the LVGL lock: it can wait up to 300 ms
     std::lock_guard<std::mutex> guard(lv_lock);
-    status_icons->set_camera(enabled);
+    camera_running = running;
+    status_icons->set_camera(running);
   });
+}
+
+void MainPanel::toggle_camera() {
+  const bool turn_off = camera_running;
+  auto print_state = State::get_instance()->get_data("/printer_state/print_stats/state"_json_pointer);
+  bool printing = false;
+  if (print_state.is_string()) {
+    const std::string value = print_state.template get<std::string>();
+    printing = value == "printing" || value == "paused";
+  }
+  if (turn_off && printing) {
+    // A touch on a small icon must not cost the timelapse photos of a print by accident.
+    powerui::confirm_dialog("Turn the camera off?", "The timelapse takes its photos with the camera.", "Turn off",
+                            powerui::ActionKind::Destructive, [this]() { send_camera_macro(true); }, "Keep it on");
+    return;
+  }
+  send_camera_macro(turn_off);
+}
+
+void MainPanel::send_camera_macro(bool turn_off) {
+  const std::string macro = turn_off ? "CAMERA_OFF" : "CAMERA_ON";
+  spdlog::info("camera: {}", macro);
+  camera_running = !turn_off;
+  status_icons->set_camera(camera_running);  // right away; the real state is read again a few seconds later
+  ws.send_jsonrpc("printer.gcode.script", json{{"script", macro}}, [this, macro](json &j) {
+    if (j.contains("error")) {
+      spdlog::warn("camera macro {} failed: {}", macro, j["error"].dump());
+      std::lock_guard<std::mutex> guard(lv_lock);
+      // The macros come with the Power Macros of the CFS Power Script.
+      powerui::confirm_dialog("Camera macros not found",
+                              "Install the Power Macros again from the CFS Power Script (Install menu, option 6).", "OK",
+                              powerui::ActionKind::Outline, []() {});
+    }
+  });
+  lv_timer_t *check = lv_timer_create(&MainPanel::_camera_check_cb, 7000, this);
+  lv_timer_set_repeat_count(check, 1);
 }
 
 void MainPanel::init(json &j) {
