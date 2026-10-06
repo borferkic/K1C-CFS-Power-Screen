@@ -399,7 +399,7 @@ void confirm_deleted(lv_event_t *e) {
 }  // namespace
 
 void confirm_dialog(const char *title, const char *message, const char *confirm_text, ActionKind kind,
-                    std::function<void()> on_confirm) {
+                    std::function<void()> on_confirm, const char *dismiss_text) {
   lv_obj_t *overlay = lv_obj_create(lv_layer_top());
   lv_obj_remove_style_all(overlay);
   lv_obj_set_size(overlay, LV_PCT(100), LV_PCT(100));
@@ -421,7 +421,7 @@ void confirm_dialog(const char *title, const char *message, const char *confirm_
   lv_obj_set_width(m, px(w - 48));
   lv_obj_set_pos(m, px(24), px(56));
   // Child order matters: confirm_clicked identifies the confirm button as child 3 of the card.
-  action_button(dlg, NULL, "Cancel", ActionKind::Outline, 24, h - 74, 196, 50, &confirm_clicked, overlay);
+  action_button(dlg, NULL, dismiss_text, ActionKind::Outline, 24, h - 74, 196, 50, &confirm_clicked, overlay);
   action_button(dlg, NULL, confirm_text, kind, w - 24 - 196, h - 74, 196, 50, &confirm_clicked, overlay);
 }
 

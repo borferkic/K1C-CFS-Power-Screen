@@ -112,10 +112,11 @@ enum class ActionKind { Primary, Outline, Destructive };
 lv_obj_t *action_button(lv_obj_t *parent, const lv_img_dsc_t *icon_src, const char *text, ActionKind kind,
                         int x, int y, int w, int h, lv_event_cb_t cb, void *user_data);
 
-// Modal confirmation card over the whole screen (dimmed background): title, message, Cancel and a confirm button.
+// Modal confirmation card over the whole screen (dimmed background): title, message, a dismiss button ("Cancel" unless
+// `dismiss_text` says otherwise) and a confirm button.
 // `on_confirm` runs when the confirm button is touched; both buttons close the dialog.
 void confirm_dialog(const char *title, const char *message, const char *confirm_text, ActionKind kind,
-                    std::function<void()> on_confirm);
+                    std::function<void()> on_confirm, const char *dismiss_text = "Cancel");
 
 // Background of an overlay panel's root container: page color, no padding or border, not scrollable.
 void style_overlay_root(lv_obj_t *cont);

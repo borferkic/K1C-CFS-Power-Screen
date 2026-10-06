@@ -78,6 +78,8 @@ class PrintStatusPanel : public NotifyConsumer {
   std::function<void()> exclude_action;
   void update_pause_resume(bool paused);
   bool prompt_enabled();
+  // Asks "Cancel the print?" with the PowerUI confirmation card; the print is cancelled only if it is confirmed.
+  void confirm_cancel();
   lv_obj_t *status_cont;
   lv_obj_t *title_bar;
   lv_obj_t *title_label;

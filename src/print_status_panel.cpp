@@ -140,7 +140,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   mini_print_status.set_actions(
     [this]() { ws.send_jsonrpc("printer.print.pause"); },
     [this]() { ws.send_jsonrpc("printer.print.resume"); },
-    [this]() { cancel_btn.handle_prompt(); });
+    [this]() { confirm_cancel(); });
 
   lv_obj_move_background(status_cont);
   lv_obj_clear_flag(status_cont, LV_OBJ_FLAG_SCROLLABLE);  
@@ -896,6 +896,20 @@ bool PrintStatusPanel::prompt_enabled() {
   return !prompt.is_null() && prompt.template get<bool>();
 }
 
+void PrintStatusPanel::confirm_cancel() {
+  std::string message = "The print stops and cannot be resumed.";
+  const char *name = file_label != NULL ? lv_label_get_text(file_label) : NULL;
+  if (name != NULL && *name != '\0') {
+    message = std::string(name) + "\n" + message;
+  }
+  powerui::confirm_dialog("Cancel the print?", message.c_str(), "Cancel print", powerui::ActionKind::Destructive,
+                          [this]() {
+                            spdlog::debug("cancel print confirmed");
+                            ws.send_jsonrpc("printer.print.cancel");
+                          },
+                          "Keep printing");
+}
+
 void PrintStatusPanel::handle_action(lv_event_t *event) {
   if (lv_event_get_code(event) != LV_EVENT_CLICKED) {
     return;
@@ -909,7 +923,7 @@ void PrintStatusPanel::handle_action(lv_event_t *event) {
     lv_obj_add_state(act_resume, LV_STATE_DISABLED);
   } else if (btn == act_cancel) {
     if (prompt_enabled()) {
-      cancel_btn.handle_prompt();
+      confirm_cancel();
     } else {
       ws.send_jsonrpc("printer.print.cancel");
     }
