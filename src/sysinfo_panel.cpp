@@ -446,7 +446,7 @@ SysInfoPanel::SysInfoPanel()
   lv_obj_set_style_radius(update_button, 12, LV_PART_MAIN);
   lv_obj_add_state(update_button, LV_STATE_DISABLED);
 
-  lv_label_set_text(update_button_label, "UPDATE");
+  lv_label_set_text(update_button_label, "Check for updates");
   lv_obj_set_width(update_button_label, LV_PCT(100));
   lv_obj_set_style_text_align(update_button_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
   lv_obj_set_style_text_color(update_button_label, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
@@ -931,10 +931,27 @@ std::string phase_text(const std::string &status) {
 }
 }
 
+// The PowerScreen button works like the one of the CFS Power Script: "Checking..." while it looks for a new version,
+// "UPDATE" when there is one, and "Check for updates" otherwise (a press checks again).
+void SysInfoPanel::apply_update_button(bool checking) {
+  const bool update_mode = update_available && !checking;
+  lv_label_set_text(update_button_label, checking ? "Checking..." : (update_mode ? "UPDATE" : "Check for updates"));
+  lv_obj_set_style_text_font(update_button_label, &lv_font_montserrat_16, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(update_button, lv_color_hex(update_mode ? powerui::COLOR_PRIMARY : powerui::COLOR_SECONDARY),
+                            LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_bg_color(update_button, lv_color_hex(update_mode ? powerui::COLOR_PRIMARY_PRESSED : powerui::COLOR_PRESSED),
+                            LV_PART_MAIN | LV_STATE_PRESSED);
+  if (checking) {
+    lv_obj_add_state(update_button, LV_STATE_DISABLED);
+  } else {
+    lv_obj_clear_state(update_button, LV_STATE_DISABLED);
+  }
+}
+
 void SysInfoPanel::check_for_update() {
   lv_label_set_text(update_status, "CHECKING...");
   lv_obj_set_style_text_color(update_status, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
-  lv_obj_add_state(update_button, LV_STATE_DISABLED);
+  apply_update_button(true);
 
   // The GitHub query takes several seconds: run it on another thread so the
   // screen does not freeze. poll_update() applies the result.
@@ -1038,19 +1055,22 @@ void SysInfoPanel::poll_update() {
   if (check_done.exchange(false)) {
     switch (check_result.load()) {
     case 1:
+      update_available = true;
       lv_label_set_text(update_status, "NEW UPDATE AVAILABLE!");
       lv_obj_set_style_text_color(update_status, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
-      lv_obj_clear_state(update_button, LV_STATE_DISABLED);
       break;
     case 2:
+      update_available = false;
       lv_label_set_text(update_status, "UP TO DATE");
       lv_obj_set_style_text_color(update_status, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
       break;
     default:
+      update_available = false;
       lv_label_set_text(update_status, "CHECK FAILED");
       lv_obj_set_style_text_color(update_status, lv_color_hex(powerui::COLOR_DANGER), LV_PART_MAIN);
       break;
     }
+    apply_update_button(false);
   }
 
   if (!update_running) {
@@ -1475,8 +1495,13 @@ void SysInfoPanel::handle_callback(lv_event_t *e)
       if (lv_obj_has_state(update_button, LV_STATE_DISABLED)) {
         return;
       }
-      spdlog::trace("update powerscreen pressed from system info");
-      start_update();
+      if (update_available) {
+        spdlog::trace("update powerscreen pressed from system info");
+        start_update();
+      } else {
+        spdlog::trace("check for powerscreen updates pressed from system info");
+        check_for_update();  // manual check, like the Power Script button
+      }
     } else if (btn == script_button) {
       if (!lv_obj_has_state(script_button, LV_STATE_DISABLED)) {
         if (script_state == 2) {

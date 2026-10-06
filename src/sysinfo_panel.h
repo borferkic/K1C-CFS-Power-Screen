@@ -143,6 +143,9 @@ class SysInfoPanel {
   void update_clock();
   void refresh_network();
   void check_for_update();
+  // True when the last check found a newer PowerScreen: the button then updates; otherwise it checks again.
+  bool update_available = false;
+  void apply_update_button(bool checking);
   void create_update_overlay();
   void create_tabs();
   void show_tab(bool updates);
