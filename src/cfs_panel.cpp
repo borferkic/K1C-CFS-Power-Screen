@@ -146,6 +146,7 @@ CfsPanel::CfsPanel(KWebSocketClient &c, std::mutex &l)
   , header_label(NULL)
   , version_label(NULL)
   , status_label(NULL)
+  , refresh_btn(NULL)
   , detail_spool(NULL)
   , detail_slot_label(NULL)
   , detail_name(NULL)
@@ -185,7 +186,10 @@ CfsPanel::CfsPanel(KWebSocketClient &c, std::mutex &l)
   status_label = label(slots_card, "", &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
   lv_obj_set_pos(status_label, px(76), px(18));
   version_label = label(slots_card, "", &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
-  lv_obj_align(version_label, LV_ALIGN_TOP_RIGHT, -px(20), px(18));
+  lv_obj_align(version_label, LV_ALIGN_TOP_RIGHT, -px(20 + 132 + 12), px(18));
+  // Same command as the refresh button of the Creality screen; disabled while printing (see refresh()).
+  refresh_btn = action_button(slots_card, NULL, "Refresh", ActionKind::Outline, 712 - 20 - 132, 8, 132, 34,
+                              [](lv_event_t *e) { static_cast<CfsPanel *>(e->user_data)->refresh_slots(); }, this);
 
   for (int i = 0; i < 4; ++i) {
     SlotWidget &w = slots[i];
@@ -417,6 +421,21 @@ void CfsPanel::handle_slot_click(int index) {
   }
 }
 
+void CfsPanel::refresh_slots() {
+  if (!state.connected) {
+    return;
+  }
+  // The CFS moves the filament of each slot a little to see if a spool is there: never while printing.
+  if (printing_now()) {
+    show_status("Cannot refresh slots while printing", COLOR_WARNING, 5000);
+    return;
+  }
+  // NUM=15 is "every slot", as the Creality interface sends it.
+  ws.gcode_script(fmt::format("BOX_INFO_REFRESH ADDR={} NUM=15", state.box));
+  spdlog::info("cfs: refresh of every slot requested (box {})", state.box);
+  show_status("Refreshing slots...", COLOR_MUTED, 10000);
+}
+
 void CfsPanel::select_slot(int index) {
   if (index < 0 || index > 3) {
     return;
@@ -454,6 +473,13 @@ void CfsPanel::refresh() {
 
   const std::string version = "Box firmware: " + (state.version.empty() ? std::string("unknown") : state.version);
   lv_label_set_text(version_label, version.c_str());
+  if (refresh_btn != NULL) {
+    if (printing_now()) {
+      lv_obj_add_state(refresh_btn, LV_STATE_DISABLED);
+    } else {
+      lv_obj_clear_state(refresh_btn, LV_STATE_DISABLED);
+    }
+  }
 
   for (int i = 0; i < 4; ++i) {
     const cfs::Slot &s = state.slots[i];

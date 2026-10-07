@@ -32,6 +32,9 @@ class CfsPanel {
   void foreground();
   void handle_slot_click(int index);
 
+  // Asks the CFS to check every slot again (BOX_INFO_REFRESH, the command of the Creality refresh button).
+  void refresh_slots();
+
   // Slot editor (material and color of the spool in a slot).
   void open_edit(int index);
   void close_edit();
@@ -84,6 +87,7 @@ class CfsPanel {
   lv_obj_t *header_label;
   lv_obj_t *version_label;
   lv_obj_t *status_label;
+  lv_obj_t *refresh_btn;
   SlotWidget slots[4];
   SlotHandle handles[4];
   lv_obj_t *detail_spool;
