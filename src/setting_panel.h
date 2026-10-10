@@ -5,7 +5,6 @@
 
 #include "sysinfo_panel.h"
 #include "spoolman_panel.h"
-#include "printer_select_panel.h"
 #include "button_container.h"
 #include "square_button.h"
 #include "websocket_client.h"
@@ -47,14 +46,12 @@ class SettingPanel {
   std::function<void()> open_cfs;
   std::function<void()> open_macros;
   void refresh_cfs_button();
-  PrinterSelectPanel printer_select_panel;
   SquareButton wifi_btn;
   SquareButton restart_btn;
   SquareButton macros_btn;
   SquareButton sysinfo_btn;
   SquareButton spoolman_btn;
   SquareButton powerscreen_update_btn;
-  SquareButton printer_select_btn;
 
   // The Restart tile opens a list: PowerScreen, Klipper or the firmware.
   void show_restart_menu();

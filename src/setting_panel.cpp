@@ -45,7 +45,6 @@ LV_IMG_DECLARE(update_img);
 
 LV_IMG_DECLARE(info_img);
 
-LV_IMG_DECLARE(print);
 LV_IMG_DECLARE(ui_console_img);
 LV_IMG_DECLARE(ui_icon_play);
 
@@ -61,7 +60,6 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
   , sysinfo_btn(cont, &info_img, "System", &SettingPanel::_handle_callback, this)
   , spoolman_btn(cont, &ui_cfs_img, "CFS", &SettingPanel::_handle_callback, this)
   , powerscreen_update_btn(cont, &update_img, "Power Update", &SettingPanel::_handle_callback, this)
-  , printer_select_btn(cont, &print, "Printers", &SettingPanel::_handle_callback, this)
   , update_lock_timer(NULL)
   , update_locked(false)
 {
@@ -98,8 +96,7 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
   lv_obj_set_grid_cell(wifi_btn.get_button(), S, 2, 1, S, 0, 1);
   lv_obj_set_grid_cell(sysinfo_btn.get_button(), S, 3, 1, S, 0, 1);
 
-  // row 2: restart, the watermark and Power Update as the last tile (the Console lives in Calibrations; this build only
-  // targets the K1C, so Printers stays hidden)
+  // row 2: restart, the watermark and Power Update as the last tile (the Console lives in Calibrations)
   lv_obj_set_grid_cell(restart_btn.get_button(), S, 0, 1, S, 1, 1);
   lv_obj_set_grid_cell(powerscreen_update_btn.get_button(), S, 3, 1, S, 1, 1);
 
@@ -110,7 +107,6 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
   lv_obj_set_style_border_color(restart_btn.get_button(), lv_color_hex(powerui::COLOR_DESTRUCTIVE),
                                 LV_PART_MAIN | LV_STATE_DEFAULT);
   lv_obj_set_style_border_opa(restart_btn.get_button(), LV_OPA_40, LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_add_flag(printer_select_btn.get_button(), LV_OBJ_FLAG_HIDDEN);
 
   // Watermark in the free grid cell: the PowerScreen logo at low opacity with the installed version below.
   lv_obj_t *mark = powerui::plain(cont);
@@ -172,9 +168,6 @@ void SettingPanel::handle_callback(lv_event_t *event) {
     } else if (btn == powerscreen_update_btn.get_button()) {
       spdlog::trace("update powerscreen pressed");
       sysinfo_panel.open_power_update();
-    } else if (btn == printer_select_btn.get_button()) {
-      spdlog::trace("setting printers pressed");
-      printer_select_panel.foreground();
     }
   }
 }

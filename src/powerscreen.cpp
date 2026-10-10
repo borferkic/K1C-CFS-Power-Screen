@@ -7,7 +7,6 @@
 #include "spdlog/sinks/rotating_file_sink.h"
 #include "spdlog/sinks/stdout_sinks.h"
 
-#include "printer_select_panel.h"
 #include "spdlog/spdlog.h"
 #include "state.h"
 #include "powerui.h"
