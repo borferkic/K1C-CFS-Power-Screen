@@ -59,23 +59,46 @@ TmcStatusContainer::TmcStatusContainer(KWebSocketClient &c,
 	     })
 {
   lv_obj_set_size(cont, LV_PCT(100), LV_SIZE_CONTENT);
-  lv_obj_set_flex_align(cont, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-  
-  lv_obj_set_style_pad_all(cont, 0, 0);
-  lv_obj_set_style_pad_bottom(cont, 15, 0);
-  lv_obj_set_style_border_side(cont, LV_BORDER_SIDE_BOTTOM, 0);
-  lv_obj_set_style_border_width(cont, 2, 0);
-  
-  lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_ROW_WRAP_REVERSE);
+  lv_obj_set_flex_align(cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+
+  lv_obj_set_style_bg_color(cont, lv_color_hex(powerui::COLOR_CARD), 0);
+  lv_obj_set_style_bg_opa(cont, LV_OPA_COVER, 0);
+  lv_obj_set_style_radius(cont, 10, 0);
+  lv_obj_set_style_border_width(cont, 1, 0);
+  lv_obj_set_style_border_color(cont, lv_color_hex(powerui::COLOR_WHITE), 0);
+  lv_obj_set_style_border_opa(cont, LV_OPA_10, 0);
+  lv_obj_set_style_pad_all(cont, 12, 0);
+  lv_obj_set_style_pad_row(cont, 8, 0);
+  lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
+
+  lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_ROW_WRAP);
+
+  // Header row: motor name, live values and driver status.
+  lv_obj_t *header = powerui::plain(cont);
+  lv_obj_set_size(header, LV_PCT(100), LV_SIZE_CONTENT);
+  lv_obj_set_flex_flow(header, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(header, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_style_pad_column(header, 12, 0);
+  lv_obj_move_to_index(header, 0);
+
+  lv_obj_t *name = powerui::label(header, stepper_name.substr(stepper_name.find(' ') + 1).c_str(),
+				  &lv_font_montserrat_16, lv_color_hex(powerui::COLOR_FG));
+  lv_obj_set_flex_grow(name, 1);
+  irms_label = powerui::label(header, "i_rms -", &lv_font_montserrat_12, lv_color_hex(powerui::COLOR_MUTED));
+  sg_label = powerui::label(header, "sg_result -", &lv_font_montserrat_12, lv_color_hex(powerui::COLOR_MUTED));
+  status_badge = powerui::badge(header, "OK", lv_color_hex(powerui::COLOR_ACCENT));
 
   lv_obj_set_width(label, LV_PCT(100));
-  lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
-  lv_label_set_text(label, fmt::format("{} (current/load)", stepper_name).c_str());
+  lv_label_set_text(label, "Current / load");
+  lv_obj_set_style_text_font(label, &lv_font_montserrat_12, 0);
+  lv_obj_set_style_text_color(label, lv_color_hex(powerui::COLOR_MUTED), 0);
 
   auto scale = (double)lv_disp_get_physical_hor_res(NULL) / 800.0;
   lv_obj_set_flex_flow(chart_cont, LV_FLEX_FLOW_COLUMN);
-  lv_obj_set_size(chart_cont, LV_PCT(70), LV_SIZE_CONTENT);
+  lv_obj_set_size(chart_cont, LV_PCT(62), LV_SIZE_CONTENT);
   lv_obj_set_style_pad_left(chart_cont, 50 * scale, 0);
+  lv_obj_set_style_bg_opa(chart_cont, LV_OPA_0, 0);
+  lv_obj_set_style_border_width(chart_cont, 0, 0);
   
   lv_obj_set_size(legend, LV_PCT(100), LV_SIZE_CONTENT);
   lv_obj_set_style_pad_all(legend, 0, 0);  
@@ -98,6 +121,15 @@ TmcStatusContainer::TmcStatusContainer(KWebSocketClient &c,
   lv_obj_set_style_text_color(axis_label, lv_color_hex(powerui::COLOR_MAT_GREEN), 0);
   
   lv_obj_set_style_size(chart, 0, LV_PART_INDICATOR);
+  lv_obj_set_style_bg_color(chart, lv_color_hex(powerui::COLOR_BG), 0);
+  lv_obj_set_style_bg_opa(chart, LV_OPA_COVER, 0);
+  lv_obj_set_style_radius(chart, 8, 0);
+  lv_obj_set_style_border_width(chart, 1, 0);
+  lv_obj_set_style_border_color(chart, lv_color_hex(powerui::COLOR_WHITE), 0);
+  lv_obj_set_style_border_opa(chart, LV_OPA_10, 0);
+  lv_obj_set_style_line_color(chart, lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN);
+  lv_obj_set_style_text_color(chart, lv_color_hex(powerui::COLOR_MUTED), LV_PART_TICKS);
+  lv_obj_set_style_text_font(chart, &lv_font_montserrat_12, LV_PART_TICKS);
 
   lv_chart_set_range(chart, LV_CHART_AXIS_PRIMARY_Y, 0, 1600);
   lv_chart_set_axis_tick(chart, LV_CHART_AXIS_PRIMARY_Y, 0, 0, 6, 5, true, 50);
@@ -109,11 +141,14 @@ TmcStatusContainer::TmcStatusContainer(KWebSocketClient &c,
 
   lv_obj_set_flex_grow(stepper_config, 1);
   lv_obj_set_height(stepper_config, LV_SIZE_CONTENT);
-  lv_obj_set_flex_flow(stepper_config, LV_FLEX_FLOW_COLUMN);
-  lv_obj_set_style_pad_row(stepper_config, 0, 0);
-  lv_obj_set_style_pad_column(stepper_config, 0, 0);
+  lv_obj_set_flex_flow(stepper_config, LV_FLEX_FLOW_ROW_WRAP);
+  lv_obj_set_style_pad_row(stepper_config, 6, 0);
+  lv_obj_set_style_pad_column(stepper_config, 6, 0);
   lv_obj_set_style_pad_all(stepper_config, 0, 0);
-  lv_obj_set_flex_align(stepper_config, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_style_bg_opa(stepper_config, LV_OPA_0, 0);
+  lv_obj_set_style_border_width(stepper_config, 0, 0);
+  lv_obj_clear_flag(stepper_config, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_flex_align(stepper_config, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
   
 }
 
@@ -131,6 +166,21 @@ void TmcStatusContainer::update(json &stepper) {
     auto v = stepper["/i_rms"_json_pointer];
     if (!v.is_null()) {
       lv_chart_set_next_value(chart, irms_series, v.template get<double>());
+      lv_label_set_text(irms_label, fmt::format("i_rms {} mA", (int)v.template get<double>()).c_str());
+    }
+
+    // drv_status only lists the flags that are set: any of these means the driver reports a fault.
+    bool fault = false;
+    auto drv = stepper["/drv_status"_json_pointer];
+    if (drv.is_object()) {
+      for (const char *flag : {"ot", "otpw", "s2ga", "s2gb", "s2vsa", "s2vsb"}) {
+	fault = fault || drv.contains(flag);
+      }
+    }
+    if (fault != alert) {
+      alert = fault;
+      powerui::badge_set(status_badge, fault ? "Alert" : "OK",
+			 lv_color_hex(fault ? powerui::COLOR_DANGER : powerui::COLOR_ACCENT));
     }
     
     v = stepper["/semin"_json_pointer];
@@ -181,6 +231,7 @@ void TmcStatusContainer::update(json &stepper) {
     v = stepper["/sg_result"_json_pointer];
     if (!v.is_null()) {
       lv_chart_set_next_value(chart, sg_series, v.template get<int>());
+      lv_label_set_text(sg_label, fmt::format("sg_result {}", v.template get<int>()).c_str());
     }
   }
 }

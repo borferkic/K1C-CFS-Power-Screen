@@ -34,6 +34,10 @@ class TmcStatusContainer {
   lv_chart_series_t *semin_series;
   lv_chart_series_t *semax_series;
   lv_obj_t *stepper_config;
+  lv_obj_t *irms_label;
+  lv_obj_t *sg_label;
+  lv_obj_t *status_badge;
+  bool alert = false;
 
   SpinBoxSelector semin_sb;
   SpinBoxSelector semax_sb;

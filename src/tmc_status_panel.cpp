@@ -19,19 +19,32 @@ TmcStatusPanel::TmcStatusPanel(KWebSocketClient &c,
   }, this)
 {
   lv_obj_move_background(cont);
-  lv_obj_set_size(cont, LV_PCT(100), LV_PCT(100));
-  lv_obj_set_style_pad_all(cont, 0, 0);
-  
+  powerui::style_overlay_root(cont);
+  lv_obj_add_flag(cont, LV_OBJ_FLAG_SCROLLABLE);  // one card per motor: the list scrolls
+  const int gap = (int)(12 * powerui::overlay_width_scale());
+  lv_obj_set_style_pad_all(cont, gap, 0);
+  lv_obj_set_style_pad_row(cont, gap, 0);
+
   lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_COLUMN);
 
   lv_obj_set_size(top, LV_PCT(100), LV_SIZE_CONTENT);
+  lv_obj_set_style_bg_color(top, lv_color_hex(powerui::COLOR_CARD), 0);
+  lv_obj_set_style_bg_opa(top, LV_OPA_COVER, 0);
+  lv_obj_set_style_radius(top, 10, 0);
+  lv_obj_set_style_border_width(top, 1, 0);
+  lv_obj_set_style_border_color(top, lv_color_hex(powerui::COLOR_WHITE), 0);
+  lv_obj_set_style_border_opa(top, LV_OPA_10, 0);
+  lv_obj_set_style_pad_all(top, gap, 0);
+  lv_obj_clear_flag(top, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_t *l = lv_label_create(top);
-  lv_label_set_text(l, "TMC Metrics is experimental and disabled by default. "
-		    "Turn it on as needed. For in-depth detail, refer to the TMC "
-		    "driver datasheet.");
-  lv_obj_set_width(l, LV_PCT(70));
+  lv_label_set_text(l, "Experimental, disabled by default. Turn it on when you need it. "
+		    "For in-depth detail, refer to the TMC driver datasheet.");
+  lv_obj_set_style_text_font(l, &lv_font_montserrat_12, 0);
+  lv_obj_set_style_text_color(l, lv_color_hex(powerui::COLOR_MUTED), 0);
+  lv_obj_set_width(l, LV_PCT(75));
   lv_obj_align(l, LV_ALIGN_LEFT_MID, 0, 0);
 
+  powerui::style_switch(toggle);
   lv_obj_align(toggle, LV_ALIGN_RIGHT_MID, 0, 0);
   lv_obj_clear_state(toggle, LV_STATE_CHECKED);
 
