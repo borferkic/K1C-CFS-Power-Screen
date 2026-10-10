@@ -19,8 +19,6 @@ if [ -f ./custom_upgrade.sh ]; then
     cp ./custom_upgrade.sh $RELEASES_DIR
 fi
 cp reinstall-creality.sh $RELEASES_DIR
-cp -r ./debian $RELEASES_DIR
-cp ./build/bin/kd_graphic_mode $RELEASES_DIR/debian
 cp ./k1/moonraker/powerscreen-update.conf $RELEASES_DIR
 
 
