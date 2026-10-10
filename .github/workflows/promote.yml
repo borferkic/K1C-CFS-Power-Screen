@@ -51,12 +51,12 @@ jobs:
     - name: Download nightly packages
       run: |
         gh release download "$NIGHTLY" --repo "$REPO" --dir nightly \
-          --pattern powerscreen-zbolt.tar.gz --pattern powerscreen-zbolt.zip
+          --pattern powerscreen-k1c.tar.gz --pattern powerscreen-k1c.zip
 
     - name: Rewrite version and repackage
       run: |
         mkdir -p pkg
-        tar xzf nightly/powerscreen-zbolt.tar.gz -C pkg
+        tar xzf nightly/powerscreen-k1c.tar.gz -C pkg
         BIN_BEFORE="$(sha256sum pkg/powerscreen/powerscreen | cut -d' ' -f1)"
         jq --arg v "$STABLE" '.version = $v' pkg/powerscreen/.version > tmp && mv tmp pkg/powerscreen/.version
         jq --arg v "$STABLE" '.version = $v' pkg/powerscreen/release_info.json > tmp && mv tmp pkg/powerscreen/release_info.json
@@ -64,8 +64,8 @@ jobs:
         test "$BIN_BEFORE" = "$BIN_AFTER"
         echo "Binary unchanged: $BIN_AFTER"
         mkdir -p out
-        tar czf out/powerscreen-zbolt.tar.gz -C pkg .
-        python3 - pkg/powerscreen out/powerscreen-zbolt.zip <<'PY'
+        tar czf out/powerscreen-k1c.tar.gz -C pkg .
+        python3 - pkg/powerscreen out/powerscreen-k1c.zip <<'PY'
         from pathlib import Path
         from zipfile import ZIP_DEFLATED, ZipFile
         import sys
@@ -74,7 +74,10 @@ jobs:
             for item in source.rglob("*"):
                 package.write(item, item.relative_to(source))
         PY
-        unzip -p out/powerscreen-zbolt.zip release_info.json | jq -e --arg v "$STABLE" '.version == $v'
+        unzip -p out/powerscreen-k1c.zip release_info.json | jq -e --arg v "$STABLE" '.version == $v'
+        # Transition: the same packages under the old name for installations that still look for it.
+        cp out/powerscreen-k1c.tar.gz out/powerscreen-zbolt.tar.gz
+        cp out/powerscreen-k1c.zip out/powerscreen-zbolt.zip
 
     - name: Publish stable release
       run: |
@@ -87,7 +90,7 @@ jobs:
           NOTES=(--notes "Official release promoted from nightly \`$NIGHTLY\` (same binary, tested on the K1C).")
           echo "No release notes file for $STABLE: using the default note"
         fi
-        gh release create "$STABLE" out/powerscreen-zbolt.tar.gz out/powerscreen-zbolt.zip \
+        gh release create "$STABLE" out/powerscreen-k1c.tar.gz out/powerscreen-k1c.zip out/powerscreen-zbolt.tar.gz out/powerscreen-zbolt.zip \
           --repo "$REPO" \
           --title "$STABLE" \
           --target "$TARGET" \

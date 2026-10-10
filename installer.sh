@@ -9,7 +9,7 @@ BACKUP_DIR=/usr/data/powerscreen-backup
 K1_POWERSCREEN_DIR=/usr/data/powerscreen
 FT2FONT_PATH=/usr/lib/python3.8/site-packages/matplotlib/ft2font.cpython-38-mipsel-linux-gnu.so
 POWERSCREEN_REPOSITORY="borferkic/K1C-CFS-POWER-SCREEN"
-ASSET_NAME="powerscreen-zbolt"
+ASSET_NAME="powerscreen-k1c"
 # Creality screen and web binaries that PowerScreen disables (renamed to "<name>.disabled").
 # The installer assumes a clean printer: no previous touch screen replacement installed.
 CREALITY_BINARIES="Monitor display-server web-server"
@@ -156,7 +156,11 @@ fi
 printf "${green} Downloading asset: $ASSET_NAME.tar.gz ${white}\n"
 
 # download/extract latest powerscreen
-/tmp/curl -s -L $ASSET_URL -o /tmp/powerscreen.tar.gz
+if ! /tmp/curl -s -L -f $ASSET_URL -o /tmp/powerscreen.tar.gz; then
+    # Transition: a release published before the rename only has the package under its old name.
+    printf "${yellow}Package not found as $ASSET_NAME.tar.gz, trying powerscreen-zbolt.tar.gz ${white}\n"
+    /tmp/curl -s -L -f "https://github.com/$POWERSCREEN_REPOSITORY/releases/latest/download/powerscreen-zbolt.tar.gz" -o /tmp/powerscreen.tar.gz
+fi
 tar xf /tmp/powerscreen.tar.gz -C /usr/data/
 
 if [ ! -f "$K1_POWERSCREEN_DIR/powerscreen" ]; then

@@ -14,7 +14,9 @@ CONFIG_FILE=$POWERSCREEN_DIR/powerscreenconfig.json
 CUSTOM_UPGRADE_SCRIPT=$POWERSCREEN_DIR/custom_upgrade.sh
 MOONRAKER_UPDATE_CONF=/usr/data/printer_data/config/powerscreen-update.conf
 POWERSCREEN_REPOSITORY="borferkic/K1C-CFS-POWER-SCREEN"
-ASSET_NAME="powerscreen-zbolt.tar.gz"
+ASSET_NAME="powerscreen-k1c.tar.gz"
+# Transition: releases published until the old name is dropped carry the same package as powerscreen-zbolt.*
+LEGACY_ASSET_NAME="powerscreen-zbolt.tar.gz"
 CHECK_ONLY=false
 STATUS_FILE=/tmp/powerscreen-update.status
 DONE_FILE=/tmp/powerscreen-update.done
@@ -112,7 +114,7 @@ else
         exit 0
     fi
 
-    asset_url=`jq -r --arg asset "$ASSET_NAME" "$RELEASE_FILTER | .assets[] | select(.name == \\$asset) | .browser_download_url" /tmp/powerscreen-releases.json`
+    asset_url=`jq -r --arg asset "$ASSET_NAME" --arg legacy "$LEGACY_ASSET_NAME" "$RELEASE_FILTER | first(.assets[] | select(.name == \\$asset or .name == \\$legacy) | .browser_download_url)" /tmp/powerscreen-releases.json`
     if [ -z "$asset_url" ] || [ "$asset_url" = "null" ]; then
         set_status "ERROR:Release $latest_version has no package"
         exit 1

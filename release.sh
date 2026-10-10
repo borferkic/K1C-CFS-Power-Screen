@@ -4,7 +4,7 @@ RELEASES_DIR=./releases/powerscreen
 rm -rf $RELEASES_DIR
 mkdir -p $RELEASES_DIR
 
-ASSET_NAME="powerscreen-zbolt"
+ASSET_NAME="powerscreen-k1c"
 PROJECT_OWNER="borferkic"
 PROJECT_NAME="K1C-CFS-POWER-SCREEN"
 

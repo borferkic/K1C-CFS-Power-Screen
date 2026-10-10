@@ -73,15 +73,21 @@ jobs:
     - name: make powerscreen
       run: make -j
 
-    - name: package zbolt
+    - name: package k1c
       run: |
         chmod +x ./release.sh
-        ./release.sh powerscreen-zbolt
+        ./release.sh powerscreen-k1c
+        # Transition: the same packages under the old name, so installations that still look
+        # for powerscreen-zbolt can update to a build that already uses the new one.
+        cp powerscreen-k1c.tar.gz powerscreen-zbolt.tar.gz
+        cp powerscreen-k1c.zip powerscreen-zbolt.zip
 
     - uses: actions/upload-artifact@v4
       with:
-        name: powerscreen-zbolt
+        name: powerscreen-k1c
         path: |
+          ./powerscreen-k1c.tar.gz
+          ./powerscreen-k1c.zip
           ./powerscreen-zbolt.tar.gz
           ./powerscreen-zbolt.zip
 
@@ -95,7 +101,7 @@ jobs:
     - name: Download PowerScreen packages
       uses: actions/download-artifact@v4
       with:
-        name: powerscreen-zbolt
+        name: powerscreen-k1c
         path: artifacts
 
     - name: Publish nightly release
@@ -103,10 +109,12 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        VERSION="$(unzip -p artifacts/powerscreen-zbolt.zip release_info.json | jq -r .version)"
+        VERSION="$(unzip -p artifacts/powerscreen-k1c.zip release_info.json | jq -r .version)"
         test -n "$VERSION"
         test "$VERSION" != "null"
         gh release create "$VERSION" \
+          artifacts/powerscreen-k1c.tar.gz \
+          artifacts/powerscreen-k1c.zip \
           artifacts/powerscreen-zbolt.tar.gz \
           artifacts/powerscreen-zbolt.zip \
           --repo borferkic/K1C-CFS-POWER-SCREEN \
