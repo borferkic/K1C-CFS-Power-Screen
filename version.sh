@@ -1,6 +1,0 @@
-#!/bin/bash
-
-VERSION=`cat ./VERSION`
-VERSION_STR="$VERSION-beta"
-
-echo -n "POWERSCREEN_VERSION=$VERSION_STR"

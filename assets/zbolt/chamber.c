@@ -1,4 +1,4 @@
-/* Reutiliza el icono Material Design de GuppyScreen para la camara cerrada. */
+/* Reuses the Material Design icon from GuppyScreen for the closed camera. */
 #define LV_ATTRIBUTE_IMG_CHAMBER
 #define heater_map chamber_map
 #define heater chamber
