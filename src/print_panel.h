@@ -63,6 +63,7 @@ class PrintPanel : public NotifyConsumer {
     bool directory;
     std::string thumbnail_source;
     lv_obj_t *subtitle = NULL;
+    lv_obj_t *check = NULL;  // selection box, only visible in select mode
   };
 
   void show_dir(Tree *dir, uint32_t sort_type);
@@ -83,6 +84,13 @@ class PrintPanel : public NotifyConsumer {
   void show_delete_confirmation();
   void hide_delete_context();
   void hide_delete_confirmation();
+
+  // Select mode: mark several files and delete them in one go.
+  void set_select_mode(bool on);
+  void toggle_selected(FileCard &card);
+  void refresh_select_ui();
+  void show_batch_delete_confirmation();
+  void delete_next_in_batch(size_t index);
 
   // Start print: asks for the bed mesh mode and the adaptive purge line (KAMP pins of the Power Script) before sending
   // the print. Printers without those pins start the print straight away.
@@ -140,6 +148,16 @@ class PrintPanel : public NotifyConsumer {
   PrintStatusPanel &print_status;
   uint32_t sorted_by;
   std::vector<FileCard> file_cards;
+
+  bool select_mode = false;
+  std::vector<std::string> selected;      // full paths of the marked files
+  std::vector<std::string> delete_batch;  // paths being deleted after the confirmation
+  lv_obj_t *select_btn = NULL;
+  lv_obj_t *select_bar = NULL;
+  lv_obj_t *select_info = NULL;
+  lv_obj_t *select_delete_btn = NULL;
+  lv_obj_t *select_cancel_btn = NULL;
+  lv_obj_t *delete_title = NULL;
 
 };
 

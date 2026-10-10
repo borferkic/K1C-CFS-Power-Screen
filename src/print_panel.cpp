@@ -1,4 +1,5 @@
 #include "print_panel.h"
+#include <algorithm>
 #include "powerui.h"
 #include "file_panel.h"
 #include "state.h"
@@ -119,6 +120,12 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_add_event_cb(refresh_btn, &PrintPanel::_handle_btns, LV_EVENT_CLICKED, this);
   lv_obj_add_event_cb(modified_sort_btn, &PrintPanel::_handle_btns, LV_EVENT_CLICKED, this);
   lv_obj_add_event_cb(az_sort_btn, &PrintPanel::_handle_btns, LV_EVENT_CLICKED, this);
+
+  select_btn = lv_btn_create(file_table_btns);
+  label = lv_label_create(select_btn);
+  lv_label_set_text(label, "Select");
+  lv_obj_center(label);
+  lv_obj_add_event_cb(select_btn, &PrintPanel::_handle_btns, LV_EVENT_CLICKED, this);
   
   lv_obj_set_size(file_table_btns, LV_PCT(100), LV_SIZE_CONTENT);
   lv_obj_set_style_pad_all(file_table_btns, 4, 0);
@@ -137,7 +144,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_set_style_border_width(file_table_btns, 0, 0);
   lv_obj_set_height(file_table_btns, powerui::px(48));
 
-  lv_obj_t *sort_buttons[] = {refresh_btn, modified_sort_btn, az_sort_btn};
+  lv_obj_t *sort_buttons[] = {refresh_btn, modified_sort_btn, az_sort_btn, select_btn};
   for (lv_obj_t *sort_button : sort_buttons) {
     lv_obj_set_size(sort_button, sort_button == refresh_btn ? powerui::px(36) : (sort_button == modified_sort_btn ? powerui::px(112) : powerui::px(70)), powerui::px(36));
     lv_obj_set_style_pad_all(sort_button, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -150,6 +157,8 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
     lv_obj_set_style_border_width(sort_button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(sort_button, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
   }
+
+  lv_obj_set_size(select_btn, powerui::px(88), powerui::px(40));
 
   // Refresh stands out: larger, with a green outline and icon.
   lv_obj_set_size(refresh_btn, powerui::px(48), powerui::px(40));
@@ -169,8 +178,9 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_set_style_text_font(count_label, &lv_font_montserrat_12, LV_PART_MAIN);
   lv_obj_move_to_index(modified_sort_btn, 0);
   lv_obj_move_to_index(az_sort_btn, 1);
-  lv_obj_move_to_index(count_label, 2);
-  lv_obj_move_to_index(refresh_btn, 3);
+  lv_obj_move_to_index(select_btn, 2);
+  lv_obj_move_to_index(count_label, 3);
+  lv_obj_move_to_index(refresh_btn, 4);
   update_sort_buttons();
 
   // Storage switch: Local / USB.
@@ -352,7 +362,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_set_style_radius(delete_confirm_box, px(14), LV_PART_MAIN);
   lv_obj_clear_flag(delete_confirm_box, LV_OBJ_FLAG_SCROLLABLE);
 
-  lv_obj_t *delete_title = powerui::label(delete_confirm_box, "Delete file?", &lv_font_montserrat_20, lv_color_hex(powerui::COLOR_FG));
+  delete_title = powerui::label(delete_confirm_box, "Delete file?", &lv_font_montserrat_20, lv_color_hex(powerui::COLOR_FG));
   lv_obj_set_pos(delete_title, px(24), px(22));
 
   lv_obj_set_width(delete_confirm_label, px(332));
@@ -385,6 +395,45 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_add_event_cb(delete_cancel_btn, &PrintPanel::_handle_btns,
                       LV_EVENT_CLICKED, this);
   lv_obj_add_flag(delete_confirm_cont, LV_OBJ_FLAG_HIDDEN);
+
+  // Select-mode bar: count on the left, Cancel and Delete on the right.
+  select_bar = lv_obj_create(left_cont);
+  lv_obj_add_flag(select_bar, LV_OBJ_FLAG_IGNORE_LAYOUT);
+  lv_obj_clear_flag(select_bar, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_size(select_bar, LV_PCT(100), px(64));
+  lv_obj_align(select_bar, LV_ALIGN_BOTTOM_MID, 0, 0);
+  lv_obj_set_style_bg_color(select_bar, lv_color_hex(powerui::COLOR_CARD), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(select_bar, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_radius(select_bar, 0, LV_PART_MAIN);
+  lv_obj_set_style_border_width(select_bar, 1, LV_PART_MAIN);
+  lv_obj_set_style_border_side(select_bar, LV_BORDER_SIDE_TOP, LV_PART_MAIN);
+  lv_obj_set_style_border_color(select_bar, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
+  lv_obj_set_style_border_opa(select_bar, LV_OPA_10, LV_PART_MAIN);
+  lv_obj_set_style_pad_all(select_bar, px(10), LV_PART_MAIN);
+  lv_obj_set_style_pad_column(select_bar, px(10), LV_PART_MAIN);
+  lv_obj_set_flex_flow(select_bar, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(select_bar, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  select_info = powerui::label(select_bar, "", &lv_font_montserrat_14, lv_color_hex(powerui::COLOR_FG));
+  lv_obj_set_flex_grow(select_info, 1);
+  auto style_bar_button = [](lv_obj_t *btn, uint32_t bg, uint32_t pressed, int w) {
+    lv_obj_set_size(btn, px(w), px(44));
+    lv_obj_set_style_bg_color(btn, lv_color_hex(bg), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(btn, lv_color_hex(pressed), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_opa(btn, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(btn, LV_OPA_40, LV_PART_MAIN | LV_STATE_DISABLED);
+    lv_obj_set_style_border_width(btn, 0, LV_PART_MAIN);
+    lv_obj_set_style_shadow_width(btn, 0, LV_PART_MAIN);
+    lv_obj_set_style_radius(btn, px(10), LV_PART_MAIN);
+  };
+  select_cancel_btn = lv_btn_create(select_bar);
+  style_bar_button(select_cancel_btn, powerui::COLOR_SECONDARY, powerui::COLOR_PRESSED, 100);
+  lv_obj_center(powerui::label(select_cancel_btn, "Cancel", &lv_font_montserrat_14, lv_color_hex(powerui::COLOR_FG)));
+  select_delete_btn = lv_btn_create(select_bar);
+  style_bar_button(select_delete_btn, powerui::COLOR_DANGER, powerui::COLOR_MAT_RED_DARK, 140);
+  lv_obj_center(powerui::label(select_delete_btn, "Delete (0)", &lv_font_montserrat_14, lv_color_hex(powerui::COLOR_WHITE)));
+  lv_obj_add_event_cb(select_cancel_btn, &PrintPanel::_handle_btns, LV_EVENT_CLICKED, this);
+  lv_obj_add_event_cb(select_delete_btn, &PrintPanel::_handle_btns, LV_EVENT_CLICKED, this);
+  lv_obj_add_flag(select_bar, LV_OBJ_FLAG_HIDDEN);
 
   // prompt
   lv_obj_add_flag(prompt_cont, LV_OBJ_FLAG_HIDDEN);  
@@ -621,7 +670,29 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_set_style_text_color(chevron, lv_color_hex(powerui::COLOR_MUTED), LV_PART_MAIN);
     lv_obj_set_style_text_font(chevron, &lv_font_montserrat_14, LV_PART_MAIN);
 
-    file_cards.push_back({card, thumbnail, path, node, directory, "", subtitle_label});
+    lv_obj_t *check = NULL;
+    if (!directory) {
+      check = lv_obj_create(card);
+      lv_obj_clear_flag(check, LV_OBJ_FLAG_CLICKABLE);
+      lv_obj_clear_flag(check, LV_OBJ_FLAG_SCROLLABLE);
+      lv_obj_set_size(check, powerui::px(22), powerui::px(22));
+      lv_obj_set_style_pad_all(check, 0, LV_PART_MAIN);
+      lv_obj_set_style_radius(check, 6, LV_PART_MAIN);
+      lv_obj_set_style_bg_opa(check, LV_OPA_TRANSP, LV_PART_MAIN);
+      lv_obj_set_style_bg_color(check, lv_color_hex(powerui::COLOR_ACCENT), LV_PART_MAIN | LV_STATE_CHECKED);
+      lv_obj_set_style_bg_opa(check, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_CHECKED);
+      lv_obj_set_style_border_width(check, 2, LV_PART_MAIN);
+      lv_obj_set_style_border_color(check, lv_color_hex(powerui::COLOR_MUTED), LV_PART_MAIN);
+      lv_obj_set_style_border_color(check, lv_color_hex(powerui::COLOR_ACCENT), LV_PART_MAIN | LV_STATE_CHECKED);
+      lv_obj_t *mark = powerui::label(check, "", &lv_font_montserrat_12, lv_color_hex(powerui::COLOR_BLACK));
+      lv_obj_center(mark);
+      lv_obj_move_to_index(check, 0);
+      if (!select_mode) {
+        lv_obj_add_flag(check, LV_OBJ_FLAG_HIDDEN);
+      }
+    }
+
+    file_cards.push_back({card, thumbnail, path, node, directory, "", subtitle_label, check});
     if (!directory && node->contains_metadata()) {
       update_file_card(path, node->metadata);
     }
@@ -676,7 +747,9 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
 	cur_file = &selected->second;
 	for (auto &card : file_cards) {
 	  if (card.node == cur_file) {
-	    select_file_card(card);
+	    if (!select_mode) {
+	      select_file_card(card);
+	    }
 	    break;
 	  }
 	}
@@ -685,6 +758,9 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     }
   }
 
+  if (select_mode) {
+    refresh_select_ui();
+  }
 }
 
 void PrintPanel::handle_file_card(lv_event_t *event) {
@@ -692,6 +768,9 @@ void PrintPanel::handle_file_card(lv_event_t *event) {
   lv_obj_t *target = lv_event_get_current_target(event);
 
   if (code == LV_EVENT_LONG_PRESSED) {
+    if (select_mode) {
+      return;
+    }
     for (auto &card : file_cards) {
       if (card.card == target && card.node != NULL && card.node->is_leaf()) {
         delete_target = card.node;
@@ -709,6 +788,14 @@ void PrintPanel::handle_file_card(lv_event_t *event) {
   for (auto &card : file_cards) {
     if (card.card != target) {
       continue;
+    }
+
+    if (select_mode && card.node != NULL && card.node->is_leaf()) {
+      toggle_selected(card);
+      return;
+    }
+    if (select_mode) {
+      selected.clear();  // changing folder: only the files shown can be marked
     }
 
     if (card.node == NULL) {
@@ -764,6 +851,8 @@ void PrintPanel::show_delete_confirmation() {
     return;
   }
 
+  delete_batch.clear();
+  lv_label_set_text(delete_title, "Delete file?");
   std::string message = delete_target->name + "\nThis cannot be undone.";
   lv_label_set_text(delete_confirm_label, message.c_str());
   hide_delete_context();
@@ -927,6 +1016,21 @@ void PrintPanel::handle_btns(lv_event_t *event) {
   if (code == LV_EVENT_CLICKED) {
     lv_obj_t *btn = lv_event_get_current_target(event);
 
+    if (btn == select_btn) {
+      set_select_mode(!select_mode);
+      return;
+    }
+
+    if (btn == select_cancel_btn) {
+      set_select_mode(false);
+      return;
+    }
+
+    if (btn == select_delete_btn) {
+      show_batch_delete_confirmation();
+      return;
+    }
+
     if (btn == delete_btn) {
       if (cur_file != NULL) {
         delete_target = cur_file;
@@ -949,6 +1053,7 @@ void PrintPanel::handle_btns(lv_event_t *event) {
     if (btn == delete_cancel_btn) {
       hide_delete_confirmation();
       delete_target = NULL;
+      delete_batch.clear();
       return;
     }
 
@@ -957,6 +1062,11 @@ void PrintPanel::handle_btns(lv_event_t *event) {
     }
 
     if (btn == delete_accept_btn) {
+      if (!delete_batch.empty()) {
+        lv_obj_add_state(delete_accept_btn, LV_STATE_DISABLED);
+        delete_next_in_batch(0);
+        return;
+      }
       if (delete_target == NULL) {
         hide_delete_confirmation();
         return;
@@ -1033,6 +1143,7 @@ void PrintPanel::update_storage_buttons() {
 }
 
 void PrintPanel::set_storage(bool usb) {
+  set_select_mode(false);
   usb_view = usb;
   view_mode = usb ? 1 : 0;
   cur_dir = &root;
@@ -1055,6 +1166,7 @@ void PrintPanel::show_file_widgets(bool visible) {
 
 void PrintPanel::show_extra(FilesExtraView::Mode mode) {
   view_mode = mode == FilesExtraView::Mode::Timelapse ? 2 : 3;
+  set_select_mode(false);
   hide_delete_context();
   hide_delete_confirmation();
   show_file_widgets(false);
@@ -1097,6 +1209,148 @@ void PrintPanel::sync_usb_link() {
   } catch (const std::exception &error) {
     spdlog::warn("USB link failed: {}", error.what());
   }
+}
+
+void PrintPanel::set_select_mode(bool on) {
+  if (on && (view_mode > 1 || usb_missing)) {
+    return;
+  }
+  if (select_mode == on) {
+    return;
+  }
+  select_mode = on;
+  selected.clear();
+  hide_delete_context();
+  for (auto &card : file_cards) {
+    if (card.check != NULL) {
+      if (on) {
+        lv_obj_clear_flag(card.check, LV_OBJ_FLAG_HIDDEN);
+      } else {
+        lv_obj_add_flag(card.check, LV_OBJ_FLAG_HIDDEN);
+      }
+    }
+    lv_obj_clear_state(card.card, LV_STATE_CHECKED);  // marks replace the current-file highlight
+  }
+  lv_obj_set_style_pad_bottom(file_grid, on ? powerui::px(68) : 0, 0);
+  if (on) {
+    lv_obj_clear_flag(select_bar, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_move_foreground(select_bar);
+  } else {
+    lv_obj_add_flag(select_bar, LV_OBJ_FLAG_HIDDEN);
+    for (auto &card : file_cards) {
+      if (cur_file != NULL && card.node == cur_file) {
+        select_file_card(card);
+        break;
+      }
+    }
+  }
+  const lv_color_t accent = lv_color_hex(powerui::COLOR_ACCENT);
+  lv_obj_set_style_bg_color(select_btn, on ? accent : lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(select_btn, on ? LV_OPA_20 : LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_border_width(select_btn, 1, LV_PART_MAIN);
+  lv_obj_set_style_border_color(select_btn, on ? accent : lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
+  lv_obj_set_style_border_opa(select_btn, on ? LV_OPA_50 : LV_OPA_TRANSP, LV_PART_MAIN);
+  lv_obj_set_style_text_color(select_btn, on ? accent : lv_color_hex(powerui::COLOR_FG), LV_PART_MAIN);
+  refresh_select_ui();
+}
+
+void PrintPanel::toggle_selected(FileCard &card) {
+  auto it = std::find(selected.begin(), selected.end(), card.path);
+  if (it != selected.end()) {
+    selected.erase(it);
+  } else {
+    selected.push_back(card.path);
+  }
+  refresh_select_ui();
+}
+
+// Syncs the check boxes, the count and the Delete button with `selected` (only files that are on screen count).
+void PrintPanel::refresh_select_ui() {
+  size_t count = 0;
+  for (auto &card : file_cards) {
+    if (card.check == NULL) {
+      continue;
+    }
+    const bool marked = select_mode && std::find(selected.begin(), selected.end(), card.path) != selected.end();
+    if (marked) {
+      lv_obj_add_state(card.card, LV_STATE_CHECKED);
+      lv_obj_add_state(card.check, LV_STATE_CHECKED);
+      count++;
+    } else {
+      lv_obj_clear_state(card.card, LV_STATE_CHECKED);
+      lv_obj_clear_state(card.check, LV_STATE_CHECKED);
+    }
+    lv_label_set_text(lv_obj_get_child(card.check, 0), marked ? LV_SYMBOL_OK : "");
+  }
+  if (!select_mode) {
+    return;
+  }
+
+  auto state = State::get_instance()->get_data("/printer_state/print_stats/state"_json_pointer);
+  const std::string print_state = state.is_string() ? state.template get<std::string>() : "";
+  const bool printing = print_state == "printing" || print_state == "paused";
+
+  lv_label_set_text(select_info, printing ? "Deleting is blocked while printing"
+                                          : (count == 0 ? "Tap files to select them"
+                                                        : fmt::format("{} file{} selected", count, count == 1 ? "" : "s").c_str()));
+  lv_label_set_text(lv_obj_get_child(select_delete_btn, 0), fmt::format("Delete ({})", count).c_str());
+  if (count == 0 || printing) {
+    lv_obj_add_state(select_delete_btn, LV_STATE_DISABLED);
+  } else {
+    lv_obj_clear_state(select_delete_btn, LV_STATE_DISABLED);
+  }
+}
+
+void PrintPanel::show_batch_delete_confirmation() {
+  delete_batch.clear();
+  std::string names;
+  size_t count = 0;
+  for (auto &card : file_cards) {
+    if (card.check == NULL || card.node == NULL ||
+        std::find(selected.begin(), selected.end(), card.path) == selected.end()) {
+      continue;
+    }
+    delete_batch.push_back(card.path);
+    if (count < 3) {
+      names += (count == 0 ? "" : ", ") + card.node->name;
+    }
+    count++;
+  }
+  if (count == 0) {
+    return;
+  }
+
+  delete_target = NULL;
+  lv_label_set_text(delete_title, fmt::format("Delete {} file{}?", count, count == 1 ? "" : "s").c_str());
+  if (count > 3) {
+    names += fmt::format(" and {} more", count - 3);
+  }
+  lv_label_set_text(delete_confirm_label, (names + "\nThis cannot be undone.").c_str());
+  hide_delete_context();
+  lv_obj_clear_state(delete_accept_btn, LV_STATE_DISABLED);
+  lv_obj_clear_flag(delete_confirm_cont, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_move_foreground(delete_confirm_cont);
+}
+
+// Deletes the confirmed files one after another, then leaves select mode and reloads the list once.
+void PrintPanel::delete_next_in_batch(size_t index) {
+  if (index >= delete_batch.size()) {
+    delete_batch.clear();
+    hide_delete_confirmation();
+    lv_obj_clear_state(delete_accept_btn, LV_STATE_DISABLED);
+    set_select_mode(false);
+    subscribe();
+    return;
+  }
+
+  ws.send_jsonrpc("server.files.delete_file", json{{"path", "gcodes/" + delete_batch[index]}},
+                  [this, index](json &response) {
+                    std::lock_guard<std::mutex> lock(lv_lock);
+                    if (response.contains("error")) {
+                      spdlog::error("failed to delete file: {}", response.dump());
+                    }
+                    delete_next_in_batch(index + 1);
+                  });
 }
 
 void PrintPanel::update_sort_buttons() {
