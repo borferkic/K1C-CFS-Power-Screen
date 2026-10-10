@@ -49,6 +49,7 @@ LV_IMG_DECLARE(info_img);
 
 LV_IMG_DECLARE(print);
 LV_IMG_DECLARE(ui_console_img);
+LV_IMG_DECLARE(ui_icon_play);
 
 SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent, SpoolmanPanel &sm)
   : ws(c)
@@ -60,6 +61,7 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
   , spoolman_panel(sm)
   , wifi_btn(cont, &network_img, "Wi-Fi", &SettingPanel::_handle_callback, this)
   , restart_btn(cont, &refresh_img, "Restart", &SettingPanel::_handle_callback, this)
+  , macros_btn(cont, &ui_icon_play, "Macros", &SettingPanel::_handle_callback, this)
   , sysinfo_btn(cont, &info_img, "System", &SettingPanel::_handle_callback, this)
   , spoolman_btn(cont, &ui_cfs_img, "CFS", &SettingPanel::_handle_callback, this)
   , powerscreen_update_btn(cont, &update_img, "Power Update", &SettingPanel::_handle_callback, this)
@@ -74,6 +76,7 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
   sysinfo_panel.set_wifi_callback([this]() { wifi_panel.foreground(); });
   wifi_btn.set_subtitle("Network");
   restart_btn.set_subtitle("Screen, Klipper, Firmware");
+  macros_btn.set_subtitle("Run printer macros");
   sysinfo_btn.set_subtitle("Preferences and info");
   spoolman_btn.set_subtitle("Filament system");
   powerscreen_update_btn.set_subtitle("PowerScreen and Script");
@@ -96,19 +99,21 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
   lv_obj_set_style_pad_column(cont, 12, LV_PART_MAIN);
 
   const lv_grid_align_t S = LV_GRID_ALIGN_STRETCH;
-  // row 1: connectivity, CFS, updates and system info
+  // row 1: connectivity, CFS, system info and restart
   lv_obj_set_grid_cell(wifi_btn.get_button(), S, 0, 1, S, 0, 1);
   lv_obj_set_grid_cell(spoolman_btn.get_button(), S, 1, 1, S, 0, 1);
-  lv_obj_set_grid_cell(powerscreen_update_btn.get_button(), S, 2, 1, S, 0, 1);
-  lv_obj_set_grid_cell(sysinfo_btn.get_button(), S, 3, 1, S, 0, 1);
+  lv_obj_set_grid_cell(sysinfo_btn.get_button(), S, 2, 1, S, 0, 1);
+  lv_obj_set_grid_cell(restart_btn.get_button(), S, 3, 1, S, 0, 1);
 
-  // row 2: restart (the Console now lives in Calibrations; this build only targets the K1C, so Printers stays hidden)
-  lv_obj_set_grid_cell(restart_btn.get_button(), S, 0, 1, S, 1, 1);
+  // row 2: macros, the watermark and Power Update as the last tile (the Console lives in Calibrations; this build only
+  // targets the K1C, so Printers stays hidden)
+  lv_obj_set_grid_cell(macros_btn.get_button(), S, 0, 1, S, 1, 1);
+  lv_obj_set_grid_cell(powerscreen_update_btn.get_button(), S, 3, 1, S, 1, 1);
   lv_obj_add_flag(printer_select_btn.get_button(), LV_OBJ_FLAG_HIDDEN);
 
   // Watermark in the free grid cell: the PowerScreen logo at low opacity with the installed version below.
   lv_obj_t *mark = powerui::plain(cont);
-  lv_obj_set_grid_cell(mark, S, 3, 1, S, 1, 1);
+  lv_obj_set_grid_cell(mark, S, 1, 2, S, 1, 1);
   lv_obj_clear_flag(mark, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_t *mark_logo = lv_img_create(mark);
   lv_img_set_src(mark_logo, &ui_logo_watermark_img);
@@ -153,6 +158,11 @@ void SettingPanel::handle_callback(lv_event_t *event) {
     } else if (btn == restart_btn.get_button()) {
       spdlog::trace("setting restart pressed");
       show_restart_menu();
+    } else if (btn == macros_btn.get_button()) {
+      spdlog::trace("setting macros pressed");
+      if (open_macros) {
+        open_macros();
+      }
     } else if (btn == spoolman_btn.get_button()) {
       spdlog::trace("setting CFS pressed");
       if (cfs_available && open_cfs) {
@@ -228,6 +238,10 @@ void SettingPanel::set_cfs_available(bool available) {
 
 void SettingPanel::set_cfs_opener(std::function<void()> opener) {
   open_cfs = std::move(opener);
+}
+
+void SettingPanel::set_macros_opener(std::function<void()> opener) {
+  open_macros = std::move(opener);
 }
 
 void SettingPanel::refresh_cfs_button() {

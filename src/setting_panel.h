@@ -28,6 +28,8 @@ class SettingPanel {
   // The "CFS" tile opens the CFS screen while the CFS is connected, else Spoolman when it is available.
   void set_cfs_available(bool available);
   void set_cfs_opener(std::function<void()> opener);
+  // The "Macros" tile opens the full-screen Macros page owned by the main panel.
+  void set_macros_opener(std::function<void()> opener);
 
   void handle_callback(lv_event_t *event);
 
@@ -49,10 +51,12 @@ class SettingPanel {
   bool cfs_available = false;
   bool spoolman_available = false;
   std::function<void()> open_cfs;
+  std::function<void()> open_macros;
   void refresh_cfs_button();
   PrinterSelectPanel printer_select_panel;
   SquareButton wifi_btn;
   SquareButton restart_btn;
+  SquareButton macros_btn;
   SquareButton sysinfo_btn;
   SquareButton spoolman_btn;
   SquareButton powerscreen_update_btn;

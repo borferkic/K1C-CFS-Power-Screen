@@ -66,6 +66,8 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   , files_tab(lv_tabview_add_tab(tabview, CONSOLE_SYMBOL))
   , console_page(lv_obj_create(lv_scr_act()))
   , console_panel(ws, lock, console_page)
+  , macros_page(lv_obj_create(lv_scr_act()))
+  , macros_panel(ws, lock, macros_page)
   , setting_tab(lv_tabview_add_tab(tabview, SETTING_SYMBOL))
   , setting_panel(websocket, lock, setting_tab, sm)
   , title_bar(lv_obj_create(lv_scr_act()))
@@ -184,6 +186,18 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
     lv_obj_add_flag(console_page, LV_OBJ_FLAG_HIDDEN);
     printertune_panel.set_console_callback([this]() { open_console(); });
 
+    // Same for the macros: a full-screen page opened from Settings.
+    lv_obj_clear_flag(macros_page, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_pos(macros_page, 0, 0);
+    lv_obj_set_size(macros_page, LV_PCT(100), LV_PCT(100));
+    lv_obj_set_style_pad_all(macros_page, 0, LV_PART_MAIN);
+    lv_obj_set_style_radius(macros_page, 0, LV_PART_MAIN);
+    lv_obj_set_style_border_width(macros_page, 0, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(macros_page, screen_background, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(macros_page, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_add_flag(macros_page, LV_OBJ_FLAG_HIDDEN);
+    setting_panel.set_macros_opener([this]() { open_macros(); });
+
     ws.register_notify_update(this);
     setting_panel.set_cfs_opener([this]() { cfs_panel.foreground(); });
     extruder_panel.set_cfs_opener([this]() { cfs_panel.foreground(); });
@@ -230,6 +244,15 @@ void MainPanel::open_files() {
   lv_tabview_set_act(tabview, 2, LV_ANIM_OFF);
   print_panel.foreground();
   update_header();
+}
+
+void MainPanel::open_macros() {
+  // Rebuild the list on every open so it follows the macros Klipper has loaded.
+  macros_panel.populate();
+  lv_obj_clear_flag(macros_page, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_move_foreground(macros_page);
+  lv_obj_move_foreground(title_bar);
+  push_overlay("Macros", [this]() { lv_obj_add_flag(macros_page, LV_OBJ_FLAG_HIDDEN); });
 }
 
 void MainPanel::open_console() {
@@ -564,6 +587,7 @@ void MainPanel::handle_tab_change_cb(lv_event_t *event) {
 void MainPanel::handle_tab_click_cb(lv_event_t *event) {
   if (lv_event_get_code(event) == LV_EVENT_CLICKED) {
     lv_obj_add_flag(console_page, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(macros_page, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(tabview);
     overlays.clear();
     update_header();

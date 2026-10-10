@@ -139,7 +139,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
 
   lv_obj_t *sort_buttons[] = {refresh_btn, modified_sort_btn, az_sort_btn};
   for (lv_obj_t *sort_button : sort_buttons) {
-    lv_obj_set_size(sort_button, sort_button == refresh_btn ? powerui::px(36) : (sort_button == modified_sort_btn ? powerui::px(88) : powerui::px(70)), powerui::px(36));
+    lv_obj_set_size(sort_button, sort_button == refresh_btn ? powerui::px(36) : (sort_button == modified_sort_btn ? powerui::px(112) : powerui::px(70)), powerui::px(36));
     lv_obj_set_style_pad_all(sort_button, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(sort_button, lv_color_hex(powerui::COLOR_FG), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(sort_button, lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN | LV_STATE_DEFAULT);

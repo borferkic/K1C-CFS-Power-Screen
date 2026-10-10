@@ -16,6 +16,7 @@
 #include "led_panel.h"
 #include "print_panel.h"
 #include "console_panel.h"
+#include "macros_panel.h"
 #include "printertune_panel.h"
 #include "setting_panel.h"
 #include "print_status_panel.h"
@@ -49,6 +50,7 @@ class MainPanel : public NotifyConsumer {
   // The file picker is not reachable from the Home screen anymore; kept for the screen that will host it.
   void open_files();
   void open_console();
+  void open_macros();
 
   void create_panel();
   void create_sensors(json &temp_sensors);
@@ -160,6 +162,8 @@ class MainPanel : public NotifyConsumer {
   lv_obj_t *files_tab;
   lv_obj_t *console_page;
   ConsolePanel console_panel;
+  lv_obj_t *macros_page;
+  MacrosPanel macros_panel;
   lv_obj_t *setting_tab;
   SettingPanel setting_panel;
   lv_obj_t *title_bar;
