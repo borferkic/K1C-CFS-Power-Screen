@@ -156,11 +156,7 @@ fi
 printf "${green} Downloading asset: $ASSET_NAME.tar.gz ${white}\n"
 
 # download/extract latest powerscreen
-if ! /tmp/curl -s -L -f $ASSET_URL -o /tmp/powerscreen.tar.gz; then
-    # Transition: a release published before the rename only has the package under its old name.
-    printf "${yellow}Package not found as $ASSET_NAME.tar.gz, trying powerscreen-zbolt.tar.gz ${white}\n"
-    /tmp/curl -s -L -f "https://github.com/$POWERSCREEN_REPOSITORY/releases/latest/download/powerscreen-zbolt.tar.gz" -o /tmp/powerscreen.tar.gz
-fi
+/tmp/curl -s -L $ASSET_URL -o /tmp/powerscreen.tar.gz
 tar xf /tmp/powerscreen.tar.gz -C /usr/data/
 
 if [ ! -f "$K1_POWERSCREEN_DIR/powerscreen" ]; then

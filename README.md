@@ -61,7 +61,7 @@ PowerScreen is installed from an SSH shell on the printer while logged in as `ro
 - Moonraker running on the printer.
 - The root password of the printer.
 
-The only supported package is `powerscreen-zbolt.tar.gz`, the MIPS Z-Bolt package for the K1C.
+The only supported package is `powerscreen-k1c.tar.gz`, the MIPS Z-Bolt package for the K1C.
 
 ### 1. Connect to the printer
 
@@ -112,7 +112,7 @@ sh /tmp/powerscreen-installer.sh nightly
 
 #### What the installer does
 
-- Downloads `powerscreen-zbolt.tar.gz` from this repository's GitHub Releases (the latest stable release, or the latest nightly pre-release) and extracts it under `/usr/data/powerscreen`.
+- Downloads `powerscreen-k1c.tar.gz` from this repository's GitHub Releases (the latest stable release, or the latest nightly pre-release) and extracts it under `/usr/data/powerscreen`.
 - Backs up the original Creality files in `/usr/data/powerscreen-backup` and disables the Creality screen and services.
 - Configures the service, the Klipper modules and the PowerScreen macros.
 - Registers PowerScreen in Moonraker's Update Manager so it appears in Fluidd. The registered repository is `borferkic/K1C-CFS-POWER-SCREEN`.
@@ -231,7 +231,7 @@ PowerScreen se instala desde una consola SSH de la impresora iniciada como `root
 - Moonraker ejecutándose en la impresora.
 - La contraseña root de la impresora.
 
-El único paquete compatible es `powerscreen-zbolt.tar.gz`, el paquete MIPS Z-Bolt para la K1C.
+El único paquete compatible es `powerscreen-k1c.tar.gz`, el paquete MIPS Z-Bolt para la K1C.
 
 ### 1. Conectarse a la impresora
 
@@ -282,7 +282,7 @@ sh /tmp/powerscreen-installer.sh nightly
 
 #### Qué hace el instalador
 
-- Descarga `powerscreen-zbolt.tar.gz` desde las GitHub Releases de este repositorio (la última release estable o la última nightly) y lo extrae en `/usr/data/powerscreen`.
+- Descarga `powerscreen-k1c.tar.gz` desde las GitHub Releases de este repositorio (la última release estable o la última nightly) y lo extrae en `/usr/data/powerscreen`.
 - Respalda los archivos originales de Creality en `/usr/data/powerscreen-backup` y desactiva la pantalla y los servicios de Creality.
 - Configura el servicio, los módulos de Klipper y las macros de PowerScreen.
 - Registra PowerScreen en el Update Manager de Moonraker para que aparezca en Fluidd. El repositorio registrado es `borferkic/K1C-CFS-POWER-SCREEN`.

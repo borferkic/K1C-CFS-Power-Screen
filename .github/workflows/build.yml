@@ -1,4 +1,4 @@
-name: powerscreen zbolt build
+name: powerscreen k1c build
 
 on:
   # Official releases are not built here: they are promoted from a tested
@@ -77,10 +77,6 @@ jobs:
       run: |
         chmod +x ./release.sh
         ./release.sh powerscreen-k1c
-        # Transition: the same packages under the old name, so installations that still look
-        # for powerscreen-zbolt can update to a build that already uses the new one.
-        cp powerscreen-k1c.tar.gz powerscreen-zbolt.tar.gz
-        cp powerscreen-k1c.zip powerscreen-zbolt.zip
 
     - uses: actions/upload-artifact@v4
       with:
@@ -88,8 +84,6 @@ jobs:
         path: |
           ./powerscreen-k1c.tar.gz
           ./powerscreen-k1c.zip
-          ./powerscreen-zbolt.tar.gz
-          ./powerscreen-zbolt.zip
 
   release:
     if: github.ref == 'refs/heads/main'
@@ -115,8 +109,6 @@ jobs:
         gh release create "$VERSION" \
           artifacts/powerscreen-k1c.tar.gz \
           artifacts/powerscreen-k1c.zip \
-          artifacts/powerscreen-zbolt.tar.gz \
-          artifacts/powerscreen-zbolt.zip \
           --repo borferkic/K1C-CFS-POWER-SCREEN \
           --title "$VERSION" \
           --prerelease \

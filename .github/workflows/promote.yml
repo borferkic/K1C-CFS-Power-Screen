@@ -75,9 +75,6 @@ jobs:
                 package.write(item, item.relative_to(source))
         PY
         unzip -p out/powerscreen-k1c.zip release_info.json | jq -e --arg v "$STABLE" '.version == $v'
-        # Transition: the same packages under the old name for installations that still look for it.
-        cp out/powerscreen-k1c.tar.gz out/powerscreen-zbolt.tar.gz
-        cp out/powerscreen-k1c.zip out/powerscreen-zbolt.zip
 
     - name: Publish stable release
       run: |
@@ -90,7 +87,7 @@ jobs:
           NOTES=(--notes "Official release promoted from nightly \`$NIGHTLY\` (same binary, tested on the K1C).")
           echo "No release notes file for $STABLE: using the default note"
         fi
-        gh release create "$STABLE" out/powerscreen-k1c.tar.gz out/powerscreen-k1c.zip out/powerscreen-zbolt.tar.gz out/powerscreen-zbolt.zip \
+        gh release create "$STABLE" out/powerscreen-k1c.tar.gz out/powerscreen-k1c.zip \
           --repo "$REPO" \
           --title "$STABLE" \
           --target "$TARGET" \
