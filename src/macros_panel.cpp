@@ -94,6 +94,111 @@ void params_field_event(lv_event_t *e) {
   keyboard_for_field(e, (lv_obj_t *)e->user_data);
 }
 
+// Ids of the special pills of the group row.
+const std::string OTHER_ID = "\x01";
+const std::string ADD_ID = "\x02";
+
+std::string trim(const std::string &text) {
+  const size_t first = text.find_first_not_of(" \t");
+  if (first == std::string::npos) {
+    return "";
+  }
+  const size_t last = text.find_last_not_of(" \t");
+  return text.substr(first, last - first + 1);
+}
+
+// Card with a single text field (group name). `on_confirm` returns an error text to show and keep the card open,
+// or an empty string to accept and close.
+struct NameDialog {
+  std::function<std::string(const std::string &)> on_confirm;
+  lv_obj_t *field;
+  lv_obj_t *error;
+};
+
+void name_deleted(lv_event_t *e) {
+  delete (NameDialog *)lv_obj_get_user_data(lv_event_get_target(e));
+}
+
+void name_overlay_clicked(lv_event_t *e) {
+  lv_obj_t *overlay = lv_event_get_current_target(e);
+  if (lv_event_get_target(e) == overlay) {
+    lv_obj_del_async(overlay);
+  }
+}
+
+void name_close_clicked(lv_event_t *e) {
+  lv_obj_del_async((lv_obj_t *)e->user_data);
+}
+
+void name_confirm_clicked(lv_event_t *e) {
+  lv_obj_t *overlay = (lv_obj_t *)e->user_data;
+  NameDialog *data = (NameDialog *)lv_obj_get_user_data(overlay);
+  if (data == NULL) {
+    return;
+  }
+  const std::string error = data->on_confirm(trim(lv_textarea_get_text(data->field)));
+  if (!error.empty()) {
+    lv_label_set_text(data->error, error.c_str());
+    return;
+  }
+  lv_obj_del_async(overlay);
+}
+
+void name_field_event(lv_event_t *e) {
+  keyboard_for_field(e, (lv_obj_t *)e->user_data);
+}
+
+void name_dialog(const char *title, const std::string &initial, const char *confirm_text,
+                 std::function<std::string(const std::string &)> on_confirm) {
+  using namespace powerui;
+
+  lv_obj_t *overlay = lv_obj_create(lv_layer_top());
+  lv_obj_remove_style_all(overlay);
+  lv_obj_set_size(overlay, LV_PCT(100), LV_PCT(100));
+  lv_obj_set_style_bg_color(overlay, lv_color_hex(COLOR_BLACK), 0);
+  lv_obj_set_style_bg_opa(overlay, LV_OPA_60, 0);
+  lv_obj_add_flag(overlay, LV_OBJ_FLAG_CLICKABLE);
+  NameDialog *data = new NameDialog{std::move(on_confirm), NULL, NULL};
+  lv_obj_set_user_data(overlay, data);
+  lv_obj_add_event_cb(overlay, &name_deleted, LV_EVENT_DELETE, NULL);
+  lv_obj_add_event_cb(overlay, &name_overlay_clicked, LV_EVENT_CLICKED, NULL);
+
+  lv_obj_t *dialog_kb = lv_keyboard_create(overlay);
+  lv_obj_set_size(dialog_kb, LV_PCT(100), px(190));
+  lv_obj_align(dialog_kb, LV_ALIGN_BOTTOM_MID, 0, 0);
+  style_keyboard(dialog_kb);
+
+  const int w = 460, pad = 16, h = 182;
+  lv_obj_t *dlg = card(overlay, 0, 0, w, h);
+  lv_obj_align(dlg, LV_ALIGN_TOP_MID, 0, px(8));
+  lv_obj_set_style_border_opa(dlg, LV_OPA_30, 0);
+
+  lv_obj_t *t = label(dlg, title, &lv_font_montserrat_18, lv_color_hex(COLOR_FG));
+  lv_obj_set_pos(t, px(pad), px(19));
+  action_button(dlg, NULL, LV_SYMBOL_CLOSE, ActionKind::Outline, w - pad - 32, 12, 32, 32, &name_close_clicked,
+                overlay);
+
+  data->field = lv_textarea_create(dlg);
+  lv_textarea_set_one_line(data->field, true);
+  lv_textarea_set_max_length(data->field, 16);
+  lv_textarea_set_placeholder_text(data->field, "Group name");
+  lv_textarea_set_text(data->field, initial.c_str());
+  lv_obj_set_pos(data->field, px(pad), px(54));
+  lv_obj_set_size(data->field, px(w - 2 * pad), px(40));
+  style_field(data->field);
+  lv_obj_add_event_cb(data->field, &name_field_event, LV_EVENT_ALL, dialog_kb);
+
+  data->error = label(dlg, "", &lv_font_montserrat_12, lv_color_hex(COLOR_DESTRUCTIVE));
+  lv_obj_set_pos(data->error, px(pad), px(100));
+
+  action_button(dlg, NULL, confirm_text, ActionKind::Primary, pad, 122, w - 2 * pad, 46, &name_confirm_clicked,
+                overlay);
+
+  // The keyboard is ready as soon as the card opens.
+  lv_keyboard_set_textarea(dialog_kb, data->field);
+  lv_obj_clear_flag(dialog_kb, LV_OBJ_FLAG_HIDDEN);
+}
+
 }  // namespace
 
 MacrosPanel::MacrosPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent)
@@ -102,8 +207,10 @@ MacrosPanel::MacrosPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent)
   , cont(lv_obj_create(parent))
   , search(NULL)
   , show_hidden_switch(NULL)
+  , pill_row(NULL)
   , grid(NULL)
   , kb(NULL)
+  , groups_loaded(false)
 {
   using namespace powerui;
 
@@ -131,6 +238,16 @@ MacrosPanel::MacrosPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent)
   show_hidden_switch = lv_switch_create(bar);
   style_switch(show_hidden_switch);
   lv_obj_add_event_cb(show_hidden_switch, &MacrosPanel::_handle_show_hidden, LV_EVENT_VALUE_CHANGED, this);
+
+  // Group pills: All, the user's groups, Other and "+"; scrolls sideways.
+  pill_row = lv_obj_create(cont);
+  lv_obj_remove_style_all(pill_row);
+  lv_obj_set_size(pill_row, LV_PCT(100), px(32));
+  lv_obj_set_flex_flow(pill_row, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(pill_row, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_style_pad_column(pill_row, px(8), 0);
+  lv_obj_set_scroll_dir(pill_row, LV_DIR_HOR);
+  lv_obj_set_scrollbar_mode(pill_row, LV_SCROLLBAR_MODE_OFF);
 
   // Tiles: three columns, scrolls vertically.
   grid = lv_obj_create(cont);
@@ -160,6 +277,7 @@ MacrosPanel::~MacrosPanel()
 void MacrosPanel::populate() {
   macro_items.clear();
   lv_obj_clean(grid);
+  load_groups();
 
   auto &config_json = State::get_instance()
     ->get_data("/printer_state/configfile/config"_json_pointer);
@@ -201,6 +319,7 @@ void MacrosPanel::populate() {
   if (macro_items.empty()) {
     powerui::label(grid, "No macros found", &lv_font_montserrat_14, lv_color_hex(powerui::COLOR_MUTED));
   }
+  rebuild_pills();
   apply_filter();
 }
 
@@ -250,7 +369,8 @@ void MacrosPanel::apply_filter() {
   const std::string text = to_lower(lv_textarea_get_text(search));
   const bool show_hidden = lv_obj_has_state(show_hidden_switch, LV_STATE_CHECKED);
   for (const auto &item : macro_items) {
-    const bool matches = text.empty() || to_lower(item->name()).find(text) != std::string::npos;
+    const bool matches = (text.empty() || to_lower(item->name()).find(text) != std::string::npos)
+      && in_selected_group(item->name());
     item->update_visibility(matches, show_hidden);
   }
 }
@@ -343,8 +463,274 @@ void MacrosPanel::open_params(MacroItem &item) {
 void MacrosPanel::open_options(MacroItem &item) {
   const std::string name = item.name();
   const bool hide = !item.is_hidden();
-  powerui::choice_dialog("Macro options", {hide ? "Hide macro" : "Show macro"},
-                         [this, name, hide](int) { set_macro_hidden(name, hide); });
+  std::vector<std::string> options = {hide ? "Hide macro" : "Show macro", "Move to group"};
+  if (assignment.count(name) > 0) {
+    options.push_back("Remove from group");
+  }
+  powerui::choice_dialog("Macro options", options, [this, name, hide](int index) {
+    if (index == 0) {
+      set_macro_hidden(name, hide);
+    } else if (index == 1) {
+      open_move_menu(name);
+    } else if (index == 2) {
+      assign_macro(name, "");
+    }
+  });
+}
+
+bool MacrosPanel::in_selected_group(const std::string &macro) const {
+  if (selected.empty()) {
+    return true;
+  }
+  const auto found = assignment.find(macro);
+  if (selected == OTHER_ID) {
+    return found == assignment.end();
+  }
+  return found != assignment.end() && found->second == selected;
+}
+
+void MacrosPanel::load_groups() {
+  if (groups_loaded) {
+    return;
+  }
+  groups_loaded = true;
+  auto &saved = State::get_instance()->get_data("/powerscreensettings/macros/groups"_json_pointer);
+  if (!saved.is_object()) {
+    return;
+  }
+  if (saved.contains("list") && saved.at("list").is_array()) {
+    for (const auto &entry : saved.at("list")) {
+      if (entry.is_string() && (int)groups.size() < MAX_GROUPS) {
+        groups.push_back(entry.template get<std::string>());
+      }
+    }
+  }
+  if (saved.contains("assign") && saved.at("assign").is_object()) {
+    for (const auto &entry : saved.at("assign").items()) {
+      if (!entry.value().is_string()) {
+        continue;
+      }
+      const std::string group = entry.value().template get<std::string>();
+      if (std::find(groups.begin(), groups.end(), group) != groups.end()) {
+        assignment[entry.key()] = group;
+      }
+    }
+  }
+}
+
+void MacrosPanel::save_groups() {
+  json value;
+  value["list"] = groups;
+  value["assign"] = assignment;
+  json setting = {
+    {"namespace", "powerscreen"},
+    {"key", "macros.groups"},
+    {"value", value}
+  };
+  ws.send_jsonrpc("server.database.post_item", setting);
+}
+
+void MacrosPanel::schedule_rebuild_pills() {
+  // The pill that was touched is deleted by the rebuild, so wait until its event is over.
+  lv_async_call([](void *panel) { static_cast<MacrosPanel *>(panel)->rebuild_pills(); }, this);
+}
+
+void MacrosPanel::rebuild_pills() {
+  using namespace powerui;
+
+  bool has_ungrouped = false;
+  for (const auto &item : macro_items) {
+    if (assignment.count(item->name()) == 0) {
+      has_ungrouped = true;
+    }
+  }
+  const bool show_other = !groups.empty() && has_ungrouped;
+  if ((selected == OTHER_ID && !show_other)
+      || (!selected.empty() && selected != OTHER_ID
+          && std::find(groups.begin(), groups.end(), selected) == groups.end())) {
+    selected.clear();
+  }
+
+  lv_obj_clean(pill_row);
+  pill_ids.clear();
+
+  auto add_pill = [this](const std::string &id, const std::string &text) {
+    const bool is_add = id == ADD_ID;
+    const bool is_selected = !is_add && id == selected;
+    lv_obj_t *pill = lv_obj_create(pill_row);
+    lv_obj_remove_style_all(pill);
+    lv_obj_set_size(pill, LV_SIZE_CONTENT, px(32));
+    lv_obj_set_style_pad_hor(pill, px(14), 0);
+    lv_obj_set_style_radius(pill, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_opa(pill, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_width(pill, 1, 0);
+    if (is_selected) {
+      lv_obj_set_style_bg_color(pill, lv_color_hex(COLOR_ACCENT_BG), 0);
+      lv_obj_set_style_border_color(pill, lv_color_hex(COLOR_ACCENT), 0);
+      lv_obj_set_style_border_opa(pill, LV_OPA_50, 0);
+    } else {
+      lv_obj_set_style_bg_color(pill, lv_color_hex(is_add ? COLOR_CARD : COLOR_SECONDARY), 0);
+      lv_obj_set_style_border_color(pill, lv_color_hex(COLOR_WHITE), 0);
+      lv_obj_set_style_border_opa(pill, LV_OPA_10, 0);
+    }
+    lv_obj_clear_flag(pill, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_add_flag(pill, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_flex_flow(pill, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(pill, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_t *text_label = label(pill, text.c_str(), &lv_font_montserrat_14,
+                                 lv_color_hex(is_selected || is_add ? COLOR_ACCENT : COLOR_FG));
+    lv_obj_clear_flag(text_label, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_event_cb(pill, &MacrosPanel::_handle_pill_event, LV_EVENT_ALL, this);
+    pill_ids.push_back(id);
+  };
+
+  add_pill("", "All");
+  for (const auto &group : groups) {
+    add_pill(group, group);
+  }
+  if (show_other) {
+    add_pill(OTHER_ID, "Other");
+  }
+  if ((int)groups.size() < MAX_GROUPS) {
+    add_pill(ADD_ID, "+");
+  }
+}
+
+void MacrosPanel::handle_pill_event(lv_event_t *e) {
+  const lv_event_code_t code = lv_event_get_code(e);
+  if (code != LV_EVENT_SHORT_CLICKED && code != LV_EVENT_LONG_PRESSED) {
+    return;
+  }
+  const uint32_t index = lv_obj_get_index(lv_event_get_current_target(e));
+  if (index >= pill_ids.size()) {
+    return;
+  }
+  const std::string id = pill_ids[index];
+  if (code == LV_EVENT_SHORT_CLICKED) {
+    if (id == ADD_ID) {
+      open_new_group("");
+    } else {
+      selected = id;
+      apply_filter();
+      schedule_rebuild_pills();
+    }
+  } else if (!id.empty() && id != OTHER_ID && id != ADD_ID) {
+    open_group_options(id);
+  }
+}
+
+std::string MacrosPanel::validate_group_name(const std::string &name, const std::string &ignore) const {
+  if (name.empty()) {
+    return "Enter a name";
+  }
+  const std::string lower = to_lower(name);
+  if (lower == "all" || lower == "other") {
+    return "That name is reserved";
+  }
+  for (const auto &group : groups) {
+    if (group != ignore && to_lower(group) == lower) {
+      return "That group already exists";
+    }
+  }
+  if (ignore.empty() && (int)groups.size() >= MAX_GROUPS) {
+    return "Maximum " + std::to_string(MAX_GROUPS) + " groups";
+  }
+  return "";
+}
+
+void MacrosPanel::open_new_group(const std::string &assign_to) {
+  name_dialog("New group", "", "Create", [this, assign_to](const std::string &name) -> std::string {
+    const std::string error = validate_group_name(name, "");
+    if (!error.empty()) {
+      return error;
+    }
+    groups.push_back(name);
+    if (!assign_to.empty()) {
+      assignment[assign_to] = name;
+    }
+    save_groups();
+    apply_filter();
+    schedule_rebuild_pills();
+    return "";
+  });
+}
+
+void MacrosPanel::open_move_menu(const std::string &macro) {
+  if (groups.empty()) {
+    open_new_group(macro);
+    return;
+  }
+  std::vector<std::string> options = groups;
+  if ((int)groups.size() < MAX_GROUPS) {
+    options.push_back("New group");
+  }
+  const std::vector<std::string> current = groups;
+  powerui::choice_dialog("Move to group", options, [this, macro, current](int index) {
+    if (index >= 0 && index < (int)current.size()) {
+      assign_macro(macro, current[index]);
+    } else {
+      open_new_group(macro);
+    }
+  });
+}
+
+void MacrosPanel::assign_macro(const std::string &macro, const std::string &group) {
+  if (group.empty()) {
+    assignment.erase(macro);
+  } else {
+    assignment[macro] = group;
+  }
+  save_groups();
+  apply_filter();
+  schedule_rebuild_pills();
+}
+
+void MacrosPanel::open_group_options(const std::string &group) {
+  powerui::choice_dialog("Group options", {"Rename", "Delete"}, [this, group](int index) {
+    if (index == 0) {
+      open_rename_group(group);
+    } else if (index == 1) {
+      confirm_delete_group(group);
+    }
+  });
+}
+
+void MacrosPanel::open_rename_group(const std::string &group) {
+  name_dialog("Rename group", group, "Save", [this, group](const std::string &name) -> std::string {
+    const std::string error = validate_group_name(name, group);
+    if (!error.empty()) {
+      return error;
+    }
+    std::replace(groups.begin(), groups.end(), group, name);
+    for (auto &entry : assignment) {
+      if (entry.second == group) {
+        entry.second = name;
+      }
+    }
+    if (selected == group) {
+      selected = name;
+    }
+    save_groups();
+    apply_filter();
+    schedule_rebuild_pills();
+    return "";
+  });
+}
+
+void MacrosPanel::confirm_delete_group(const std::string &group) {
+  powerui::confirm_dialog(("Delete " + group + "?").c_str(), "Its macros go back to All.", "Delete",
+                          powerui::ActionKind::Destructive, [this, group]() {
+    groups.erase(std::remove(groups.begin(), groups.end(), group), groups.end());
+    for (auto entry = assignment.begin(); entry != assignment.end();) {
+      entry = entry->second == group ? assignment.erase(entry) : std::next(entry);
+    }
+    if (selected == group) {
+      selected.clear();
+    }
+    save_groups();
+    apply_filter();
+    schedule_rebuild_pills();
+  });
 }
 
 void MacrosPanel::set_macro_hidden(const std::string &name, bool hide) {

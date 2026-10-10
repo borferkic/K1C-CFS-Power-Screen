@@ -40,8 +40,6 @@ std::string package_version() {
 LV_IMG_DECLARE(network_img);
 LV_IMG_DECLARE(refresh_img);
 LV_IMG_DECLARE(ui_cfs_img);
-LV_IMG_DECLARE(ui_cpu_img);
-LV_IMG_DECLARE(ui_logo_white_img);
 LV_IMG_DECLARE(ui_logo_watermark_img);
 LV_IMG_DECLARE(update_img);
 
