@@ -97,16 +97,24 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
   lv_obj_set_style_pad_column(cont, 12, LV_PART_MAIN);
 
   const lv_grid_align_t S = LV_GRID_ALIGN_STRETCH;
-  // row 1: connectivity, CFS, system info and restart
-  lv_obj_set_grid_cell(wifi_btn.get_button(), S, 0, 1, S, 0, 1);
-  lv_obj_set_grid_cell(spoolman_btn.get_button(), S, 1, 1, S, 0, 1);
-  lv_obj_set_grid_cell(sysinfo_btn.get_button(), S, 2, 1, S, 0, 1);
-  lv_obj_set_grid_cell(restart_btn.get_button(), S, 3, 1, S, 0, 1);
+  // row 1: CFS, macros, connectivity and system info
+  lv_obj_set_grid_cell(spoolman_btn.get_button(), S, 0, 1, S, 0, 1);
+  lv_obj_set_grid_cell(macros_btn.get_button(), S, 1, 1, S, 0, 1);
+  lv_obj_set_grid_cell(wifi_btn.get_button(), S, 2, 1, S, 0, 1);
+  lv_obj_set_grid_cell(sysinfo_btn.get_button(), S, 3, 1, S, 0, 1);
 
-  // row 2: macros, the watermark and Power Update as the last tile (the Console lives in Calibrations; this build only
+  // row 2: restart, the watermark and Power Update as the last tile (the Console lives in Calibrations; this build only
   // targets the K1C, so Printers stays hidden)
-  lv_obj_set_grid_cell(macros_btn.get_button(), S, 0, 1, S, 1, 1);
+  lv_obj_set_grid_cell(restart_btn.get_button(), S, 0, 1, S, 1, 1);
   lv_obj_set_grid_cell(powerscreen_update_btn.get_button(), S, 3, 1, S, 1, 1);
+
+  // Restart stands out: soft red surface, red icon and title.
+  restart_btn.set_active(true, lv_color_hex(powerui::COLOR_DESTRUCTIVE));
+  lv_obj_set_style_bg_color(restart_btn.get_button(), lv_color_hex(powerui::COLOR_DESTRUCTIVE_BG),
+                            LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_border_color(restart_btn.get_button(), lv_color_hex(powerui::COLOR_DESTRUCTIVE),
+                                LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_border_opa(restart_btn.get_button(), LV_OPA_40, LV_PART_MAIN | LV_STATE_DEFAULT);
   lv_obj_add_flag(printer_select_btn.get_button(), LV_OBJ_FLAG_HIDDEN);
 
   // Watermark in the free grid cell: the PowerScreen logo at low opacity with the installed version below.
