@@ -181,10 +181,14 @@ void PrinterTunePanel::init(json &j) {
     }
   }
 
-  // TMC Metrics needs the command that loads the tmcstatus module, or the
-  // module to be loaded already.
+  // TMC Metrics needs the powerscreen_module_loader section, which registers the _PS_LOAD_MODULE command
+  // (a Python command: it is neither a macro nor a Klipper object), or the tmcstatus module already loaded.
   tmc_status_available = false;
   nozzle_clean_mode = 0;
+  auto &printer_config = s->get_data("/printer_state/configfile/config"_json_pointer);
+  if (printer_config.is_object() && printer_config.contains("powerscreen_module_loader")) {
+    tmc_status_available = true;
+  }
   auto &objects = s->get_data("/printer_objs/objects"_json_pointer);
   if (objects.is_array()) {
     for (auto &o : objects) {
@@ -193,7 +197,7 @@ void PrinterTunePanel::init(json &j) {
       }
       std::string name = o.template get<std::string>();
       std::transform(name.begin(), name.end(), name.begin(), ::tolower);
-      if (name == "gcode_macro _ps_load_module" || name == "tmcstatus") {
+      if (name == "tmcstatus") {
         tmc_status_available = true;
       }
       if (name == "box") {
