@@ -5,7 +5,6 @@
 
 namespace {
 constexpr uint32_t ICON_COLOR = powerui::COLOR_FG;
-constexpr uint32_t DISABLED_RED = powerui::COLOR_DESTRUCTIVE;
 }
 
 SquareButton::SquareButton(lv_obj_t *parent,
@@ -149,7 +148,7 @@ void SquareButton::disable() {
   lv_obj_add_state(button, LV_STATE_DISABLED);
   lv_obj_add_state(icon, LV_STATE_DISABLED);
   lv_obj_add_state(label, LV_STATE_DISABLED);
-  lv_obj_set_style_img_recolor(icon, lv_color_hex(DISABLED_RED),
+  lv_obj_set_style_img_recolor(icon, lv_color_hex(powerui::COLOR_DESTRUCTIVE),
                                LV_PART_MAIN | LV_STATE_DISABLED);
   lv_obj_set_style_img_recolor_opa(icon, LV_OPA_COVER,
                                    LV_PART_MAIN | LV_STATE_DISABLED);

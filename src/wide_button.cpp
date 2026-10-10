@@ -2,7 +2,6 @@
 #include "powerui.h"
 
 namespace {
-constexpr uint32_t CREALITY_GREEN = powerui::COLOR_PRIMARY;
 }
 
 WideButton::WideButton(lv_obj_t *parent,
@@ -12,7 +11,7 @@ WideButton::WideButton(lv_obj_t *parent,
                        void *user_data)
   : button(lv_btn_create(parent))
 {
-  const lv_color_t green = lv_color_hex(CREALITY_GREEN);
+  const lv_color_t green = lv_color_hex(powerui::COLOR_PRIMARY);
 
   lv_obj_set_style_bg_color(button, green, LV_PART_MAIN | LV_STATE_DEFAULT);
   lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);

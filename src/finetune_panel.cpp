@@ -19,8 +19,6 @@ LV_IMG_DECLARE(speed_down_img);
 LV_IMG_DECLARE(flow_up_img);
 LV_IMG_DECLARE(flow_down_img);
 
-constexpr uint32_t CREALITY_GREEN = powerui::COLOR_ACCENT;
-constexpr uint32_t CREALITY_GREEN_PRESSED = powerui::COLOR_ACCENT_PRESSED;
 
 FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   : NotifyConsumer(l)

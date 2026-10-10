@@ -219,7 +219,7 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_set_style_text_color(graph_switch_label, lv_color_hex(COLOR_FG), 0);
   style_switch(graph_switch);
   lv_obj_clear_state(graph_switch, LV_STATE_CHECKED);
-  lv_obj_t *note = label(switch_cont, "Needs an accelerometer. Save restarts Klipper", &lv_font_montserrat_10, lv_color_hex(COLOR_MUTED));
+  lv_obj_t *note = label(switch_cont, "Needs an accelerometer. Save restarts Klipper", &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
   lv_label_set_long_mode(note, LV_LABEL_LONG_WRAP);
   lv_obj_set_width(note, px(190));
 

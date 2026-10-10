@@ -36,7 +36,6 @@ LV_IMG_DECLARE(print);
 LV_IMG_DECLARE(ui_icon_play);
 LV_IMG_DECLARE(back);
 
-constexpr uint32_t CREALITY_GREEN = powerui::COLOR_ACCENT;
 
 LV_IMG_DECLARE(sd_img);
 LV_IMG_DECLARE(ui_icon_folder);
@@ -570,7 +569,7 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_set_style_bg_opa(card, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_CHECKED);
     lv_obj_set_style_border_width(card, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_opa(card, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_color(card, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_border_color(card, lv_color_hex(powerui::COLOR_ACCENT), LV_PART_MAIN | LV_STATE_CHECKED);
     lv_obj_set_style_border_opa(card, LV_OPA_50, LV_PART_MAIN | LV_STATE_CHECKED);
     lv_obj_set_style_radius(card, powerui::px(10), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_all(card, powerui::px(8), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -597,7 +596,7 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_set_size(thumbnail, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
     lv_obj_set_style_text_font(thumbnail, &lv_font_montserrat_16, LV_PART_MAIN);
     lv_obj_set_style_img_recolor(thumbnail,
-                                 directory ? lv_color_hex(CREALITY_GREEN) : lv_color_hex(powerui::COLOR_WHITE),
+                                 directory ? lv_color_hex(powerui::COLOR_ACCENT) : lv_color_hex(powerui::COLOR_WHITE),
                                  LV_PART_MAIN);
     lv_obj_set_style_img_recolor_opa(thumbnail, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_center(thumbnail);

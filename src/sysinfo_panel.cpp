@@ -70,7 +70,6 @@ std::pair<std::string, std::string> split_version(const std::string &version) {
 }
 
 constexpr uint32_t CARD_BORDER = powerui::COLOR_ACCENT;
-constexpr uint32_t CREALITY_GREEN = powerui::COLOR_ACCENT;
 constexpr uint32_t BUTTON_GREY = powerui::COLOR_SECONDARY;
 constexpr uint32_t SCREEN_BACKGROUND = powerui::COLOR_BG;
 
@@ -1030,7 +1029,7 @@ void SysInfoPanel::poll_update() {
     case 1:
       update_available = true;
       lv_label_set_text(update_status, "NEW UPDATE AVAILABLE!");
-      lv_obj_set_style_text_color(update_status, lv_color_hex(CREALITY_GREEN), LV_PART_MAIN);
+      lv_obj_set_style_text_color(update_status, lv_color_hex(powerui::COLOR_ACCENT), LV_PART_MAIN);
       break;
     case 2:
       update_available = false;

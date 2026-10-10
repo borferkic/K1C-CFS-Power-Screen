@@ -407,7 +407,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
     lv_obj_align(status_label, LV_ALIGN_TOP_LEFT, 0, px(6));
     lv_obj_set_width(progress_label, px(90));
     lv_obj_set_style_text_align(progress_label, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN);
-    lv_obj_set_style_text_font(progress_label, &lv_font_montserrat_28, LV_PART_MAIN);
+    lv_obj_set_style_text_font(progress_label, &lv_font_montserrat_24, LV_PART_MAIN);
     lv_obj_set_height(progress_label, LV_SIZE_CONTENT);
     lv_obj_align(progress_label, LV_ALIGN_TOP_RIGHT, 0, 0);
     lv_obj_set_size(progress_bar, px(248), px(10));
@@ -460,7 +460,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
           lv_obj_align(cell_value, LV_ALIGN_TOP_LEFT, px(96), px(1));
         } else {
           lv_obj_set_width(cell_value, px(column - 6));
-          lv_obj_set_style_text_font(cell_value, &lv_font_montserrat_28, LV_PART_MAIN);
+          lv_obj_set_style_text_font(cell_value, &lv_font_montserrat_24, LV_PART_MAIN);
           lv_obj_align(cell_value, LV_ALIGN_TOP_LEFT, 0, px(26));
         }
       }
