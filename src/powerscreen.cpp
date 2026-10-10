@@ -1,16 +1,11 @@
 #include "powerscreen.h"
 
 #include "config.h"
-#ifndef OS_ANDROID
-  #include "lv_drivers/display/fbdev.h"
-  #include "lv_drivers/indev/evdev.h"
-  
-  #include "spdlog/sinks/rotating_file_sink.h"
-  #include "spdlog/sinks/stdout_sinks.h"
+#include "lv_drivers/display/fbdev.h"
+#include "lv_drivers/indev/evdev.h"
 
-#else
-  #include "spdlog/sinks/android_sink.h"
-#endif
+#include "spdlog/sinks/rotating_file_sink.h"
+#include "spdlog/sinks/stdout_sinks.h"
 
 #include "printer_select_panel.h"
 #include "spdlog/spdlog.h"
@@ -24,9 +19,7 @@ lv_style_t PowerScreen::style_imgbtn_pressed;
 lv_style_t PowerScreen::style_imgbtn_disabled;
 lv_theme_t PowerScreen::th_new;
 
-#ifndef OS_ANDROID
 lv_obj_t *PowerScreen::screen_saver = NULL;
-#endif
 
 KWebSocketClient PowerScreen::ws(NULL);
 
@@ -63,16 +56,10 @@ PowerScreen *PowerScreen::init(std::function<void(lv_color_t, lv_color_t)> hal_i
   auto primary_color = lv_color_hex(powerui::COLOR_PRIMARY);
   auto secondary_color = lv_color_hex(powerui::COLOR_LVGL_SECONDARY);
 
-#ifndef OS_ANDROID
   auto console_sink = std::make_shared<spdlog::sinks::stdout_sink_mt>();
   auto file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
       conf->get<std::string>("/log_path"), 1048576 * 10, 3);
   spdlog::sinks_init_list log_sinks{console_sink, file_sink};
-
-#else
-  auto android_sink = std::make_shared<spdlog::sinks::android_sink_mt>();
-  spdlog::sinks_init_list log_sinks{android_sink};
-#endif  // OS_ANDROID
 
   auto klogger = std::make_shared<spdlog::logger>("powerscreen", log_sinks);
   spdlog::register_logger(klogger);
@@ -89,11 +76,11 @@ PowerScreen *PowerScreen::init(std::function<void(lv_color_t, lv_color_t)> hal_i
   /*LittlevGL init*/
   lv_init();
 
-#if !defined(SIMULATOR) && !defined(OS_ANDROID)
+#if !defined(SIMULATOR)
   /*Linux frame buffer device init*/
   fbdev_init();
   fbdev_unblank();
-#endif  // OS_ANDROID
+#endif
 
   hal_init(primary_color, secondary_color);
   lv_png_init();
@@ -141,7 +128,6 @@ PowerScreen *PowerScreen::init(std::function<void(lv_color_t, lv_color_t)> hal_i
     gs->connect_ws(ws_url);
   }
 
-#ifndef OS_ANDROID
   screen_saver = lv_obj_create(lv_scr_act());
 
   // The screen reserves a sidebar and title bar inset; the screen saver must cover all of it.
@@ -175,14 +161,13 @@ PowerScreen *PowerScreen::init(std::function<void(lv_color_t, lv_color_t)> hal_i
       }
     }
   }
-#endif // OS_ANDROID
 
   return gs;
 }
 
 void PowerScreen::loop() {
   /*Handle LitlevGL tasks (tickless mode)*/
-#if !defined(SIMULATOR) && !defined(OS_ANDROID)
+#if !defined(SIMULATOR)
   std::atomic_bool is_sleeping(false);
   Config *conf = Config::get_instance();
   int32_t display_sleep = conf->get<int32_t>("/display_sleep_sec") * 1000;
@@ -193,7 +178,7 @@ void PowerScreen::loop() {
     lv_timer_handler();
     lv_lock.unlock();
 
-#if !defined(SIMULATOR) && !defined(OS_ANDROID)
+#if !defined(SIMULATOR)
     if (display_sleep != -1) {
       if (lv_disp_get_inactive_time(NULL) > display_sleep) {
         if (!is_sleeping.load()) {
@@ -212,7 +197,7 @@ void PowerScreen::loop() {
         }
       }
     }
-#endif  // SIMULATOR/OS_ANDROID
+#endif  // SIMULATOR
 
     usleep(5000);
   }

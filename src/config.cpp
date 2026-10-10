@@ -1,5 +1,4 @@
 #include "config.h"
-#include "platform.h"
 
 #include <sys/stat.h>
 #include <fstream>
@@ -80,7 +79,6 @@ void Config::init(std::string config_path, const std::string thumbdir) {
         {"wpa_supplicant", "/var/run/wpa_supplicant"},
 #endif
         {"display_sleep_sec", -1}
-#ifndef OS_ANDROID
         , {"default_printer", "k1"},
         {"printers", {{"k1", {
                                  {"moonraker_api_key", false},
@@ -91,7 +89,6 @@ void Config::init(std::string config_path, const std::string thumbdir) {
                                  {"default_macros", default_macros_conf},
                              }}}
         }
-#endif
     };
   }
 

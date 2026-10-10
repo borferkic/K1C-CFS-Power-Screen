@@ -4,7 +4,6 @@
 #include "config.h"
 #include "state.h"
 #include "spdlog/spdlog.h"
-#include "platform.h"
 #include "wpa_ctrl.h"
 
 #include <cmath>
@@ -148,7 +147,6 @@ namespace KUtils {
 
   std::vector<std::string> get_interfaces() {
     std::vector<std::string> ifaces;
-#ifndef OS_ANDROID
     struct ifaddrs *addrs;
     getifaddrs(&addrs);
     for (struct ifaddrs *addr = addrs; addr != nullptr; addr = addr->ifa_next) {
@@ -158,7 +156,6 @@ namespace KUtils {
     }
 
     freeifaddrs(addrs);
-#endif // OS_ANDROID
     return ifaces;
   }
 
