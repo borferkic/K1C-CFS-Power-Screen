@@ -417,7 +417,7 @@ void FilesExtraView::rebuild_detail() {
     add_info_row(236, "Started", format_time(h.start));
     add_info_row(270, "Duration", format_duration(h.duration));
     add_info_row(304, "Filament", h.weight_g > 0 ? fmt::format("{:.0f} g", h.weight_g) : fmt::format("{:.1f} m", h.filament_mm / 1000.0));
-    primary_btn = action_button(detail, &print, "Print again", ActionKind::Primary, 16, 348, 260, 52, &FilesExtraView::_action_clicked, this);
+    primary_btn = action_button(detail, NULL, "Print again", ActionKind::Primary, 16, 348, 260, 52, &FilesExtraView::_action_clicked, this);
     if (!h.exists || printing()) {
       lv_obj_add_state(primary_btn, LV_STATE_DISABLED);
     }

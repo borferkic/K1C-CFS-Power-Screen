@@ -59,11 +59,9 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
   , sysinfo_panel()
   , spoolman_panel(sm)
   , wifi_btn(cont, &network_img, "Wi-Fi", &SettingPanel::_handle_callback, this)
-  , restart_klipper_btn(cont, &refresh_img, "Restart Klipper", &SettingPanel::_handle_callback, this)
-  , restart_firmware_btn(cont, &ui_cpu_img, "Restart Firmware", &SettingPanel::_handle_callback, this)
+  , restart_btn(cont, &refresh_img, "Restart", &SettingPanel::_handle_callback, this)
   , sysinfo_btn(cont, &info_img, "System", &SettingPanel::_handle_callback, this)
   , spoolman_btn(cont, &ui_cfs_img, "CFS", &SettingPanel::_handle_callback, this)
-  , powerscreen_restart_btn(cont, &ui_logo_white_img, "Restart Screen", &SettingPanel::_handle_callback, this)
   , powerscreen_update_btn(cont, &update_img, "Power Update", &SettingPanel::_handle_callback, this)
   , printer_select_btn(cont, &print, "Printers", &SettingPanel::_handle_callback, this)
   , update_lock_timer(NULL)
@@ -75,11 +73,9 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
   sysinfo_panel.set_websocket(&ws);
   sysinfo_panel.set_wifi_callback([this]() { wifi_panel.foreground(); });
   wifi_btn.set_subtitle("Network");
-  restart_klipper_btn.set_subtitle("Reload printer service");
-  restart_firmware_btn.set_subtitle("Firmware restart");
+  restart_btn.set_subtitle("Screen, Klipper, Firmware");
   sysinfo_btn.set_subtitle("Preferences and info");
   spoolman_btn.set_subtitle("Filament system");
-  powerscreen_restart_btn.set_subtitle("Reload this interface");
   powerscreen_update_btn.set_subtitle("PowerScreen and Script");
 
   spoolman_btn.disable();
@@ -106,10 +102,8 @@ SettingPanel::SettingPanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent,
   lv_obj_set_grid_cell(powerscreen_update_btn.get_button(), S, 2, 1, S, 0, 1);
   lv_obj_set_grid_cell(sysinfo_btn.get_button(), S, 3, 1, S, 0, 1);
 
-  // row 2: restarts (the Console now lives in Calibrations; this build only targets the K1C, so Printers stays hidden)
-  lv_obj_set_grid_cell(powerscreen_restart_btn.get_button(), S, 0, 1, S, 1, 1);
-  lv_obj_set_grid_cell(restart_klipper_btn.get_button(), S, 1, 1, S, 1, 1);
-  lv_obj_set_grid_cell(restart_firmware_btn.get_button(), S, 2, 1, S, 1, 1);
+  // row 2: restart (the Console now lives in Calibrations; this build only targets the K1C, so Printers stays hidden)
+  lv_obj_set_grid_cell(restart_btn.get_button(), S, 0, 1, S, 1, 1);
   lv_obj_add_flag(printer_select_btn.get_button(), LV_OBJ_FLAG_HIDDEN);
 
   // Watermark in the free grid cell: the PowerScreen logo at low opacity with the installed version below.
@@ -156,28 +150,15 @@ void SettingPanel::handle_callback(lv_event_t *event) {
     } else if (btn == sysinfo_btn.get_button()) {
       spdlog::trace("setting system info pressed");
       sysinfo_panel.foreground();
-    } else if (btn == restart_klipper_btn.get_button()) {
-      spdlog::trace("setting restart klipper pressed");
-      show_confirm("Restart Klipper?", "printer.restart");
-    } else if (btn == restart_firmware_btn.get_button()) {
-      spdlog::trace("setting restart firmware pressed");
-      show_confirm("Restart Firmware?", "printer.firmware_restart");
+    } else if (btn == restart_btn.get_button()) {
+      spdlog::trace("setting restart pressed");
+      show_restart_menu();
     } else if (btn == spoolman_btn.get_button()) {
       spdlog::trace("setting CFS pressed");
       if (cfs_available && open_cfs) {
         open_cfs();
       } else {
         spoolman_panel.foreground();
-      }
-    } else if (btn == powerscreen_restart_btn.get_button()) {
-      spdlog::trace("restart powerscreen pressed");
-      Config *conf = Config::get_instance();
-      auto init_script = conf->get<std::string>("/powerscreen_init_script");
-      const fs::path script(init_script);
-      if (fs::exists(script) || init_script.rfind("service powerscreen", 0) == 0) {
-        sp::call({init_script, "restart"});
-      } else {
-        spdlog::warn("Failed to restart PowerScreen. Did not find restart script.");
       }
     } else if (btn == powerscreen_update_btn.get_button()) {
       spdlog::trace("update powerscreen pressed");
@@ -186,6 +167,30 @@ void SettingPanel::handle_callback(lv_event_t *event) {
       spdlog::trace("setting printers pressed");
       printer_select_panel.foreground();
     }
+  }
+}
+
+void SettingPanel::show_restart_menu() {
+  powerui::choice_dialog("Restart", {"PowerScreen", "Klipper", "Firmware"}, [this](int index) {
+    if (index == 0) {
+      restart_powerscreen();
+    } else if (index == 1) {
+      show_confirm("Restart Klipper?", "printer.restart");
+    } else if (index == 2) {
+      show_confirm("Restart Firmware?", "printer.firmware_restart");
+    }
+  });
+}
+
+void SettingPanel::restart_powerscreen() {
+  spdlog::trace("restart powerscreen pressed");
+  Config *conf = Config::get_instance();
+  auto init_script = conf->get<std::string>("/powerscreen_init_script");
+  const fs::path script(init_script);
+  if (fs::exists(script) || init_script.rfind("service powerscreen", 0) == 0) {
+    sp::call({init_script, "restart"});
+  } else {
+    spdlog::warn("Failed to restart PowerScreen. Did not find restart script.");
   }
 }
 

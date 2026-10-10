@@ -135,7 +135,7 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_set_style_pad_column(file_table_btns, powerui::px(8), 0);
   lv_obj_set_style_bg_opa(file_table_btns, LV_OPA_TRANSP, 0);
   lv_obj_set_style_border_width(file_table_btns, 0, 0);
-  lv_obj_set_height(file_table_btns, powerui::px(40));
+  lv_obj_set_height(file_table_btns, powerui::px(48));
 
   lv_obj_t *sort_buttons[] = {refresh_btn, modified_sort_btn, az_sort_btn};
   for (lv_obj_t *sort_button : sort_buttons) {
@@ -150,6 +150,14 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
     lv_obj_set_style_border_width(sort_button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(sort_button, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
   }
+
+  // Refresh stands out: larger, with a green outline and icon.
+  lv_obj_set_size(refresh_btn, powerui::px(48), powerui::px(40));
+  lv_obj_set_style_bg_color(refresh_btn, lv_color_hex(powerui::COLOR_CARD), LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_border_width(refresh_btn, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_border_color(refresh_btn, lv_color_hex(powerui::COLOR_ACCENT), LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_text_color(refresh_btn, lv_color_hex(powerui::COLOR_ACCENT), LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_text_font(refresh_btn, &lv_font_montserrat_20, LV_PART_MAIN | LV_STATE_DEFAULT);
 
   // Toolbar like the reference: [Modified][A-Z]   count   [refresh].
   count_label = lv_label_create(file_table_btns);

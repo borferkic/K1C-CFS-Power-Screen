@@ -5,6 +5,7 @@
 
 #include <functional>
 #include <string>
+#include <vector>
 
 // PowerUI theme helpers: shared colors and small widget builders used by the new Home screen.
 // All sizes are given in design pixels for an 800x480 display and scaled by px().
@@ -117,6 +118,10 @@ lv_obj_t *action_button(lv_obj_t *parent, const lv_img_dsc_t *icon_src, const ch
 // `on_confirm` runs when the confirm button is touched; both buttons close the dialog.
 void confirm_dialog(const char *title, const char *message, const char *confirm_text, ActionKind kind,
                     std::function<void()> on_confirm, const char *dismiss_text = "Cancel");
+
+// Narrow modal list (dimmed background): title, an X button and one row per option. `on_pick` receives the index of the
+// touched row. Touching the X or anywhere outside the card closes the dialog without calling `on_pick`.
+void choice_dialog(const char *title, const std::vector<std::string> &options, std::function<void(int)> on_pick);
 
 // Background of an overlay panel's root container: page color, no padding or border, not scrollable.
 void style_overlay_root(lv_obj_t *cont);

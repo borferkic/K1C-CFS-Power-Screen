@@ -52,14 +52,15 @@ class SettingPanel {
   void refresh_cfs_button();
   PrinterSelectPanel printer_select_panel;
   SquareButton wifi_btn;
-  SquareButton restart_klipper_btn;
-  SquareButton restart_firmware_btn;
+  SquareButton restart_btn;
   SquareButton sysinfo_btn;
   SquareButton spoolman_btn;
-  SquareButton powerscreen_restart_btn;
   SquareButton powerscreen_update_btn;
   SquareButton printer_select_btn;
 
+  // The Restart tile opens a list: PowerScreen, Klipper or the firmware.
+  void show_restart_menu();
+  void restart_powerscreen();
   // Confirmation before restarting Klipper or the firmware.
 
   // Power Update is disabled while a print is running or paused (like CFS when it is offline).

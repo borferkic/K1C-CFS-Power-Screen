@@ -425,6 +425,67 @@ void confirm_dialog(const char *title, const char *message, const char *confirm_
   action_button(dlg, NULL, confirm_text, kind, w - 24 - 196, h - 74, 196, 50, &confirm_clicked, overlay);
 }
 
+namespace {
+struct ChoiceData {
+  std::function<void(int)> on_pick;
+};
+
+void choice_overlay_clicked(lv_event_t *e) {
+  lv_obj_t *overlay = lv_event_get_current_target(e);
+  // Only a touch that lands on the dimmed background (not on the card) closes the dialog.
+  if (lv_event_get_target(e) == overlay) {
+    lv_obj_del_async(overlay);
+  }
+}
+
+void choice_clicked(lv_event_t *e) {
+  lv_obj_t *overlay = (lv_obj_t *)e->user_data;
+  lv_obj_t *target = lv_event_get_target(e);
+  // Card children: 0 title, 1 X button, 2.. option rows.
+  const int index = (int)lv_obj_get_index(target) - 2;
+  ChoiceData *data = (ChoiceData *)lv_obj_get_user_data(overlay);
+  std::function<void(int)> fn = index >= 0 && data != NULL ? data->on_pick : std::function<void(int)>();
+  lv_obj_del_async(overlay);
+  if (fn) {
+    fn(index);
+  }
+}
+
+void choice_deleted(lv_event_t *e) {
+  delete (ChoiceData *)lv_obj_get_user_data(lv_event_get_target(e));
+}
+}  // namespace
+
+void choice_dialog(const char *title, const std::vector<std::string> &options, std::function<void(int)> on_pick) {
+  lv_obj_t *overlay = lv_obj_create(lv_layer_top());
+  lv_obj_remove_style_all(overlay);
+  lv_obj_set_size(overlay, LV_PCT(100), LV_PCT(100));
+  lv_obj_set_style_bg_color(overlay, lv_color_hex(COLOR_BLACK), 0);
+  lv_obj_set_style_bg_opa(overlay, LV_OPA_60, 0);
+  lv_obj_add_flag(overlay, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_set_user_data(overlay, new ChoiceData{std::move(on_pick)});
+  lv_obj_add_event_cb(overlay, &choice_deleted, LV_EVENT_DELETE, NULL);
+  lv_obj_add_event_cb(overlay, &choice_overlay_clicked, LV_EVENT_CLICKED, NULL);
+
+  const int n = (int)options.size();
+  const int w = 280, pad = 14, head = 32, row_h = 42, gap = 8;
+  const int h = pad + head + 12 + n * row_h + (n - 1) * gap + pad;
+  lv_obj_t *dlg = card(overlay, 0, 0, w, h);
+  lv_obj_center(dlg);
+  lv_obj_set_style_border_opa(dlg, LV_OPA_30, 0);
+
+  lv_obj_t *t = label(dlg, title, &lv_font_montserrat_18, lv_color_hex(COLOR_FG));
+  lv_obj_set_pos(t, px(pad + 2), px(pad + 5));
+  // Child order matters: choice_clicked reads the option index from the position inside the card.
+  action_button(dlg, NULL, LV_SYMBOL_CLOSE, ActionKind::Outline, w - pad - head, pad, head, head, &choice_clicked, overlay);
+  for (int i = 0; i < n; i++) {
+    lv_obj_t *row = action_button(dlg, NULL, options[i].c_str(), ActionKind::Outline, pad,
+                                  pad + head + 12 + i * (row_h + gap), w - 2 * pad, row_h, &choice_clicked, overlay);
+    lv_obj_set_style_bg_color(row, lv_color_hex(COLOR_SECONDARY), 0);
+    lv_obj_set_style_bg_color(row, lv_color_hex(COLOR_PRESSED), LV_STATE_PRESSED);
+  }
+}
+
 void style_overlay_root(lv_obj_t *cont) {
   lv_obj_set_style_pad_all(cont, 0, 0);
   lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);

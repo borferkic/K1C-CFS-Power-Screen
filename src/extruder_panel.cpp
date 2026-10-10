@@ -2,6 +2,7 @@
 #include "powerui.h"
 #include "state.h"
 #include "config.h"
+#include "utils.h"
 #include "spdlog/spdlog.h"
 
 #include <limits>
@@ -327,14 +328,24 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
     }
 
     if (btn == load_btn.get_container()) {
+      std::string load_script = load_filament_macro;
       if (load_filament_macro == "_PS_LOAD_MATERIAL") {
         const char *temp = lv_btnmatrix_get_btn_text(temp_selector.get_selector(),
                                                      temp_selector.get_selected_idx());
         const char *len = lv_btnmatrix_get_btn_text(length_selector.get_selector(),
                                                     length_selector.get_selected_idx());
-        ws.gcode_script(fmt::format("{} EXTRUDER_TEMP={} EXTRUDE_LEN={}", load_filament_macro, temp, len));
+        load_script = fmt::format("{} EXTRUDER_TEMP={} EXTRUDE_LEN={}", load_filament_macro, temp, len);
+      }
+
+      if (KUtils::is_homed()) {
+        ws.gcode_script(load_script);
       } else {
-        ws.gcode_script(load_filament_macro);
+        // The load macro aborts when the printer is not homed; offer to home first.
+        powerui::confirm_dialog("Homing required",
+                                "The printer is not homed. Home all axes now and then load the filament?",
+                                "Home & Load", powerui::ActionKind::Primary, [this, load_script]() {
+          ws.gcode_script("G28\n" + load_script);
+        });
       }
     }
 
