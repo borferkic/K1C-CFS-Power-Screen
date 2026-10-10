@@ -73,9 +73,6 @@ jobs:
     - name: make powerscreen
       run: make -j
 
-    - name: make kd_graphic_mode
-      run: make kd_graphic_mode
-
     - name: package zbolt
       run: |
         chmod +x ./release.sh

@@ -9,7 +9,6 @@ PROJECT_OWNER="borferkic"
 PROJECT_NAME="K1C-CFS-POWER-SCREEN"
 
 "$CROSS_COMPILE"strip ./build/bin/powerscreen
-"$CROSS_COMPILE"strip ./build/bin/kd_graphic_mode
 cp ./build/bin/powerscreen $RELEASES_DIR/powerscreen
 cp -r ./k1/k1_mods $RELEASES_DIR
 cp -r ./k1/scripts $RELEASES_DIR

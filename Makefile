@@ -34,7 +34,7 @@ prefix 			?= /usr
 bindir 			?= $(prefix)/bin
 
 #Collect the files to compile
-MAINSRC = 		$(filter-out $(LVGL_DIR)/src/kd_graphic_mode.cpp, $(wildcard $(LVGL_DIR)/src/*.cpp))
+MAINSRC = 		$(wildcard $(LVGL_DIR)/src/*.cpp)
 
 include $(LVGL_DIR)/lvgl/lvgl.mk
 include $(LVGL_DIR)/lv_drivers/lv_drivers.mk
@@ -107,14 +107,6 @@ $(BUILD_OBJ_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
 	@$(COMPILE_CC)  $(CFLAGS) -c $< -o $@
 	@echo "CC $<"
-
-$(BUILD_OBJ_DIR)/kd_graphic_mode.o: src/kd_graphic_mode.cpp
-	@mkdir -p $(dir $@)
-	@$(COMPILE_CC)  $(CFLAGS) -c $< -o $@
-	@echo "CC $<"
-
-kd_graphic_mode: $(BUILD_OBJ_DIR)/kd_graphic_mode.o
-	$(CC) -o $(BUILD_BIN_DIR)/kd_graphic_mode $(BUILD_OBJ_DIR)/kd_graphic_mode.o
 
 default: $(TARGET)
 	@mkdir -p $(dir $(BUILD_BIN_DIR)/)
