@@ -1,105 +1,43 @@
 #include "macro_item.h"
 #include "powerui.h"
-#include "spdlog/spdlog.h"
 
-MacroItem::MacroItem(KWebSocketClient &c,
-		     lv_obj_t *parent,
-		     std::string macro_name,
-		     const std::map<std::string, std::string> &m_params,
-		     lv_obj_t *keyboard,
-		     // lv_color_t bg_color,
-		     bool hide)
-  : ws(c)
-  , cont(lv_obj_create(parent))
-  , top_cont(lv_obj_create(cont))
-  , macro_label(lv_label_create(top_cont))
-  , hide_show_cont(lv_obj_create(top_cont))
-  , hide_show(lv_label_create(hide_show_cont))
-  , kb(keyboard)
+MacroItem::MacroItem(lv_obj_t *parent,
+		     const std::string &name,
+		     const std::map<std::string, std::string> &params,
+		     lv_coord_t tile_width,
+		     bool hide,
+		     Callback on_tap,
+		     Callback on_long_press)
+  : cont(powerui::card(parent, 0, 0, 10, 10))
+  , macro_name(name)
+  , macro_params(params)
   , hidden(hide)
-  , always_visible(false)
+  , tap_cb(std::move(on_tap))
+  , long_press_cb(std::move(on_long_press))
 {
-  if (hidden) {
-    lv_obj_add_flag(cont, LV_OBJ_FLAG_HIDDEN);
-  }
+  using namespace powerui;
 
-  lv_obj_set_size(cont, LV_PCT(100), LV_SIZE_CONTENT);
-  // lv_obj_set_style_bg_color(cont, bg_color, 0);  
-  // lv_obj_set_style_bg_opa(cont, LV_OPA_COVER, 0);
+  lv_obj_set_size(cont, tile_width, px(84));
+  lv_obj_add_flag(cont, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_set_style_bg_color(cont, lv_color_hex(COLOR_SECONDARY), LV_STATE_PRESSED);
 
-  lv_obj_set_size(top_cont, LV_PCT(100), LV_SIZE_CONTENT);
-  // lv_obj_set_style_bg_color(top_cont, bg_color, 0);  
-  // lv_obj_set_style_bg_opa(top_cont, LV_OPA_COVER, 0);
-  lv_obj_set_style_pad_all(top_cont, 0, 0);
-  
-  lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_ROW_WRAP);
-  lv_obj_set_flex_align(cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_t *title = label(cont, macro_name.c_str(), &lv_font_montserrat_14, lv_color_hex(COLOR_FG));
+  lv_label_set_long_mode(title, LV_LABEL_LONG_DOT);
+  lv_obj_set_size(title, tile_width - px(24), px(36));
+  lv_obj_set_pos(title, px(12), px(10));
 
-  lv_obj_set_style_border_side(cont, LV_BORDER_SIDE_TOP, LV_PART_MAIN);  
+  const std::string info = macro_params.empty()
+    ? "No parameters"
+    : std::to_string(macro_params.size()) + (macro_params.size() == 1 ? " parameter" : " parameters");
+  lv_obj_t *info_label = label(cont, info.c_str(), &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
+  lv_obj_align(info_label, LV_ALIGN_BOTTOM_LEFT, px(12), -px(10));
 
-  lv_obj_set_style_border_width(cont, 2, 0);
-  lv_obj_clear_flag(hide_show_cont, LV_OBJ_FLAG_SCROLLABLE);
-  
-  lv_obj_center(hide_show);
+  lv_obj_t *mark = label(cont, macro_params.empty() ? LV_SYMBOL_PLAY : LV_SYMBOL_SETTINGS, &lv_font_montserrat_16,
+			 lv_color_hex(COLOR_ACCENT));
+  lv_obj_align(mark, LV_ALIGN_BOTTOM_RIGHT, -px(12), -px(8));
 
-  if (hidden) {
-    lv_label_set_text(hide_show, "    " LV_SYMBOL_EYE_OPEN "    ");
-    lv_obj_set_style_text_color(hide_show, lv_color_hex(powerui::COLOR_MAT_GREEN), LV_PART_MAIN);
-  } else {
-    lv_label_set_text(hide_show, "    " LV_SYMBOL_EYE_CLOSE "    ");
-    lv_obj_set_style_text_color(hide_show, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
-  }
-
-  lv_obj_align(hide_show_cont, LV_ALIGN_LEFT_MID, 0, 0);
-  lv_obj_set_size(hide_show_cont, 60, LV_PCT(100));
-  lv_obj_add_flag(hide_show_cont, LV_OBJ_FLAG_CLICKABLE);
-  lv_obj_add_event_cb(hide_show_cont, &MacroItem::_handle_hide_show, LV_EVENT_CLICKED, this);
-
-  lv_label_set_text(macro_label, macro_name.c_str());
-  lv_obj_align(macro_label, LV_ALIGN_LEFT_MID, 65, 0);
-
-  lv_obj_t *run_btn = lv_btn_create(top_cont);
-  lv_obj_align(run_btn, LV_ALIGN_RIGHT_MID, 0, 0);
-
-  lv_obj_set_style_text_font(run_btn, &lv_font_montserrat_16, LV_STATE_DEFAULT);
-  lv_obj_set_width(run_btn, 80);
-  lv_obj_t *run_btn_label = lv_label_create(run_btn);
-  lv_label_set_text(run_btn_label, LV_SYMBOL_PLAY);
-  lv_obj_center(run_btn_label);
-  lv_obj_add_event_cb(run_btn , &MacroItem::_handle_send_macro, LV_EVENT_CLICKED, this);
-
-
-  if (!m_params.empty()) {
-    lv_obj_t *params_cont = lv_obj_create(cont);
-    // lv_obj_set_style_bg_color(params_cont, bg_color, 0);  
-    // lv_obj_set_style_bg_opa(params_cont, LV_OPA_COVER, 0);
-    
-    lv_obj_set_size(params_cont, LV_PCT(70), LV_SIZE_CONTENT);
-
-    lv_obj_set_flex_flow(params_cont, LV_FLEX_FLOW_ROW_WRAP);
-    lv_obj_set_flex_align(params_cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START);
-    lv_obj_set_style_pad_all(params_cont, 0, 0);
-
-    lv_obj_t *param_name;
-    lv_obj_t *param_value;
-
-    for (auto const & [k, v] : m_params) {
-      param_name = lv_label_create(params_cont);
-      lv_label_set_text(param_name, k.c_str());
-
-      param_value = lv_textarea_create(params_cont);
-      lv_textarea_set_one_line(param_value, true);
-      lv_textarea_set_text(param_value, v.c_str());
-      lv_obj_clear_flag(param_value, LV_OBJ_FLAG_SCROLLABLE);
-      lv_obj_add_event_cb(param_value, &MacroItem::_handle_kb_input, LV_EVENT_ALL, this);
-
-      lv_obj_set_width(param_name, LV_PCT(30));
-      lv_obj_set_width(param_value, LV_PCT(45));
-
-      params.push_back({param_name, param_value});
-    }
-
-  }
+  lv_obj_add_event_cb(cont, &MacroItem::_handle_event, LV_EVENT_ALL, this);
+  set_hidden(hidden);
 }
 
 MacroItem::~MacroItem() {
@@ -109,93 +47,24 @@ MacroItem::~MacroItem() {
   }
 }
 
-void MacroItem::handle_kb_input(lv_event_t *e)
-{
+void MacroItem::handle_event(lv_event_t *e) {
   const lv_event_code_t code = lv_event_get_code(e);
-  lv_obj_t *obj = lv_event_get_target(e);
-
-  if(code == LV_EVENT_FOCUSED) {
-    spdlog::trace("macro item focused");    
-    lv_keyboard_set_textarea(kb, obj);
-    lv_obj_clear_flag(kb, LV_OBJ_FLAG_HIDDEN);
-  }
-  
-  if(code == LV_EVENT_DEFOCUSED) {
-    spdlog::trace("macro item defocused");
-    lv_obj_add_flag(kb, LV_OBJ_FLAG_HIDDEN);
-  }
-
-  if (code == LV_EVENT_READY) {
-    spdlog::trace("macro item keyboard ready");
-  }
-
-  if (code == LV_EVENT_CANCEL) {
-    spdlog::trace("macro item keyboard close");
-    lv_obj_add_flag(kb, LV_OBJ_FLAG_HIDDEN);
-  }
-  
-}
-
-void MacroItem::handle_send_macro(lv_event_t *e) {
-  lv_event_code_t code = lv_event_get_code(e);
-  if (code == LV_EVENT_CLICKED) {
-    const char *macro_name = lv_label_get_text(macro_label);
-    std::vector<std::string> kv;
-    kv.push_back(macro_name);
-    for (const auto &p: params) {
-      const char *v = lv_textarea_get_text(p.second);
-      if (v != NULL && strlen(v) > 0) {
-	const char *k = lv_label_get_text(p.first);
-	kv.push_back(fmt::format("{}={}", k, v));
-      }
-    }
-
-    spdlog::trace("sending macro: {}", fmt::format("{}", fmt::join(kv, " "))); 
-    ws.gcode_script(fmt::format("{}", fmt::join(kv, " ")));
+  if (code == LV_EVENT_SHORT_CLICKED && tap_cb) {
+    tap_cb(*this);
+  } else if (code == LV_EVENT_LONG_PRESSED && long_press_cb) {
+    long_press_cb(*this);
   }
 }
 
-void MacroItem::handle_hide_show(lv_event_t *e) {
-  lv_event_code_t code = lv_event_get_code(e);
-  if (code == LV_EVENT_CLICKED) {
-    spdlog::trace("macro item hide/show");
-    std::string key = fmt::format("macros.settings.{}", lv_label_get_text(macro_label));
-
-    json h = {
-      {"namespace", "powerscreen"},
-      {"key", key },
-      {"value", {
-	  { "hidden", !hidden }
-	}
-      }
-    };
-    
-    ws.send_jsonrpc("server.database.post_item", h);
-    
-    hidden = !hidden;
-    
-    if (hidden) {
-      if (!always_visible) {
-	lv_obj_add_flag(cont, LV_OBJ_FLAG_HIDDEN);
-      }
-      lv_label_set_text(hide_show, "    " LV_SYMBOL_EYE_OPEN "    ");
-      lv_obj_set_style_text_color(hide_show, lv_color_hex(powerui::COLOR_MAT_GREEN), LV_PART_MAIN);
-    } else {
-      lv_obj_clear_flag(cont, LV_OBJ_FLAG_HIDDEN);
-      lv_label_set_text(hide_show, "    " LV_SYMBOL_EYE_CLOSE "    ");
-      lv_obj_set_style_text_color(hide_show, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
-    }
-  }
+void MacroItem::set_hidden(bool hide) {
+  hidden = hide;
+  lv_obj_set_style_opa(cont, hidden ? LV_OPA_50 : LV_OPA_COVER, 0);
 }
 
-void MacroItem::hide_if_hidden() {
-  if (hidden) {
+void MacroItem::update_visibility(bool matches_search, bool show_hidden) {
+  if (matches_search && (!hidden || show_hidden)) {
+    lv_obj_clear_flag(cont, LV_OBJ_FLAG_HIDDEN);
+  } else {
     lv_obj_add_flag(cont, LV_OBJ_FLAG_HIDDEN);
   }
-  always_visible = false;
-}
-
-void MacroItem::show() {
-  lv_obj_clear_flag(cont, LV_OBJ_FLAG_HIDDEN);
-  always_visible = true;
 }
