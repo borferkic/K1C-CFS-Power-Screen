@@ -418,8 +418,19 @@ void FilesExtraView::rebuild_detail() {
     add_info_row(270, "Duration", format_duration(h.duration));
     add_info_row(304, "Filament", h.weight_g > 0 ? fmt::format("{:.0f} g", h.weight_g) : fmt::format("{:.1f} m", h.filament_mm / 1000.0));
     primary_btn = action_button(detail, NULL, "Print again", ActionKind::Primary, 16, 348, 260, 52, &FilesExtraView::_action_clicked, this);
+    // Same look as the Print button of Files (filled green, white 20 pt text); unavailable looks like a disabled
+    // option elsewhere: card background and muted text.
+    lv_obj_t *again_label = lv_obj_get_child(primary_btn, 0);
+    lv_obj_set_style_bg_color(primary_btn, lv_color_hex(COLOR_PRIMARY), 0);
+    lv_obj_set_style_bg_color(primary_btn, lv_color_hex(COLOR_PRIMARY_PRESSED), LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(primary_btn, lv_color_hex(COLOR_CARD), LV_STATE_DISABLED);
+    lv_obj_set_style_opa(primary_btn, LV_OPA_COVER, LV_STATE_DISABLED);
+    lv_obj_set_style_text_font(again_label, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(again_label, lv_color_hex(COLOR_WHITE), 0);
+    lv_obj_set_style_text_color(again_label, lv_color_hex(COLOR_MUTED), LV_STATE_DISABLED);
     if (!h.exists || printing()) {
       lv_obj_add_state(primary_btn, LV_STATE_DISABLED);
+      lv_obj_add_state(again_label, LV_STATE_DISABLED);
     }
   } else {
     const Video &v = videos[selected];
