@@ -11,7 +11,6 @@ LV_IMG_DECLARE(ui_icon_play);
 LV_IMG_DECLARE(ui_icon_save);
 LV_IMG_DECLARE(ui_icon_estop);
 LV_IMG_DECLARE(emergency);
-LV_IMG_DECLARE(back);
 
 namespace {
 // Axis card geometry (design px, overlay coordinates); the graph sits at the top of the card.
@@ -86,7 +85,6 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l)
 		    spdlog::debug("emergency stop pressed");
 		    c.send_jsonrpc("printer.emergency_stop");
 		  })
-  , back_btn(cont, &back, "Back", &InputShaperPanel::_handle_callback, this)
   , ximage_fullsized(false)
   , yimage_fullsized(false)
 {
@@ -94,7 +92,6 @@ InputShaperPanel::InputShaperPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_move_background(cont);
   style_overlay_root(cont);
   lv_obj_add_flag(emergency_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
 
   struct AxisWidgets {
     lv_obj_t *card, *axis_label, *sw, *graph_cont, *graph, *output, *spinner, *slider_cont, *slider, *value, *dd;
@@ -283,7 +280,6 @@ void InputShaperPanel::foreground() {
   }
   
   lv_obj_move_foreground(cont);
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
   powerui::overlay_open("Input Shaper", [this]() { lv_obj_move_background(cont); });
 }
 
@@ -344,8 +340,6 @@ void InputShaperPanel::handle_callback(lv_event_t *event) {
     ws.gcode_script(fmt::format("PS_SAVE_INPUT_SHAPER SHAPER_FREQ_X={} SHAPER_TYPE_X={} SHAPER_FREQ_Y={} SHAPER_TYPE_Y={}\nSAVE_CONFIG",
 				xhz, xbuf, yhz, ybuf));
 
-  } else if (btn == back_btn.get_container()) {
-    lv_obj_move_background(cont);
   } else if (btn == stop_btn || btn == emergency_btn.get_container()) {
     emergency_stop();
   }

@@ -5,7 +5,6 @@
 
 #include <utility>
 
-LV_IMG_DECLARE(back);
 LV_IMG_DECLARE(sd_img);
 
 static std::map<std::string, int> goal_idx_map = {
@@ -181,12 +180,6 @@ TmcTunePanel::TmcTunePanel(KWebSocketClient &c)
       panel->save_config();
     }
   }, this)
-  , back_btn(btns_cont, &back, "Back", [](lv_event_t *e) {
-    TmcTunePanel *panel = (TmcTunePanel*)e->user_data;
-    if (lv_event_get_code(e) == LV_EVENT_CLICKED) {
-      panel->background();
-    }
-  }, this)
 {
   motor_parser._delim = ":";
   lv_obj_move_background(cont);
@@ -205,8 +198,6 @@ TmcTunePanel::TmcTunePanel(KWebSocketClient &c)
   lv_obj_set_style_pad_top(btns_cont, 5, 0);
   lv_obj_set_size(btns_cont, LV_SIZE_CONTENT, LV_PCT(100)); 
   lv_obj_set_flex_align(btns_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_CENTER);
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_FLOATING);  
-  lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, 0, -20);
   
 }
 
@@ -320,7 +311,6 @@ void TmcTunePanel::init(json &j, fs::path &kp) {
 
 void TmcTunePanel::foreground() {
   lv_obj_move_foreground(cont);
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
   powerui::overlay_open("TMC Autotune", [this]() { lv_obj_move_background(cont); });
 }
 

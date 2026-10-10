@@ -52,7 +52,6 @@ class PidTunePanel : public NotifyConsumer {
   HeaterCard bed_card;
   lv_obj_t *notice_title;
   lv_obj_t *notice_text;
-  ButtonContainer back_btn;  // hidden: Back lives in the title bar
   bool printing;
   bool tuning;
 };

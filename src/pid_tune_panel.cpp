@@ -9,7 +9,6 @@
 LV_IMG_DECLARE(extruder);
 LV_IMG_DECLARE(bed);
 LV_IMG_DECLARE(ui_icon_sliders);
-LV_IMG_DECLARE(back);
 
 using namespace powerui;
 
@@ -19,13 +18,11 @@ PidTunePanel::PidTunePanel(KWebSocketClient &c, std::mutex &l)
   , cont(lv_obj_create(lv_scr_act()))
   , notice_title(NULL)
   , notice_text(NULL)
-  , back_btn(cont, &back, "Back", &PidTunePanel::_handle_callback, this)
   , printing(false)
   , tuning(false)
 {
   lv_obj_move_background(cont);
   style_overlay_root(cont);
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
 
   hotend.heater = "extruder";
   bed_card.heater = "heater_bed";

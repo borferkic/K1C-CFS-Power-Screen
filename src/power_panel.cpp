@@ -5,7 +5,6 @@
 
 #include <map>
 
-LV_IMG_DECLARE(back);
 LV_IMG_DECLARE(ui_icon_power);
 
 namespace {
@@ -17,7 +16,6 @@ PowerPanel::PowerPanel(KWebSocketClient &websocket_client, std::mutex &l)
   : ws(websocket_client)
   , lv_lock(l)
   , cont(lv_obj_create(lv_scr_act()))
-  , back_btn(cont, &back, "Back", &PowerPanel::_handle_callback, this)
 {
   lv_obj_move_background(cont);
   powerui::style_overlay_root(cont);
@@ -34,7 +32,6 @@ PowerPanel::PowerPanel(KWebSocketClient &websocket_client, std::mutex &l)
   lv_obj_set_pos(empty, 0, powerui::px(80));
   lv_obj_add_flag(empty, LV_OBJ_FLAG_HIDDEN);
 
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
 }
 
 void PowerPanel::set_state(Device &d, bool on) {
@@ -145,17 +142,11 @@ void PowerPanel::foreground() {
   ws.send_jsonrpc("machine.device_power.status", params, [this](json& j) {
     this->handle_device_callback(j);
   });
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
   powerui::overlay_open("Power Devices", [this]() { lv_obj_move_background(cont); });
 }
 
 void PowerPanel::handle_callback(lv_event_t *e) {
-  if (lv_event_get_code(e) == LV_EVENT_CLICKED) {
-    lv_obj_t *btn = lv_event_get_current_target(e);
-    if (btn == back_btn.get_container()) {
-      lv_obj_move_background(cont);
-    }
-  } else if (lv_event_get_code(e) == LV_EVENT_VALUE_CHANGED) {
+  if (lv_event_get_code(e) == LV_EVENT_VALUE_CHANGED) {
     lv_obj_t *obj = lv_event_get_target(e);
     for (auto &device : devices) {
       if (obj == device.second.toggle) {

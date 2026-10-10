@@ -51,7 +51,6 @@ class BeltsCalibrationPanel {
   lv_obj_t *excite_btn;
   lv_obj_t *stop_btn;
   ButtonContainer emergency_btn;  // hidden: keeps the "Do you want to emergency stop?" confirmation
-  ButtonContainer back_btn;       // hidden: Back lives in the title bar
   bool image_fullsized;
 
   void fit_graph();

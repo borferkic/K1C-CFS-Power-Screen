@@ -31,7 +31,6 @@ class PowerPanel {
     std::mutex &lv_lock;
 
     lv_obj_t *cont;
-    ButtonContainer back_btn;
 
     struct Device {
       lv_obj_t *toggle;

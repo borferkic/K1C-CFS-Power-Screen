@@ -86,7 +86,6 @@ class InputShaperPanel {
   lv_obj_t *save_btn;
   lv_obj_t *stop_btn;
   ButtonContainer emergency_btn;  // hidden: keeps the "Do you want to emergency stop?" confirmation
-  ButtonContainer back_btn;       // hidden: Back lives in the title bar
   bool ximage_fullsized;
   bool yimage_fullsized;
   json calibrate_output;

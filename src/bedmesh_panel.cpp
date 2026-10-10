@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <string>
 
-LV_IMG_DECLARE(back);
 LV_IMG_DECLARE(ui_icon_trash);
 LV_IMG_DECLARE(ui_icon_grid);
 LV_IMG_DECLARE(ui_icon_save);
@@ -30,7 +29,6 @@ BedMeshPanel::BedMeshPanel(KWebSocketClient &c, std::mutex &l)
   , save_btn(controls_cont, &ui_icon_save, "Save", &BedMeshPanel::_handle_callback, this)
   , clear_btn(controls_cont, &ui_icon_trash, "Clear", &BedMeshPanel::_handle_callback, this)
   , calibrate_btn(controls_cont, &ui_icon_grid, "Calibrate", &BedMeshPanel::_handle_callback, this)
-  , back_btn(controls_cont, &back, "Back", &BedMeshPanel::_handle_callback, this)
   , msgbox(lv_obj_create(prompt))
   , input(lv_textarea_create(msgbox))
   , kb(lv_keyboard_create(prompt))
@@ -441,7 +439,6 @@ void BedMeshPanel::foreground() {
   refresh_views(bm);
   
   lv_obj_move_foreground(cont);
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
   powerui::overlay_open("Bed Mesh", [this]() { lv_obj_move_background(cont); });
 }
 
@@ -474,9 +471,6 @@ void BedMeshPanel::handle_callback(lv_event_t *event) {
     }
     ws.gcode_script("G28 X Y Z\nBED_MESH_CALIBRATE");
 
-  } else if (btn == back_btn.get_container()) {
-    spdlog::trace("back button pressed");
-    lv_obj_move_background(cont);
   }
 }
 

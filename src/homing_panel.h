@@ -53,7 +53,6 @@ class HomingPanel : public NotifyConsumer {
   ButtonContainer z_up_btn;
   ButtonContainer emergency_btn;
   ButtonContainer motoroff_btn;
-  ButtonContainer back_btn;
   Selector distance_selector;
 
   void update_clock();

@@ -53,7 +53,6 @@ class LimitsPanel : public NotifyConsumer {
   LimitCard acceleration;
   LimitCard square_corner;
   LimitCard accel_to_decel;
-  ButtonContainer back_btn;
   int max_velocity_default;
   int max_accel_default;
   int max_accel_to_decel_default;

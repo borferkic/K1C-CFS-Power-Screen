@@ -69,7 +69,6 @@ class BedMeshPanel : public NotifyConsumer {
   ButtonContainer save_btn;
   ButtonContainer clear_btn;
   ButtonContainer calibrate_btn;
-  ButtonContainer back_btn;
   lv_obj_t *msgbox;
   lv_obj_t *input;
   lv_obj_t *kb;

@@ -62,7 +62,6 @@ class TmcTunePanel {
   lv_obj_t *controls_cont;
   lv_obj_t *btns_cont;
   ButtonContainer save_btn;
-  ButtonContainer back_btn;
   IniParser motor_parser;
 
   std::map<std::string, int> motor_index;

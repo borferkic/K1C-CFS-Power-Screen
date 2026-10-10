@@ -8,7 +8,6 @@ LV_IMG_DECLARE(ui_icon_play);
 LV_IMG_DECLARE(ui_icon_activity);
 LV_IMG_DECLARE(ui_icon_estop);
 LV_IMG_DECLARE(emergency);
-LV_IMG_DECLARE(back);
 
 namespace {
 // Graph area inside the left card (design px, overlay coordinates).
@@ -48,14 +47,12 @@ BeltsCalibrationPanel::BeltsCalibrationPanel(KWebSocketClient &c, std::mutex &l)
 		    spdlog::debug("emergency stop pressed");
 		    c.send_jsonrpc("printer.emergency_stop");
 		  })
-  , back_btn(cont, &back, "Back", &BeltsCalibrationPanel::_handle_callback, this)
   , image_fullsized(false)
 {
   using namespace powerui;
   lv_obj_move_background(cont);
   style_overlay_root(cont);
   lv_obj_add_flag(emergency_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
 
   // Left card: belt resonance graph.
   lv_obj_t *graph_card = card(cont, 12, 12, 452, 416);
@@ -138,7 +135,6 @@ BeltsCalibrationPanel::~BeltsCalibrationPanel() {
 
 void BeltsCalibrationPanel::foreground() {
   lv_obj_move_foreground(cont);
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
   powerui::overlay_open("Belts / Shake", [this]() { lv_obj_move_background(cont); });
 }
 
@@ -178,8 +174,6 @@ void BeltsCalibrationPanel::handle_callback(lv_event_t *event) {
     }
     ws.gcode_script(fmt::format("PS_EXCITATE_AXIS_AT_FREQ FREQUENCY={} AXIS={}", excite_hz, excite_buf));
 
-  } else if (btn == back_btn.get_container()) {
-    lv_obj_move_background(cont);
   } else if (btn == stop_btn || btn == emergency_btn.get_container()) {
     emergency_stop();
   }

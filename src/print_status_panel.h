@@ -93,7 +93,6 @@ class PrintStatusPanel : public NotifyConsumer {
   ButtonContainer resume_btn;
   ButtonContainer cancel_btn;
   ButtonContainer emergency_btn;
-  ButtonContainer back_btn;
   lv_obj_t *pbar_cont;
   lv_obj_t *progress_bar;
   lv_obj_t *progress_label;

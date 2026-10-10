@@ -98,7 +98,6 @@ class SysInfoPanel {
   lv_obj_t *update_button_label;
   lv_obj_t *update_status;
 
-  ButtonContainer back_btn;
 
   // General / Updates tabs (created in the constructor body).
   lv_obj_t *tab_general_btn;

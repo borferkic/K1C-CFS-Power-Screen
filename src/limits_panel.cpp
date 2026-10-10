@@ -4,14 +4,12 @@
 #include "spdlog/spdlog.h"
 
 LV_IMG_DECLARE(ui_icon_reset);
-LV_IMG_DECLARE(back);
 
 LimitsPanel::LimitsPanel(KWebSocketClient &c, std::mutex &l)
   : NotifyConsumer(l)
   , ws(c)
   , cont(lv_obj_create(lv_scr_act()))
   , limit_cont(lv_obj_create(cont))
-  , back_btn(cont, &back, "Back", &LimitsPanel::_handle_callback, this)
   , max_velocity_default(1000)
   , max_accel_default(20000)
   , max_accel_to_decel_default(10000)
@@ -32,7 +30,6 @@ LimitsPanel::LimitsPanel(KWebSocketClient &c, std::mutex &l)
   square_corner = create_card(12, 226, "Square corner velocity", "mm/s", square_corner_default);
   accel_to_decel = create_card(374, 226, "Acceleration to deceleration", "mm/s2", max_accel_to_decel_default);
 
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
   
   ws.register_notify_update(this);
 }
@@ -158,7 +155,6 @@ void LimitsPanel::init(json &j) {
 
 void LimitsPanel::foreground() {
   lv_obj_move_foreground(cont);
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
   powerui::overlay_open("Limits", [this]() { lv_obj_move_background(cont); });
 }
 
@@ -188,11 +184,6 @@ void LimitsPanel::consume(json &j) {
 
 void LimitsPanel::handle_callback(lv_event_t *e) {
   lv_obj_t *btn = lv_event_get_current_target(e);
-
-  if (btn == back_btn.get_container()) {
-    lv_obj_move_background(cont);
-    return;
-  }
 
   if (lv_event_get_code(e) == LV_EVENT_RELEASED) {
     lv_obj_t *obj = lv_event_get_target(e);

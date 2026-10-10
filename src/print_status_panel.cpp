@@ -31,7 +31,6 @@ LV_IMG_DECLARE(pause_img);
 LV_IMG_DECLARE(resume);
 LV_IMG_DECLARE(cancel);
 LV_IMG_DECLARE(emergency);
-LV_IMG_DECLARE(back);
 
 namespace {
 constexpr lv_coord_t THUMBNAIL_CONTAINER_SIZE = 245;
@@ -112,7 +111,6 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 		    spdlog::debug("emergency stop pressed");
 		    websocket_client.send_jsonrpc("printer.emergency_stop");
 		  })
-  , back_btn(secondary_buttons_group, &back, "Back", &PrintStatusPanel::_handle_callback, this)
   , pbar_cont(lv_obj_create(status_cont))
   , progress_bar(lv_bar_create(pbar_cont))
   , progress_label(lv_label_create(pbar_cont))
@@ -270,13 +268,11 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
   lv_obj_set_width(resume_btn.get_container(), PAUSE_CANCEL_BUTTON_WIDTH);
   lv_obj_set_width(cancel_btn.get_container(), PAUSE_CANCEL_BUTTON_WIDTH);
   lv_obj_set_width(emergency_btn.get_container(), SECONDARY_BUTTON_WIDTH);
-  lv_obj_set_width(back_btn.get_container(), TUNE_BACK_BUTTON_WIDTH);
   style_action_button(pause_btn.get_container(), powerui::COLOR_ACCENT, true);
   style_action_button(resume_btn.get_container(), powerui::COLOR_ACCENT, true);
   style_action_button(cancel_btn.get_container(), powerui::COLOR_ACCENT, true);
   style_action_button(finetune_btn.get_container(), 0, false);
   style_action_button(emergency_btn.get_container(), powerui::COLOR_DANGER, true);
-  style_action_button(back_btn.get_container(), 0, false);
 
   lv_obj_clear_flag(file_cont, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_size(file_cont, 417, 37);
@@ -369,7 +365,6 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
     lv_obj_set_layout(status_cont, 0);                // drop the old grid
     lv_obj_set_layout(detail_cont, 0);
     lv_obj_set_style_bg_color(status_cont, lv_color_hex(powerui::COLOR_BG), LV_PART_MAIN);
-    lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(detail_cont, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(buttons_cont, LV_OBJ_FLAG_HIDDEN);  // old icon-over-text buttons (kept for their prompts)
 
@@ -537,7 +532,6 @@ PrintStatusPanel::~PrintStatusPanel() {
 void PrintStatusPanel::foreground() {
   // populate();
   lv_obj_move_foreground(status_cont);
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
   powerui::overlay_open("Print Status", [this]() {
     lv_obj_move_background(status_cont);
     if (back_home_callback) {
@@ -944,13 +938,7 @@ void PrintStatusPanel::handle_action(lv_event_t *event) {
 
 void PrintStatusPanel::handle_callback(lv_event_t *event) {
   lv_obj_t *btn = lv_event_get_current_target(event);
-  if (btn == back_btn.get_container()) {
-    lv_obj_move_background(status_cont);
-    if (back_home_callback) {
-      back_home_callback();
-    }
-
-  } else if (btn == emergency_btn.get_container()) {
+  if (btn == emergency_btn.get_container()) {
     ws.send_jsonrpc("printer.emergency_stop");
   } else if (btn == pause_btn.get_container()) {
     ws.send_jsonrpc("printer.print.pause");

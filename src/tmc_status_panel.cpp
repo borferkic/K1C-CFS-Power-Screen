@@ -2,7 +2,6 @@
 #include "powerui.h"
 #include "spdlog/spdlog.h"
 
-LV_IMG_DECLARE(back);
 
 TmcStatusPanel::TmcStatusPanel(KWebSocketClient &c,
 			      std::mutex &lock)
@@ -11,12 +10,6 @@ TmcStatusPanel::TmcStatusPanel(KWebSocketClient &c,
   , cont(lv_obj_create(lv_scr_act()))
   , top(lv_obj_create(cont))
   , toggle(lv_switch_create(top))
-  , back_btn(cont, &back, "Back", [](lv_event_t *e) {
-    TmcStatusPanel *panel = (TmcStatusPanel*)e->user_data;
-    if (lv_event_get_code(e) == LV_EVENT_CLICKED) {
-      panel->background();
-    }
-  }, this)
 {
   lv_obj_move_background(cont);
   powerui::style_overlay_root(cont);
@@ -61,8 +54,6 @@ TmcStatusPanel::TmcStatusPanel(KWebSocketClient &c,
     }
   }, LV_EVENT_VALUE_CHANGED, this);
 
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_FLOATING);  
-  lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, 0, -20);
 
   ws.register_notify_update(this);    
 }
@@ -76,7 +67,6 @@ TmcStatusPanel::~TmcStatusPanel() {
 
 void TmcStatusPanel::foreground() {
   lv_obj_move_foreground(cont);
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
   powerui::overlay_open("TMC Metrics", [this]() { lv_obj_move_background(cont); });
 }
 
@@ -125,5 +115,4 @@ void TmcStatusPanel::consume(json &j) {
     }
   }
 
-  lv_obj_move_foreground(back_btn.get_container());
 }

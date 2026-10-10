@@ -3,7 +3,6 @@
 #include "utils.h"
 #include "spdlog/spdlog.h"
 
-LV_IMG_DECLARE(back);
 LV_IMG_DECLARE(refresh_img);
 
 #define SORTED_BY_ID   1 << 0
@@ -21,7 +20,6 @@ SpoolmanPanel::SpoolmanPanel(KWebSocketClient &c, std::mutex &l)
   , switch_cont(lv_obj_create(controls))
   , show_archived(lv_switch_create(switch_cont))
   , reload_btn(controls, &refresh_img, "Reload", &SpoolmanPanel::_handle_callback, this)
-  , back_btn(controls, &back, "Back", &SpoolmanPanel::_handle_callback, this)
   , active_id(-1)
   , sorted_by(SORTED_BY_ID)
 {
@@ -67,7 +65,6 @@ SpoolmanPanel::SpoolmanPanel(KWebSocketClient &c, std::mutex &l)
   lv_obj_clear_state(show_archived, LV_STATE_CHECKED);
   lv_obj_add_event_cb(show_archived, &SpoolmanPanel::_handle_spoolman_action, LV_EVENT_VALUE_CHANGED, this);
 
-  lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, 0, 0);
 
   lv_obj_add_event_cb(spool_table, &SpoolmanPanel::_handle_spoolman_action, LV_EVENT_VALUE_CHANGED, this);
   lv_obj_add_event_cb(spool_table, &SpoolmanPanel::_handle_spoolman_action, LV_EVENT_DRAW_PART_BEGIN, this);
@@ -135,7 +132,6 @@ void SpoolmanPanel::init() {
 void SpoolmanPanel::foreground() {
   lv_obj_clear_flag(cont, LV_OBJ_FLAG_HIDDEN);
   lv_obj_move_foreground(cont);
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
   powerui::overlay_open("CFS", [this]() { lv_obj_move_background(cont); });
 }
 
@@ -233,10 +229,7 @@ void SpoolmanPanel::handle_active_id_update(json &j) {
 
 void SpoolmanPanel::handle_callback(lv_event_t *event) {
   lv_obj_t *btn = lv_event_get_current_target(event);
-  if (btn == back_btn.get_container()) {
-    spdlog::trace("spoolman back button pressed");
-    lv_obj_move_background(cont);
-  } else if (btn == reload_btn.get_container()) {
+  if (btn == reload_btn.get_container()) {
     spdlog::trace("spoolman reload button pressed");
     init();
   }

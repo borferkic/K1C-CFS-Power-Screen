@@ -22,7 +22,6 @@
 namespace fs = std::experimental::filesystem;
 namespace sp = subprocess;
 
-LV_IMG_DECLARE(back);
 LV_IMG_DECLARE(device);
 LV_IMG_DECLARE(network_img);
 
@@ -74,7 +73,6 @@ constexpr uint32_t CARD_BORDER = powerui::COLOR_ACCENT;
 constexpr uint32_t CREALITY_GREEN = powerui::COLOR_ACCENT;
 constexpr uint32_t BUTTON_GREY = powerui::COLOR_SECONDARY;
 constexpr uint32_t SCREEN_BACKGROUND = powerui::COLOR_BG;
-constexpr uint32_t BACK_BUTTON_BACKGROUND = SCREEN_BACKGROUND;
 
 lv_color_t screen_background_color() {
   return lv_color_hex(powerui::COLOR_BG);
@@ -249,7 +247,6 @@ SysInfoPanel::SysInfoPanel()
   , update_button(lv_btn_create(cont))
   , update_button_label(lv_label_create(update_button))
   , update_status(lv_label_create(cont))
-  , back_btn(cont, &back, "Back", &SysInfoPanel::_handle_callback, this)
   , tab_general_btn(NULL)
   , tab_updates_btn(NULL)
   , general_page(NULL)
@@ -461,28 +458,6 @@ SysInfoPanel::SysInfoPanel()
 
   create_tabs();
 
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_FLOATING);
-  lv_obj_t *back_container = back_btn.get_container();
-  lv_obj_set_style_pad_top(back_container, 6, LV_PART_MAIN);
-  lv_obj_set_style_pad_bottom(back_container, 6, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(back_container, lv_color_hex(BACK_BUTTON_BACKGROUND),
-                            LV_PART_MAIN);
-  lv_obj_set_style_bg_opa(back_container, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_set_style_radius(back_container, 12, LV_PART_MAIN);
-  // LVGL only supports a uniform radius. This opaque right strip squares the
-  // right corners while preserving the 12 px radius on the left side.
-  lv_obj_set_style_clip_corner(back_container, false, LV_PART_MAIN);
-  lv_obj_update_layout(back_container);
-  lv_obj_t *back_right_edge = lv_obj_create(back_container);
-  lv_obj_remove_style_all(back_right_edge);
-  lv_obj_set_size(back_right_edge, 12, LV_PCT(100));
-  lv_obj_align(back_right_edge, LV_ALIGN_RIGHT_MID, 0, 0);
-  lv_obj_set_style_bg_color(back_right_edge,
-                            lv_color_hex(BACK_BUTTON_BACKGROUND), LV_PART_MAIN);
-  lv_obj_set_style_bg_opa(back_right_edge, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_clear_flag(back_right_edge, LV_OBJ_FLAG_CLICKABLE);
-  lv_obj_align(back_btn.get_container(), LV_ALIGN_BOTTOM_RIGHT, -10, -14);
-  lv_obj_move_foreground(back_btn.get_container());
   lv_obj_move_background(cont);
 
   create_update_overlay();
@@ -522,14 +497,12 @@ void SysInfoPanel::foreground() {
     refresh_system_versions();
   }
   check_script_update();
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
   powerui::overlay_open("System", [this]() { lv_obj_move_background(cont); });
 }
 
 void SysInfoPanel::open_power_update() {
   lv_obj_move_foreground(cont);
   update_clock();
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
   show_tab(false);
   power_update_direct = true;
   show_tab(true);
@@ -1485,12 +1458,6 @@ void SysInfoPanel::handle_callback(lv_event_t *e)
       show_tab(false);
     } else if (btn == tab_updates_btn || btn == about_row) {
       show_tab(true);
-    } else if (btn == back_btn.get_container()) {
-      if (!lv_obj_has_flag(updates_page, LV_OBJ_FLAG_HIDDEN)) {
-        show_tab(false);  // About -> System
-      } else {
-        lv_obj_move_background(cont);
-      }
     } else if (btn == update_button) {
       if (lv_obj_has_state(update_button, LV_STATE_DISABLED)) {
         return;

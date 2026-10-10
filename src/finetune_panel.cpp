@@ -18,7 +18,6 @@ LV_IMG_DECLARE(speed_up_img);
 LV_IMG_DECLARE(speed_down_img);
 LV_IMG_DECLARE(flow_up_img);
 LV_IMG_DECLARE(flow_down_img);
-LV_IMG_DECLARE(back);
 
 constexpr uint32_t CREALITY_GREEN = powerui::COLOR_ACCENT;
 constexpr uint32_t CREALITY_GREEN_PRESSED = powerui::COLOR_ACCENT_PRESSED;
@@ -44,7 +43,6 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   , flow_reset_btn(panel_cont, NULL, "Reset", &FineTunePanel::_handle_flow, this)
   , flow_up_btn(panel_cont, NULL, "+", &FineTunePanel::_handle_flow, this)
   , flow_down_btn(panel_cont, NULL, "-", &FineTunePanel::_handle_flow, this)
-  , back_btn(panel_cont, &back, "Back", &FineTunePanel::_handle_callback, this)
   , zoffset_selector(panel_cont, "Z (mm) - PA (mm/s)",
 		     {"0.01", "0.025", "0.05", "0.10", ""}, 0, 30, 15, &FineTunePanel::_handle_callback, this)
   , multipler_selector(panel_cont, "Multipler Step (%)",
@@ -91,7 +89,6 @@ FineTunePanel::FineTunePanel(KWebSocketClient &websocket_client, std::mutex &l)
   lv_obj_set_style_bg_opa(panel_cont, LV_OPA_COVER, LV_PART_MAIN);
   lv_obj_set_style_border_width(panel_cont, 0, LV_PART_MAIN);
   lv_obj_add_flag(values_cont, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
 
   struct Metric {
     ImageLabel *value;
@@ -227,7 +224,6 @@ void FineTunePanel::foreground() {
   }
 
   lv_obj_move_foreground(panel_cont);
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
   powerui::overlay_open("Fine Tune", [this]() { lv_obj_move_background(panel_cont); });
 }
 
@@ -268,13 +264,6 @@ void FineTunePanel::handle_callback(lv_event_t *e) {
 
     if (selector == multipler_selector.get_selector()) {
       multipler_selector.set_selected_idx(idx);
-    }
-  }
-  
-  if (lv_event_get_code(e) == LV_EVENT_CLICKED) {
-    lv_obj_t *btn = lv_event_get_current_target(e);
-    if (btn == back_btn.get_container()) {
-      lv_obj_move_background(panel_cont);
     }
   }
 }

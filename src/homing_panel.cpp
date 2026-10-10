@@ -14,7 +14,6 @@ LV_IMG_DECLARE(arrow_right);
 LV_IMG_DECLARE(arrow_down);
 LV_IMG_DECLARE(ui_crosshair_img);
 LV_IMG_DECLARE(home_z);
-LV_IMG_DECLARE(back);
 LV_IMG_DECLARE(z_closer);
 LV_IMG_DECLARE(z_farther);
 LV_IMG_DECLARE(ui_estop_img);
@@ -48,7 +47,6 @@ HomingPanel::HomingPanel(KWebSocketClient &websocket_client, std::mutex &lock)
 		    websocket_client.send_jsonrpc("printer.emergency_stop");
 		  })
   , motoroff_btn(safety_cont, &ui_motor_off_slash_img, "Motor Off", &HomingPanel::_handle_callback, this)
-  , back_btn(safety_cont, &back, "Back", &HomingPanel::_handle_callback, this)
   , distance_selector(motion_cont, "Move Distance (mm)",
 		     {".1", ".5", "1", "5", "10", "25", "50", ""}, 2, 70, 15, &HomingPanel::_handle_selector_cb, this)
 {
@@ -220,7 +218,6 @@ void HomingPanel::foreground() {
   }
 
   lv_obj_move_foreground(homing_cont);
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
   powerui::overlay_open("Movement", [this]() { lv_obj_move_background(homing_cont); });
 }
 
@@ -292,8 +289,6 @@ void HomingPanel::handle_callback(lv_event_t *event) {
     spdlog::debug("motor off pressed");
     ws.gcode_script("M84");
 
-  } else if (btn == back_btn.get_container()) {
-    lv_obj_move_background(homing_cont);
   }
   else {
     spdlog::debug("Unknown action button pressed");

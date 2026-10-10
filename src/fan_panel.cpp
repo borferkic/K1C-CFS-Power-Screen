@@ -8,7 +8,6 @@
 #include <cmath>
 #include <vector>
 
-LV_IMG_DECLARE(back);
 
 namespace {
 constexpr uint32_t FAN_PANEL_BACKGROUND = powerui::COLOR_BG;
@@ -23,7 +22,6 @@ FanPanel::FanPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   , time_label(lv_label_create(title_bar))
   , clock_timer(NULL)
   , fans_cont(lv_obj_create(fanpanel_cont))
-  , back_btn(fanpanel_cont, &back, "Back", &FanPanel::_handle_callback, this)
 {
   lv_obj_set_style_pad_all(fanpanel_cont, 0, 0);
   lv_obj_clear_flag(fanpanel_cont, LV_OBJ_FLAG_SCROLLABLE);
@@ -43,7 +41,6 @@ FanPanel::FanPanel(KWebSocketClient &websocket_client, std::mutex &lock)
   lv_obj_set_style_pad_all(fans_cont, 0, 0);
   lv_obj_set_style_border_width(fans_cont, 0, 0);
   lv_obj_set_style_bg_opa(fans_cont, LV_OPA_TRANSP, 0);
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
   ws.register_notify_update(this);
 }
 
@@ -152,7 +149,6 @@ void FanPanel::create_fans(json &f) {
     lv_obj_clear_flag(fans_cont, LV_OBJ_FLAG_SCROLLABLE);    
   }
 
-  lv_obj_move_foreground(back_btn.get_container());
 }
 
 void FanPanel::create_target(const std::string &object, const char *title, const std::vector<int> &options, int y, int x) {
@@ -245,9 +241,7 @@ void FanPanel::foreground() {
     }
   }
   
-  lv_obj_move_foreground(back_btn.get_container());
   lv_obj_move_foreground(fanpanel_cont);
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
   powerui::overlay_open("Fans", [this]() { lv_obj_move_background(fanpanel_cont); });
 }
 
@@ -257,16 +251,6 @@ void FanPanel::update_clock() {
   char time_text[6] = {};
   std::strftime(time_text, sizeof(time_text), "%H:%M", &local_time);
   lv_label_set_text(time_label, time_text);
-}
-
-void FanPanel::handle_callback(lv_event_t *event) {
-  lv_obj_t *btn = lv_event_get_current_target(event);
-  if (btn == back_btn.get_container()) {
-    lv_obj_move_background(fanpanel_cont);
-  }
-  else {
-    spdlog::debug("Unknown action button pressed");
-  }
 }
 
 void FanPanel::handle_fan_update(lv_event_t *event) {

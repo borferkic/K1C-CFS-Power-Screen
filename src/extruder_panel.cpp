@@ -7,7 +7,6 @@
 
 #include <limits>
 
-LV_IMG_DECLARE(back);
 LV_IMG_DECLARE(ui_cfs_img);
 LV_IMG_DECLARE(extrude_img);
 LV_IMG_DECLARE(retract_img);
@@ -46,7 +45,6 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   , spoolman_btn(rightside_btns_cont, NULL, "CFS", &ExtruderPanel::_handle_callback, this)
   , extrude_btn(rightside_btns_cont, &extrude_img, "Extrude", &ExtruderPanel::_handle_callback, this)
   , retract_btn(rightside_btns_cont, &retract_img, "Retract", &ExtruderPanel::_handle_callback, this)
-  , back_btn(rightside_btns_cont, &back, "BACK", &ExtruderPanel::_handle_callback, this)
   , load_filament_macro("LOAD_FILAMENT")
   , unload_filament_macro("UNLOAD_FILAMENT")
   , cooldown_macro("SET_HEATER_TEMPERATURE HEATER=extruder TARGET=0")
@@ -205,7 +203,6 @@ ExtruderPanel::~ExtruderPanel() {
 
 void ExtruderPanel::foreground() {
   lv_obj_move_foreground(panel_cont);
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);  // Back lives in the title bar
   powerui::overlay_open("Filament", [this]() { lv_obj_move_background(panel_cont); });
 }
 
@@ -288,10 +285,6 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
     
   } else if (lv_event_get_code(e) == LV_EVENT_CLICKED) {
     lv_obj_t *btn = lv_event_get_current_target(e);
-
-    if (btn == back_btn.get_container()) {
-      lv_obj_move_background(panel_cont);
-    }
 
     if (btn == extrude_btn.get_container()) {
       const char * temp = lv_btnmatrix_get_btn_text(temp_selector.get_selector(),
