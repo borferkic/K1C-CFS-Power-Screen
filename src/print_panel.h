@@ -80,9 +80,7 @@ class PrintPanel : public NotifyConsumer {
   void request_file_metadata(Tree *file);
   void update_file_card(const std::string &path, json &metadata);
   void select_file_card(FileCard &card);
-  void show_delete_context(FileCard &card);
   void show_delete_confirmation();
-  void hide_delete_context();
   void hide_delete_confirmation();
 
   // Select mode: mark several files and delete them in one go.
@@ -133,8 +131,6 @@ class PrintPanel : public NotifyConsumer {
   lv_obj_t *file_view;
   ButtonContainer print_btn;
   ButtonContainer back_btn;
-  lv_obj_t *delete_context_cont;
-  lv_obj_t *delete_context_menu;
   lv_obj_t *delete_confirm_cont;
   lv_obj_t *delete_confirm_box;
   lv_obj_t *delete_confirm_label;

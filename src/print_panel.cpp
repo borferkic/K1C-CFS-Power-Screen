@@ -62,8 +62,6 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   , file_view(lv_obj_create(files_cont))
   , print_btn(file_view, NULL, "Print", &PrintPanel::_handle_print_callback, this)
   , back_btn(file_view, &back, "Back", &PrintPanel::_handle_back_btn, this)
-  , delete_context_cont(lv_obj_create(files_cont))
-  , delete_context_menu(lv_obj_create(delete_context_cont))
   , delete_confirm_cont(lv_obj_create(files_cont))
   , delete_confirm_box(lv_obj_create(delete_confirm_cont))
   , delete_confirm_label(lv_label_create(delete_confirm_box))
@@ -309,34 +307,6 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_set_style_bg_color(print_btn.get_container(), file_button_green_pressed,
                             LV_PART_MAIN | LV_STATE_PRESSED);
 
-  // Context menu shown beside a file after a long press.
-  lv_obj_add_flag(delete_context_cont, LV_OBJ_FLAG_IGNORE_LAYOUT);
-  lv_obj_set_size(delete_context_cont, LV_PCT(100), LV_PCT(100));
-  lv_obj_set_pos(delete_context_cont, 0, 0);
-  lv_obj_set_style_pad_all(delete_context_cont, 0, LV_PART_MAIN);
-  lv_obj_set_style_bg_opa(delete_context_cont, LV_OPA_TRANSP, LV_PART_MAIN);
-  lv_obj_set_style_border_width(delete_context_cont, 0, LV_PART_MAIN);
-  lv_obj_add_flag(delete_context_cont, LV_OBJ_FLAG_CLICKABLE);
-  lv_obj_add_event_cb(delete_context_cont, &PrintPanel::_handle_btns,
-                      LV_EVENT_CLICKED, this);
-  lv_obj_set_size(delete_context_menu, 128, 52);
-  lv_obj_set_style_bg_color(delete_context_menu, lv_color_hex(powerui::COLOR_CARD), LV_PART_MAIN);
-  lv_obj_set_style_bg_opa(delete_context_menu, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_set_style_border_width(delete_context_menu, 1, LV_PART_MAIN);
-  lv_obj_set_style_border_color(delete_context_menu, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
-  lv_obj_set_style_border_opa(delete_context_menu, LV_OPA_30, LV_PART_MAIN);
-  lv_obj_set_style_radius(delete_context_menu, 12, LV_PART_MAIN);
-  lv_obj_set_style_clip_corner(delete_context_menu, true, LV_PART_MAIN);
-  lv_obj_add_flag(delete_context_menu, LV_OBJ_FLAG_CLICKABLE);
-  lv_obj_add_event_cb(delete_context_menu, &PrintPanel::_handle_btns,
-                      LV_EVENT_CLICKED, this);
-  label = lv_label_create(delete_context_menu);
-  lv_label_set_text(label, "Delete");
-  lv_obj_set_style_text_color(label, lv_color_hex(powerui::COLOR_DESTRUCTIVE), LV_PART_MAIN);
-  lv_obj_set_style_text_font(label, &lv_font_montserrat_16, LV_PART_MAIN);
-  lv_obj_center(label);
-  lv_obj_add_flag(delete_context_cont, LV_OBJ_FLAG_HIDDEN);
-
   // Confirmation dialog shown after selecting Delete.
   lv_obj_add_flag(delete_confirm_cont, LV_OBJ_FLAG_IGNORE_LAYOUT);
   lv_obj_set_size(delete_confirm_cont, LV_PCT(100), LV_PCT(100));
@@ -566,7 +536,6 @@ void PrintPanel::handle_callback(lv_event_t *e) {
 }
 
 void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
-  hide_delete_context();
   hide_delete_confirmation();
   delete_target = NULL;
   file_cards.clear();
@@ -594,7 +563,6 @@ void PrintPanel::show_dir(Tree *dir, uint32_t sort_type) {
     lv_obj_clear_flag(card, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_add_flag(card, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_event_cb(card, &PrintPanel::_handle_file_card, LV_EVENT_CLICKED, this);
-    lv_obj_add_event_cb(card, &PrintPanel::_handle_file_card, LV_EVENT_LONG_PRESSED, this);
     lv_obj_set_style_bg_opa(card, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(card, lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_bg_opa(card, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
@@ -767,20 +735,6 @@ void PrintPanel::handle_file_card(lv_event_t *event) {
   lv_event_code_t code = lv_event_get_code(event);
   lv_obj_t *target = lv_event_get_current_target(event);
 
-  if (code == LV_EVENT_LONG_PRESSED) {
-    if (select_mode) {
-      return;
-    }
-    for (auto &card : file_cards) {
-      if (card.card == target && card.node != NULL && card.node->is_leaf()) {
-        delete_target = card.node;
-        show_delete_context(card);
-        return;
-      }
-    }
-    return;
-  }
-
   if (code != LV_EVENT_CLICKED) {
     return;
   }
@@ -813,39 +767,6 @@ void PrintPanel::handle_file_card(lv_event_t *event) {
   }
 }
 
-void PrintPanel::show_delete_context(FileCard &card) {
-  hide_delete_confirmation();
-
-  lv_area_t card_area;
-  lv_area_t parent_area;
-  lv_obj_get_coords(card.card, &card_area);
-  lv_obj_get_coords(files_cont, &parent_area);
-
-  const lv_coord_t menu_width = lv_obj_get_width(delete_context_menu);
-  const lv_coord_t menu_height = lv_obj_get_height(delete_context_menu);
-  const lv_coord_t parent_width = lv_obj_get_width(files_cont);
-  const lv_coord_t parent_height = lv_obj_get_height(files_cont);
-  lv_coord_t menu_x = card_area.x2 - parent_area.x1 + 6;
-  lv_coord_t menu_y = card_area.y1 - parent_area.y1;
-
-  if (menu_x + menu_width > parent_width - 4) {
-    menu_x = card_area.x1 - parent_area.x1 - menu_width - 6;
-  }
-  if (menu_x < 4) {
-    menu_x = 4;
-  }
-  if (menu_y + menu_height > parent_height - 4) {
-    menu_y = parent_height - menu_height - 4;
-  }
-  if (menu_y < 4) {
-    menu_y = 4;
-  }
-
-  lv_obj_set_pos(delete_context_menu, menu_x, menu_y);
-  lv_obj_clear_flag(delete_context_cont, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_move_foreground(delete_context_cont);
-}
-
 void PrintPanel::show_delete_confirmation() {
   if (delete_target == NULL) {
     return;
@@ -855,16 +776,9 @@ void PrintPanel::show_delete_confirmation() {
   lv_label_set_text(delete_title, "Delete file?");
   std::string message = delete_target->name + "\nThis cannot be undone.";
   lv_label_set_text(delete_confirm_label, message.c_str());
-  hide_delete_context();
   lv_obj_clear_state(delete_accept_btn, LV_STATE_DISABLED);
   lv_obj_clear_flag(delete_confirm_cont, LV_OBJ_FLAG_HIDDEN);
   lv_obj_move_foreground(delete_confirm_cont);
-}
-
-void PrintPanel::hide_delete_context() {
-  if (delete_context_cont != NULL) {
-    lv_obj_add_flag(delete_context_cont, LV_OBJ_FLAG_HIDDEN);
-  }
 }
 
 void PrintPanel::hide_delete_confirmation() {
@@ -1039,17 +953,6 @@ void PrintPanel::handle_btns(lv_event_t *event) {
       return;
     }
 
-    if (btn == delete_context_cont) {
-      hide_delete_context();
-      delete_target = NULL;
-      return;
-    }
-
-    if (btn == delete_context_menu) {
-      show_delete_confirmation();
-      return;
-    }
-
     if (btn == delete_cancel_btn) {
       hide_delete_confirmation();
       delete_target = NULL;
@@ -1167,7 +1070,6 @@ void PrintPanel::show_file_widgets(bool visible) {
 void PrintPanel::show_extra(FilesExtraView::Mode mode) {
   view_mode = mode == FilesExtraView::Mode::Timelapse ? 2 : 3;
   set_select_mode(false);
-  hide_delete_context();
   hide_delete_confirmation();
   show_file_widgets(false);
   update_storage_buttons();
@@ -1220,7 +1122,6 @@ void PrintPanel::set_select_mode(bool on) {
   }
   select_mode = on;
   selected.clear();
-  hide_delete_context();
   for (auto &card : file_cards) {
     if (card.check != NULL) {
       if (on) {
@@ -1326,7 +1227,6 @@ void PrintPanel::show_batch_delete_confirmation() {
     names += fmt::format(" and {} more", count - 3);
   }
   lv_label_set_text(delete_confirm_label, (names + "\nThis cannot be undone.").c_str());
-  hide_delete_context();
   lv_obj_clear_state(delete_accept_btn, LV_STATE_DISABLED);
   lv_obj_clear_flag(delete_confirm_cont, LV_OBJ_FLAG_HIDDEN);
   lv_obj_move_foreground(delete_confirm_cont);
