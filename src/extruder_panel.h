@@ -3,7 +3,6 @@
 
 #include "websocket_client.h"
 #include "notify_consumer.h"
-#include "spoolman_panel.h"
 #include <functional>
 #include "selector.h"
 #include "button_container.h"
@@ -15,14 +14,10 @@
 
 class ExtruderPanel : public NotifyConsumer {
  public:
-  ExtruderPanel(KWebSocketClient &ws, std::mutex &l, Numpad &np, SpoolmanPanel &sm);
+  ExtruderPanel(KWebSocketClient &ws, std::mutex &l, Numpad &np);
   ~ExtruderPanel();
 
   void foreground();
-  void enable_spoolman();
-  // The "CFS" button opens the CFS screen while the CFS is connected, else Spoolman when it is available.
-  void set_cfs_available(bool available);
-  void set_cfs_opener(std::function<void()> opener);
   void consume(json &j);
   void handle_callback(lv_event_t *e);
   void update_clock();
@@ -38,18 +33,12 @@ class ExtruderPanel : public NotifyConsumer {
   }
 
  private:
-  lv_obj_t *spoolman_icon = NULL;
   KWebSocketClient &ws;
   lv_obj_t *panel_cont;
   lv_obj_t *title_bar;
   lv_obj_t *title_label;
   lv_obj_t *time_label;
   lv_timer_t *clock_timer;
-  SpoolmanPanel &spoolman_panel;
-  bool cfs_available = false;
-  bool spoolman_available = false;
-  std::function<void()> open_cfs;
-  void refresh_cfs_button();
   SensorContainer extruder_temp;
   Selector temp_selector;
   Selector length_selector;
@@ -60,7 +49,6 @@ class ExtruderPanel : public NotifyConsumer {
   ButtonContainer unload_btn;
   ButtonContainer cooldown_btn;
   ButtonContainer manual_change_btn;
-  ButtonContainer spoolman_btn;
   ButtonContainer extrude_btn;
   ButtonContainer retract_btn;
   std::string load_filament_macro;

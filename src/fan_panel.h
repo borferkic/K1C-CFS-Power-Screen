@@ -70,7 +70,7 @@ class FanPanel : public NotifyConsumer {
   /* SliderContainer fan1; */
   /* SliderContainer fan2; */
 
-  // Temperature targets of the chamber and mainboard fans (Klipper temperature_fan objects).
+  // Temperature targets of the chamber fan (Klipper temperature_fan object).
   struct TargetCard {
     std::string object;      // e.g. "temperature_fan chamber_fan"
     std::string fan_name;    // e.g. "chamber_fan"
@@ -83,7 +83,7 @@ class FanPanel : public NotifyConsumer {
   };
   std::vector<std::shared_ptr<TargetCard>> targets;
 
-  void create_target(const std::string &object, const char *title, const std::vector<int> &options, int y, int x);
+  void create_target(const std::string &object, const char *title, const std::vector<int> &options, int y);
   void update_target(TargetCard &t, const json &state);
 };
 

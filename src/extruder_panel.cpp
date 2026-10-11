@@ -7,7 +7,6 @@
 
 #include <limits>
 
-LV_IMG_DECLARE(ui_cfs_img);
 LV_IMG_DECLARE(extrude_img);
 LV_IMG_DECLARE(retract_img);
 LV_IMG_DECLARE(unload_filament_img);
@@ -18,8 +17,7 @@ LV_IMG_DECLARE(ui_hand_img);
 
 ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
 			     std::mutex &lock,
-			     Numpad &numpad,
-			     SpoolmanPanel &sm)
+			     Numpad &numpad)
   : NotifyConsumer(lock)
   , ws(websocket_client)
   , panel_cont(lv_obj_create(lv_scr_act()))
@@ -27,7 +25,6 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   , title_label(lv_label_create(title_bar))
   , time_label(lv_label_create(title_bar))
   , clock_timer(NULL)
-  , spoolman_panel(sm)
   , extruder_temp(ws, panel_cont, &extruder, 150,
 	  "EXTRUDER", lv_color_hex(powerui::COLOR_MAT_RED), false, true, numpad, "extruder", NULL, NULL)
   , temp_selector(panel_cont, "EXTRUDER TEMPERATURE (C)",
@@ -42,7 +39,6 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   , unload_btn(leftside_btns_cont, &unload_filament_img, "Unload", &ExtruderPanel::_handle_callback, this)
   , cooldown_btn(leftside_btns_cont, &extruder, "Cooldown", &ExtruderPanel::_handle_callback, this)
   , manual_change_btn(leftside_btns_cont, NULL, "Manual color", &ExtruderPanel::_handle_callback, this)
-  , spoolman_btn(rightside_btns_cont, NULL, "CFS", &ExtruderPanel::_handle_callback, this)
   , extrude_btn(rightside_btns_cont, &extrude_img, "Extrude", &ExtruderPanel::_handle_callback, this)
   , retract_btn(rightside_btns_cont, &retract_img, "Retract", &ExtruderPanel::_handle_callback, this)
   , load_filament_macro("LOAD_FILAMENT")
@@ -111,8 +107,6 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   lv_obj_add_flag(rightside_btns_cont, LV_OBJ_FLAG_HIDDEN);
   lv_obj_clear_flag(panel_cont, LV_OBJ_FLAG_SCROLLABLE);
 
-  spoolman_btn.disable();
-
   // Rail buttons: a small tinted icon above the label (the large image button is hidden; touches reach the container).
   auto stack_icon = [](ButtonContainer &button, const lv_img_dsc_t *src, int icon_px, lv_color_t color) {
     lv_obj_add_flag(button.get_button(), LV_OBJ_FLAG_HIDDEN);
@@ -133,27 +127,23 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   put(load_btn, 12, 119, 140, 95);
   put(unload_btn, 12, 226, 140, 95);
   put(cooldown_btn, 12, 333, 140, 95);
-  // Right rail.
-  put(spoolman_btn, 584, 12, 140, 130);
-  put(extrude_btn, 584, 154, 140, 130);
-  put(retract_btn, 584, 296, 140, 132);
+  // Right rail: two large buttons.
+  put(extrude_btn, 584, 12, 140, 200);
+  put(retract_btn, 584, 224, 140, 204);
 
-  for (ButtonContainer *button : {&manual_change_btn, &load_btn, &unload_btn, &spoolman_btn, &retract_btn}) {
+  for (ButtonContainer *button : {&manual_change_btn, &load_btn, &unload_btn, &retract_btn}) {
     style_button(button->get_container(), button->get_button(), ButtonKind::Outline);
   }
   style_button(extrude_btn.get_container(), extrude_btn.get_button(), ButtonKind::Soft);
   style_button(cooldown_btn.get_container(), cooldown_btn.get_button(), ButtonKind::Outline);
   lv_obj_set_style_text_color(cooldown_btn.get_container(), lv_color_hex(powerui::COLOR_CHAMBER), LV_PART_MAIN);
 
-  // CFS: icon (four spools) to the left of the label; red while the CFS is not available.
-  spoolman_btn.set_disabled_text_color(lv_color_hex(powerui::COLOR_DESTRUCTIVE));
-  spoolman_icon = stack_icon(spoolman_btn, &ui_cfs_img, 44, lv_color_hex(powerui::COLOR_DESTRUCTIVE));
   stack_icon(manual_change_btn, &ui_hand_img, 38, lv_color_hex(powerui::COLOR_FG));
   stack_icon(load_btn, &load_filament_img, 38, lv_color_hex(powerui::COLOR_FG));
   stack_icon(unload_btn, &unload_filament_img, 38, lv_color_hex(powerui::COLOR_FG));
   stack_icon(cooldown_btn, &extruder, 38, lv_color_hex(powerui::COLOR_CHAMBER));
-  stack_icon(extrude_btn, &extrude_img, 44, lv_color_hex(powerui::COLOR_ACCENT));
-  stack_icon(retract_btn, &retract_img, 44, lv_color_hex(powerui::COLOR_FG));
+  stack_icon(extrude_btn, &extrude_img, 56, lv_color_hex(powerui::COLOR_ACCENT));
+  stack_icon(retract_btn, &retract_img, 56, lv_color_hex(powerui::COLOR_FG));
 
   // Option cards: title on top and a segmented selector below.
   struct CardSpec { Selector *selector; const char *title; int y; int h; };
@@ -218,30 +208,6 @@ void ExtruderPanel::show_manual_filament_change() {
   // The menu is defined once in powerscreen_cmd.cfg, so this button and the
   // M600 macro always show the same prompt.
   ws.gcode_script("_PS_MANUAL_CHANGE_PROMPT");
-}
-
-void ExtruderPanel::enable_spoolman() {
-  spoolman_available = true;
-  refresh_cfs_button();
-}
-
-void ExtruderPanel::set_cfs_available(bool available) {
-  cfs_available = available;
-  refresh_cfs_button();
-}
-
-void ExtruderPanel::set_cfs_opener(std::function<void()> opener) {
-  open_cfs = std::move(opener);
-}
-
-void ExtruderPanel::refresh_cfs_button() {
-  if (cfs_available || spoolman_available) {
-    spoolman_btn.enable();
-    powerui::icon_set_color(spoolman_icon, lv_color_hex(powerui::COLOR_FG));
-  } else {
-    spoolman_btn.disable();
-    powerui::icon_set_color(spoolman_icon, lv_color_hex(powerui::COLOR_DESTRUCTIVE));
-  }
 }
 
 void ExtruderPanel::consume(json& j) {
@@ -344,14 +310,6 @@ void ExtruderPanel::handle_callback(lv_event_t *e) {
 
     if (btn == cooldown_btn.get_container()) {
       ws.gcode_script(cooldown_macro);
-    }
-
-    if (btn == spoolman_btn.get_container()) {
-      if (cfs_available && open_cfs) {
-        open_cfs();
-      } else {
-        spoolman_panel.foreground();
-      }
     }
   }
 }

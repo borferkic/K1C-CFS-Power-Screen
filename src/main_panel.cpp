@@ -85,7 +85,7 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
   , print_panel(ws, lock, print_status_panel, files_tab)
   , printertune_panel(ws, lock, printertune_tab, print_status_panel.get_finetune_panel())
   , numpad(Numpad(main_cont))
-  , extruder_panel(ws, lock, numpad, sm)
+  , extruder_panel(ws, lock, numpad)
   , prompt_panel(websocket, lock, main_cont)
   , spoolman_panel(sm)
   , chart_card(NULL)
@@ -200,7 +200,6 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
 
     ws.register_notify_update(this);
     setting_panel.set_cfs_opener([this]() { cfs_panel.foreground(); });
-    extruder_panel.set_cfs_opener([this]() { cfs_panel.foreground(); });
     led_panel.set_state_callback([this](bool active) {
       set_quick_active(led_btn, active, active ? "LED On" : "LED Off");
     });
@@ -983,7 +982,6 @@ void MainPanel::update_cfs() {
   }
   cfs_panel.update(cfs_state);
   setting_panel.set_cfs_available(cfs_state.connected);
-  extruder_panel.set_cfs_available(cfs_state.connected);
 }
 
 void MainPanel::create_fans(json &fans) {
@@ -997,7 +995,6 @@ void MainPanel::create_leds(json &leds) {
 void MainPanel::enable_spoolman() {
   spoolman_panel.init();
   setting_panel.enable_spoolman();
-  extruder_panel.enable_spoolman();
 }
 
 void MainPanel::sync_klipper_macros(json &printer_status) {

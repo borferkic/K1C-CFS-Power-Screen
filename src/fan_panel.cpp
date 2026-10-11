@@ -128,19 +128,14 @@ void FanPanel::create_fans(json &f) {
     index++;
   }
 
-  // Temperature targets below the fans (only when the printer has those temperature_fan objects).
+  // Chamber fan target below the fans (only when the printer has that temperature_fan object).
   targets.clear();
-  bool has_chamber = false, has_board = false;
+  bool has_chamber = false;
   for (const auto &name : State::get_instance()->get_sensors()) {
     has_chamber = has_chamber || name == "temperature_fan chamber_fan";
-    has_board = has_board || name == "temperature_fan soc_fan";
   }
-  const int targets_y = 12 + count * card_step;
   if (has_chamber) {
-    create_target("temperature_fan chamber_fan", "Chamber fan target", {35, 40, 45, 50}, targets_y, 12);
-  }
-  if (has_board) {
-    create_target("temperature_fan soc_fan", "Board fan target", {40, 45, 50, 55}, targets_y, 374);
+    create_target("temperature_fan chamber_fan", "Chamber fan target", {35, 40, 45, 50}, 12 + count * card_step);
   }
 
   if (fans.size() > 3) {
@@ -151,7 +146,7 @@ void FanPanel::create_fans(json &f) {
 
 }
 
-void FanPanel::create_target(const std::string &object, const char *title, const std::vector<int> &options, int y, int x) {
+void FanPanel::create_target(const std::string &object, const char *title, const std::vector<int> &options, int y) {
   using namespace powerui;
   auto t = std::make_shared<TargetCard>();
   t->object = object;
@@ -165,20 +160,21 @@ void FanPanel::create_target(const std::string &object, const char *title, const
   }
   t->map.push_back("");
 
-  lv_obj_t *c = card(fans_cont, x, y, 350, 104);
-  lv_obj_t *name = label(c, title, &lv_font_montserrat_16, lv_color_hex(COLOR_FG));
-  lv_obj_set_pos(name, px(16), px(12));
+  // One row of the same height as the fan cards: title and current temperature, target value, selector.
+  lv_obj_t *c = card(fans_cont, 12, y, 712, 84);
+  lv_obj_t *name = label(c, title, &lv_font_montserrat_18, lv_color_hex(COLOR_FG));
+  lv_obj_set_pos(name, px(20), px(16));
   t->now_label = label(c, "", &lv_font_montserrat_12, lv_color_hex(COLOR_MUTED));
-  lv_obj_align_to(t->now_label, name, LV_ALIGN_OUT_RIGHT_BOTTOM, px(10), -px(1));
+  lv_obj_set_pos(t->now_label, px(20), px(46));
   t->target_label = label(c, "--", &lv_font_montserrat_24, lv_color_hex(COLOR_FG));
-  lv_obj_align(t->target_label, LV_ALIGN_TOP_RIGHT, -px(16), px(8));
+  lv_obj_set_pos(t->target_label, px(232), px(26));
 
   t->btnm = lv_btnmatrix_create(c);
   lv_btnmatrix_set_map(t->btnm, t->map.data());
   lv_btnmatrix_set_btn_ctrl_all(t->btnm, LV_BTNMATRIX_CTRL_CHECKABLE);
   lv_btnmatrix_set_one_checked(t->btnm, true);
-  lv_obj_set_size(t->btnm, px(318), px(40));
-  lv_obj_align(t->btnm, LV_ALIGN_BOTTOM_MID, 0, -px(12));
+  lv_obj_set_size(t->btnm, px(384), px(40));
+  lv_obj_align(t->btnm, LV_ALIGN_RIGHT_MID, -px(16), 0);
   style_segmented(t->btnm);
   lv_obj_set_style_text_font(t->btnm, &lv_font_montserrat_14, LV_PART_ITEMS);
   lv_obj_add_event_cb(t->btnm, &FanPanel::_handle_target_selected, LV_EVENT_VALUE_CHANGED, this);
@@ -193,7 +189,7 @@ void FanPanel::update_target(TargetCard &t, const json &state) {
   auto target = state.find("target");
   if (target != state.end() && target->is_number()) {
     const int value = static_cast<int>(std::lround(target->template get<double>()));
-    lv_label_set_text(t.target_label, fmt::format("{}", value).c_str());
+    lv_label_set_text(t.target_label, fmt::format("{}\xC2\xB0", value).c_str());
     lv_btnmatrix_clear_btn_ctrl_all(t.btnm, LV_BTNMATRIX_CTRL_CHECKED);
     for (size_t i = 0; i < t.options.size(); i++) {
       if (t.options[i] == value) {
@@ -211,7 +207,7 @@ void FanPanel::handle_target_selected(lv_event_t *event) {
       const int value = t->options[idx];
       spdlog::debug("set {} target to {}", t->fan_name, value);
       ws.gcode_script(fmt::format("SET_TEMPERATURE_FAN_TARGET TEMPERATURE_FAN={} TARGET={}", t->fan_name, value));
-      lv_label_set_text(t->target_label, std::to_string(value).c_str());
+      lv_label_set_text(t->target_label, fmt::format("{}\xC2\xB0", value).c_str());
       break;
     }
   }
