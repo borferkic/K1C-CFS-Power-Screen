@@ -34,7 +34,6 @@ std::string usb_mount_point() {
 
 LV_IMG_DECLARE(print);
 LV_IMG_DECLARE(ui_icon_play);
-LV_IMG_DECLARE(back);
 
 
 LV_IMG_DECLARE(sd_img);
@@ -60,7 +59,6 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   , file_grid(lv_obj_create(left_cont))
   , file_view(lv_obj_create(files_cont))
   , print_btn(file_view, NULL, "Print", &PrintPanel::_handle_print_callback, this)
-  , back_btn(file_view, &back, "Back", &PrintPanel::_handle_back_btn, this)
   , delete_confirm_cont(lv_obj_create(files_cont))
   , delete_confirm_box(lv_obj_create(delete_confirm_cont))
   , delete_confirm_label(lv_label_create(delete_confirm_box))
@@ -240,17 +238,14 @@ PrintPanel::PrintPanel(KWebSocketClient &websocket, std::mutex &lock, PrintStatu
   lv_obj_set_style_border_width(file_panel.get_container(), 0, LV_PART_MAIN);
 
   lv_obj_set_grid_cell(print_btn.get_container(), LV_GRID_ALIGN_CENTER, 0, 3, LV_GRID_ALIGN_END, 1, 1);
-  lv_obj_set_grid_cell(back_btn.get_container(), LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_END, 1, 1);
-  lv_obj_add_flag(back_btn.get_container(), LV_OBJ_FLAG_HIDDEN);
 
-  lv_obj_move_foreground(back_btn.get_container());
   lv_obj_move_foreground(print_btn.get_container());
 
   const lv_color_t file_button_grey = lv_color_hex(powerui::COLOR_SECONDARY);
   const lv_color_t file_button_green = lv_color_hex(powerui::COLOR_PRIMARY);
   const lv_color_t file_button_green_pressed = lv_color_hex(powerui::COLOR_PRIMARY_PRESSED);
   lv_obj_t *file_action_buttons[] = {
-    print_btn.get_container(), back_btn.get_container()
+    print_btn.get_container()
   };
   const auto file_action_width = static_cast<lv_coord_t>(
     119 * powerui::overlay_width_scale());
@@ -887,14 +882,6 @@ void PrintPanel::handle_metadata(const std::string &path, json &j) {
       }
       return;
     }
-  }
-}
-
-void PrintPanel::handle_back_btn(lv_event_t *event) {
-  lv_obj_t *btn = lv_event_get_current_target(event);
-  if (btn == back_btn.get_container()) {
-    lv_obj_move_background(files_cont);
-    print_status.background();    
   }
 }
 
