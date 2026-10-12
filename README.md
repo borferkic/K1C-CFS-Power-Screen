@@ -188,6 +188,10 @@ The projects and resources used by the original foundation are also acknowledged
 - [Fluidd](https://github.com/fluidd-core/fluidd)
 - [Klippain Shake&Tune](https://github.com/Frix-x/klippain-shaketune)
 
+### AI assistance
+
+Part of this project was developed with the help of Claude (Anthropic): roughly 30% of the QA work, the performance tests and simulations, and about 60% of the documentation writing. Design decisions, code review, and testing on the printer were done by the author.
+
 ## License and credits
 
 - **Source code:** GNU GPL-3.0 (see [LICENSE](LICENSE)). PowerScreen is a modification of [GuppyScreen](https://github.com/ballaswag/guppyscreen) by ballaswag.
@@ -357,6 +361,10 @@ También se reconocen los proyectos y recursos utilizados por la base original:
 - [KlipperScreen](https://github.com/KlipperScreen/KlipperScreen)
 - [Fluidd](https://github.com/fluidd-core/fluidd)
 - [Klippain Shake&Tune](https://github.com/Frix-x/klippain-shaketune)
+
+### Asistencia de IA
+
+Parte de este proyecto se desarrolló con ayuda de Claude (Anthropic): aproximadamente el 30 % del trabajo de QA, las pruebas de rendimiento y simulaciones, y cerca del 60 % de la redacción de la documentación. Las decisiones de diseño, la revisión del código y las pruebas en la impresora las hizo el autor.
 
 ## Licencia y créditos
 
