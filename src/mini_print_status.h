@@ -39,6 +39,9 @@ class MiniPrintStatus {
   // "Exclude objects" chip under the subtitle: shown only when the print has labeled objects.
   void set_exclude_available(bool available);
   void set_exclude_action(std::function<void()> action);
+  // Speed preset chip under the state badge: Slow 50 %, Standard 100 %, Fast 125 %. Touching it opens a list; the
+  // action receives the chosen percentage. The percentage is not remembered: it applies to the current print only.
+  void set_speed_action(std::function<void(int)> action);
   void set_actions(std::function<void()> pause, std::function<void()> resume, std::function<void()> stop);
   bool is_active() const;
 
@@ -50,6 +53,7 @@ class MiniPrintStatus {
 
  private:
   void refresh_subtitle();
+  void refresh_speed_chip();
 
   lv_obj_t *cont;
   lv_obj_t *title_label;
@@ -68,6 +72,9 @@ class MiniPrintStatus {
   lv_obj_t *pause_label;
   lv_obj_t *stop_btn;
   lv_obj_t *exclude_row;
+  lv_obj_t *speed_chip;
+  lv_obj_t *speed_chip_label;
+  int speed_percent;
 
   std::string status;
   std::string material;
@@ -78,6 +85,7 @@ class MiniPrintStatus {
   std::function<void()> resume_action;
   std::function<void()> stop_action;
   std::function<void()> exclude_action;
+  std::function<void(int)> speed_action;
 };
 
 #endif //__MINI_PRINT_STATUS__

@@ -121,7 +121,8 @@ void confirm_dialog(const char *title, const char *message, const char *confirm_
 
 // Narrow modal list (dimmed background): title, an X button and one row per option. `on_pick` receives the index of the
 // touched row. Touching the X or anywhere outside the card closes the dialog without calling `on_pick`.
-void choice_dialog(const char *title, const std::vector<std::string> &options, std::function<void(int)> on_pick);
+// `selected` (optional) is the index of the current option, drawn with the green accent.
+void choice_dialog(const char *title, const std::vector<std::string> &options, std::function<void(int)> on_pick, int selected = -1);
 
 // Background of an overlay panel's root container: page color, no padding or border, not scrollable.
 void style_overlay_root(lv_obj_t *cont);

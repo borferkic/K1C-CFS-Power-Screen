@@ -139,6 +139,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
     [this]() { ws.send_jsonrpc("printer.print.pause"); },
     [this]() { ws.send_jsonrpc("printer.print.resume"); },
     [this]() { confirm_cancel(); });
+  mini_print_status.set_speed_action([this](int percent) { ws.gcode_script(fmt::format("M220 S{}", percent)); });
 
   lv_obj_move_background(status_cont);
   lv_obj_clear_flag(status_cont, LV_OBJ_FLAG_SCROLLABLE);  

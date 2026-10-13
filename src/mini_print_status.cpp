@@ -12,6 +12,9 @@ LV_IMG_DECLARE(cancel);
 LV_IMG_DECLARE(ui_icon_exclude);
 
 namespace {
+constexpr int SPEED_PRESETS[3] = {50, 100, 125};
+const char *const SPEED_NAMES[3] = {"Slow", "Standard", "Fast"};
+
 // Content area of the card is 366 x 374 design px (408 x 416 card, 20 padding, 1 border).
 constexpr int CONTENT_W = 366;
 
@@ -56,6 +59,9 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
   , pause_label(NULL)
   , stop_btn(NULL)
   , exclude_row(NULL)
+  , speed_chip(NULL)
+  , speed_chip_label(NULL)
+  , speed_percent(100)
   , status("n/a")
   , active(false)
 {
@@ -101,6 +107,24 @@ MiniPrintStatus::MiniPrintStatus(lv_obj_t *parent,
   state_badge = badge(cont, "Idle", muted);
   lv_obj_update_layout(toggle);
   lv_obj_align_to(state_badge, toggle, LV_ALIGN_OUT_LEFT_MID, -px(8), 0);
+
+  // Speed preset chip: soft green pill under the state badge.
+  speed_chip = plain(cont);
+  lv_obj_add_flag(speed_chip, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_set_size(speed_chip, LV_SIZE_CONTENT, px(28));
+  lv_obj_set_style_radius(speed_chip, LV_RADIUS_CIRCLE, 0);
+  lv_obj_set_style_bg_color(speed_chip, lv_color_hex(COLOR_ACCENT_BG), 0);
+  lv_obj_set_style_bg_opa(speed_chip, LV_OPA_COVER, 0);
+  lv_obj_set_style_bg_color(speed_chip, lv_color_hex(COLOR_SECONDARY), LV_STATE_PRESSED);
+  lv_obj_set_style_border_width(speed_chip, 1, 0);
+  lv_obj_set_style_border_color(speed_chip, lv_color_hex(COLOR_ACCENT), 0);
+  lv_obj_set_style_border_opa(speed_chip, LV_OPA_50, 0);
+  lv_obj_set_style_pad_hor(speed_chip, px(12), 0);
+  lv_obj_set_flex_flow(speed_chip, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(speed_chip, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  speed_chip_label = label(speed_chip, "", &lv_font_montserrat_12, lv_color_hex(COLOR_ACCENT));
+  lv_obj_add_event_cb(speed_chip, &MiniPrintStatus::_handle_action, LV_EVENT_CLICKED, this);
+  refresh_speed_chip();
 
   // Progress: big number, percent sign, ETA and bar.
   number_label = label(cont, "0", &powerui_font_number_88, fg);
@@ -235,8 +259,41 @@ void MiniPrintStatus::set_exclude_available(bool available) {
   }
 }
 
+// "Standard 100%" when the speed matches a preset, "Custom 87%" otherwise.
+void MiniPrintStatus::refresh_speed_chip() {
+  const char *name = "Custom";
+  for (int i = 0; i < 3; ++i) {
+    if (speed_percent == SPEED_PRESETS[i]) {
+      name = SPEED_NAMES[i];
+    }
+  }
+  lv_label_set_text(speed_chip_label, fmt::format("{} {}%", name, speed_percent).c_str());
+  lv_obj_update_layout(speed_chip);
+  lv_obj_align(speed_chip, LV_ALIGN_TOP_RIGHT, 0, px(48));
+}
+
+void MiniPrintStatus::set_speed_action(std::function<void(int)> action) {
+  speed_action = action;
+}
+
 void MiniPrintStatus::handle_action(lv_event_t *event) {
   lv_obj_t *target = lv_event_get_target(event);
+  if (target == speed_chip) {
+    std::vector<std::string> options;
+    int selected = -1;
+    for (int i = 0; i < 3; ++i) {
+      options.push_back(fmt::format("{} {}%", SPEED_NAMES[i], SPEED_PRESETS[i]));
+      if (speed_percent == SPEED_PRESETS[i]) {
+        selected = i;
+      }
+    }
+    choice_dialog("Print speed", options, [this](int index) {
+      if (speed_action && index >= 0 && index < 3) {
+        speed_action(SPEED_PRESETS[index]);
+      }
+    }, selected);
+    return;
+  }
   if (target == exclude_row) {
     if (exclude_action) {
       exclude_action();
@@ -361,6 +418,8 @@ void MiniPrintStatus::update_layer(int current, int total) {
 
 void MiniPrintStatus::update_speed(int percent) {
   lv_label_set_text(speed_value, fmt::format("{}%", percent).c_str());
+  speed_percent = percent;
+  refresh_speed_chip();
 }
 
 void MiniPrintStatus::reset() {

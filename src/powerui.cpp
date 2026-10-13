@@ -456,7 +456,7 @@ void choice_deleted(lv_event_t *e) {
 }
 }  // namespace
 
-void choice_dialog(const char *title, const std::vector<std::string> &options, std::function<void(int)> on_pick) {
+void choice_dialog(const char *title, const std::vector<std::string> &options, std::function<void(int)> on_pick, int selected) {
   lv_obj_t *overlay = lv_obj_create(lv_layer_top());
   lv_obj_remove_style_all(overlay);
   lv_obj_set_size(overlay, LV_PCT(100), LV_PCT(100));
@@ -483,6 +483,11 @@ void choice_dialog(const char *title, const std::vector<std::string> &options, s
                                   pad + head + 12 + i * (row_h + gap), w - 2 * pad, row_h, &choice_clicked, overlay);
     lv_obj_set_style_bg_color(row, lv_color_hex(COLOR_SECONDARY), 0);
     lv_obj_set_style_bg_color(row, lv_color_hex(COLOR_PRESSED), LV_STATE_PRESSED);
+    if (i == selected) {
+      lv_obj_set_style_bg_color(row, lv_color_hex(COLOR_ACCENT_BG), 0);
+      lv_obj_set_style_border_color(row, lv_color_hex(COLOR_ACCENT), 0);
+      lv_obj_set_style_border_opa(row, LV_OPA_50, 0);
+    }
   }
 }
 
