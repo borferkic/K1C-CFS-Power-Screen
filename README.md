@@ -156,7 +156,7 @@ It is recommended to restart the printer after removing PowerScreen.
 - `MANUAL M600` button in the extrusion panel.
 - Manual filament change dialog adapted to the K1C screen.
 - `PS_UNLOAD_FILAMENT` and `PS_LOAD_FILAMENT` actions.
-  - The filament cut uses the cutter position and speed of the `[box]` section of `box.cfg` (`cut_pos_x`, `cut_pos_y`, `cut_velocity`), so it hits as softly as the CFS's own cut. If those values are missing it falls back to X42, Y222.8 and 8000 mm/min.
+  - The filament cut uses the cutter X position and speed of the `[box]` section of `box.cfg` (`cut_pos_x`, `cut_velocity`), so it hits as softly as the CFS's own cut. If those values are missing it falls back to X42 and 8000 mm/min. The cut stays at Y225.2.
   - The bed lowers at 10 mm/s (`F600`) before cutting or loading, the speed the CFS module uses.
   - After a pause, once the nozzle is wiped, `PS_LOAD_FILAMENT` heats the nozzle back to 10 °C under the print temperature saved by the pause, so the print does not resume at 180 °C. If no temperature was saved, it does nothing.
 - Green `RESUME` action.
@@ -333,7 +333,7 @@ Se recomienda reiniciar la impresora después de quitar PowerScreen.
 - Botón `MANUAL M600` en el panel de extrusión.
 - Diálogo de cambio manual de filamento adaptado a la pantalla de la K1C.
 - Acciones `PS_UNLOAD_FILAMENT` y `PS_LOAD_FILAMENT`.
-  - El corte del filamento usa la posición y la velocidad del cortador de la sección `[box]` de `box.cfg` (`cut_pos_x`, `cut_pos_y`, `cut_velocity`), así que golpea tan suave como el corte propio del CFS. Si faltan esos valores usa X42, Y222.8 y 8000 mm/min.
+  - El corte del filamento usa la posición X y la velocidad del cortador de la sección `[box]` de `box.cfg` (`cut_pos_x`, `cut_velocity`), así que golpea tan suave como el corte propio del CFS. Si faltan esos valores usa X42 y 8000 mm/min. El corte se mantiene en Y225.2.
   - La cama baja a 10 mm/s (`F600`) antes de cortar o cargar, la velocidad que usa el módulo del CFS.
   - Tras una pausa, y una vez limpiada la boquilla, `PS_LOAD_FILAMENT` vuelve a calentarla a 10 °C por debajo de la temperatura de impresión que guardó la pausa, para que la impresión no se reanude a 180 °C. Si no hay temperatura guardada, no hace nada.
 - Acción `RESUME` en color verde.
