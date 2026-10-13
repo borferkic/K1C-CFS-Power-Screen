@@ -242,6 +242,8 @@ PrinterTunePanel& MainPanel::get_tune_panel() {
 void MainPanel::open_files() {
   lv_tabview_set_act(tabview, 2, LV_ANIM_OFF);
   print_panel.foreground();
+  // Reload the file list on every open, as the refresh button does.
+  print_panel.subscribe();
   update_header();
 }
 
