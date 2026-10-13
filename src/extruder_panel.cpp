@@ -108,11 +108,12 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   lv_obj_clear_flag(panel_cont, LV_OBJ_FLAG_SCROLLABLE);
 
   // Rail buttons: a small tinted icon above the label (the large image button is hidden; touches reach the container).
-  auto stack_icon = [](ButtonContainer &button, const lv_img_dsc_t *src, int icon_px, lv_color_t color) {
+  auto stack_icon = [](ButtonContainer &button, const lv_img_dsc_t *src, int icon_px, lv_color_t color,
+                       int icon_dy = 12, int label_dy = 12) {
     lv_obj_add_flag(button.get_button(), LV_OBJ_FLAG_HIDDEN);
     lv_obj_t *glyph = powerui::icon(button.get_container(), src, icon_px, color);
-    lv_obj_align(glyph, LV_ALIGN_CENTER, 0, -px(12));
-    lv_obj_align(button.get_label(), LV_ALIGN_BOTTOM_MID, 0, -px(12));
+    lv_obj_align(glyph, LV_ALIGN_CENTER, 0, -px(icon_dy));
+    lv_obj_align(button.get_label(), LV_ALIGN_BOTTOM_MID, 0, -px(label_dy));
     return glyph;
   };
 
@@ -122,11 +123,11 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
     lv_obj_set_pos(button.get_container(), px(x), px(y));
   };
 
-  // Left rail (x 12, 140 wide, 95 high with 12 px gaps).
-  put(manual_change_btn, 12, 12, 140, 95);
-  put(load_btn, 12, 119, 140, 95);
-  put(unload_btn, 12, 226, 140, 95);
-  put(cooldown_btn, 12, 333, 140, 95);
+  // Left rail (x 12, 140 wide, 12 px gaps): a short text-only MANUAL M600, large Load and Unload, a short Cooldown.
+  put(manual_change_btn, 12, 12, 140, 56);
+  put(load_btn, 12, 80, 140, 122);
+  put(unload_btn, 12, 214, 140, 122);
+  put(cooldown_btn, 12, 348, 140, 80);
   // Right rail: two large buttons.
   put(extrude_btn, 584, 12, 140, 200);
   put(retract_btn, 584, 224, 140, 204);
@@ -138,10 +139,15 @@ ExtruderPanel::ExtruderPanel(KWebSocketClient &websocket_client,
   style_button(cooldown_btn.get_container(), cooldown_btn.get_button(), ButtonKind::Outline);
   lv_obj_set_style_text_color(cooldown_btn.get_container(), lv_color_hex(powerui::COLOR_CHAMBER), LV_PART_MAIN);
 
-  stack_icon(manual_change_btn, &ui_hand_img, 38, lv_color_hex(powerui::COLOR_FG));
-  stack_icon(load_btn, &load_filament_img, 38, lv_color_hex(powerui::COLOR_FG));
-  stack_icon(unload_btn, &unload_filament_img, 38, lv_color_hex(powerui::COLOR_FG));
-  stack_icon(cooldown_btn, &extruder, 38, lv_color_hex(powerui::COLOR_CHAMBER));
+  // MANUAL M600 has no icon: only its label, centered.
+  lv_obj_add_flag(manual_change_btn.get_button(), LV_OBJ_FLAG_HIDDEN);
+  lv_label_set_text(manual_change_btn.get_label(), "MANUAL M600");
+  lv_obj_align(manual_change_btn.get_label(), LV_ALIGN_CENTER, 0, 0);
+  stack_icon(load_btn, &load_filament_img, 52, lv_color_hex(powerui::COLOR_FG), 14, 14);
+  stack_icon(unload_btn, &unload_filament_img, 52, lv_color_hex(powerui::COLOR_FG), 14, 14);
+  lv_obj_set_style_text_font(load_btn.get_label(), &lv_font_montserrat_20, 0);
+  lv_obj_set_style_text_font(unload_btn.get_label(), &lv_font_montserrat_20, 0);
+  stack_icon(cooldown_btn, &extruder, 28, lv_color_hex(powerui::COLOR_CHAMBER), 12, 8);
   stack_icon(extrude_btn, &extrude_img, 56, lv_color_hex(powerui::COLOR_ACCENT));
   stack_icon(retract_btn, &retract_img, 56, lv_color_hex(powerui::COLOR_FG));
 
