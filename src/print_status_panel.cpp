@@ -667,7 +667,7 @@ void PrintStatusPanel::populate() {
   v = s->get_data(
       "/printer_state/gcode_move/homing_origin/2"_json_pointer);
   if (!v.is_null()) {
-    z_offset.update_label(fmt::format("{:.5} mm", v.template get<double>()).c_str());
+    z_offset.update_label(fmt::format("{:.3f} mm", v.template get<double>()).c_str());
   }
 
   v = s->get_data("/printer_state/gcode_move/speed_factor"_json_pointer);
@@ -782,7 +782,7 @@ void PrintStatusPanel::consume(json &j) {
   // zoffset
   v = j["/params/0/gcode_move/homing_origin/2"_json_pointer];
   if (!v.is_null()) {
-    z_offset.update_label(fmt::format("{:.5} mm", v.template get<double>()).c_str());
+    z_offset.update_label(fmt::format("{:.3f} mm", v.template get<double>()).c_str());
   }
 
   v = j["/params/0/gcode_move/speed_factor"_json_pointer];
