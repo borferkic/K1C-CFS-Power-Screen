@@ -197,6 +197,7 @@ MainPanel::MainPanel(KWebSocketClient &websocket,
     lv_obj_set_style_bg_opa(macros_page, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_add_flag(macros_page, LV_OBJ_FLAG_HIDDEN);
     setting_panel.set_macros_opener([this]() { open_macros(); });
+    extruder_panel.set_manual_change_opener([this]() { prompt_panel.show_manual_filament_change(); });
 
     ws.register_notify_update(this);
     setting_panel.set_cfs_opener([this]() { cfs_panel.foreground(); });
@@ -592,6 +593,10 @@ void MainPanel::handle_tab_click_cb(lv_event_t *event) {
     lv_obj_move_foreground(tabview);
     overlays.clear();
     update_header();
+    // Files is the third tab: reload its list on every tap on it, as the refresh button does.
+    if (lv_tabview_get_tab_act(tabview) == 2) {
+      print_panel.subscribe();
+    }
   }
 }
 
