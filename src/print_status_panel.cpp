@@ -137,7 +137,7 @@ PrintStatusPanel::PrintStatusPanel(KWebSocketClient &websocket_client,
 {
   mini_print_status.set_actions(
     [this]() { ws.send_jsonrpc("printer.print.pause"); },
-    [this]() { ws.send_jsonrpc("printer.print.resume"); },
+    [this]() { ws.gcode_script("PS_RESUME_PRINT"); },
     [this]() { confirm_cancel(); });
   mini_print_status.set_speed_action([this](int percent) { ws.gcode_script(fmt::format("M220 S{}", percent)); });
 
@@ -914,7 +914,7 @@ void PrintStatusPanel::handle_action(lv_event_t *event) {
     ws.send_jsonrpc("printer.print.pause");
     lv_obj_add_state(act_pause, LV_STATE_DISABLED);
   } else if (btn == act_resume) {
-    ws.send_jsonrpc("printer.print.resume");
+    ws.gcode_script("PS_RESUME_PRINT");
     lv_obj_add_state(act_resume, LV_STATE_DISABLED);
   } else if (btn == act_cancel) {
     if (prompt_enabled()) {
@@ -946,7 +946,7 @@ void PrintStatusPanel::handle_callback(lv_event_t *event) {
     pause_btn.disable();
 
   } else if (btn == resume_btn.get_container()) {
-    ws.send_jsonrpc("printer.print.resume");
+    ws.gcode_script("PS_RESUME_PRINT");
     resume_btn.disable();
   } else if (btn == cancel_btn.get_container()) {
     ws.send_jsonrpc("printer.print.cancel");
