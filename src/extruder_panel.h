@@ -21,6 +21,7 @@ class ExtruderPanel : public NotifyConsumer {
   void consume(json &j);
   void handle_callback(lv_event_t *e);
   void update_clock();
+  void set_manual_change_opener(std::function<void()> opener) { manual_change_opener = opener; }
 
   static void _handle_callback(lv_event_t *event) {
     ExtruderPanel *panel = (ExtruderPanel*)event->user_data;
@@ -33,6 +34,7 @@ class ExtruderPanel : public NotifyConsumer {
   }
 
  private:
+  std::function<void()> manual_change_opener;
   KWebSocketClient &ws;
   lv_obj_t *panel_cont;
   lv_obj_t *title_bar;

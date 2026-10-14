@@ -9,6 +9,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <string>
 
 struct SharedButton {
     SharedButton(lv_obj_t *bbtn) : btn(bbtn) {};
@@ -33,9 +34,12 @@ class PromptPanel : public NotifyConsumer {
 
         void foreground();
         void background();
+        // Opens the manual filament change window locally. The caller holds lv_lock.
+        void show_manual_filament_change();
 
     private:
 
+        void handle_action(const std::string &command);
         void check_height();
         void refresh_filament_buttons();
         void update_nozzle_card();

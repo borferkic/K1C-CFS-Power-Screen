@@ -211,8 +211,12 @@ void ExtruderPanel::update_clock() {
 }
 
 void ExtruderPanel::show_manual_filament_change() {
-  // The menu is defined once in powerscreen_cmd.cfg, so this button and the
-  // M600 macro always show the same prompt.
+  // The window opens locally so it does not wait for Klipper, which may be busy with another macro.
+  // Without an opener, the menu defined in powerscreen_cmd.cfg is requested instead.
+  if (manual_change_opener) {
+    manual_change_opener();
+    return;
+  }
   ws.gcode_script("_PS_MANUAL_CHANGE_PROMPT");
 }
 
