@@ -5,13 +5,15 @@
 
 // Standard menu tile (Calibrations, Settings): icon tile top-left, optional status pill top-right,
 // title and subtitle bottom-left. The tile stretches to its grid cell.
+// Compact tile (half height): icon top-left, title to its right, subtitle along the bottom.
 class SquareButton {
  public:
   SquareButton(lv_obj_t *parent,
                const void *button_img,
                const char *text,
                lv_event_cb_t cb,
-               void *user_data);
+               void *user_data,
+               bool compact = false);
   ~SquareButton();
 
   lv_obj_t *get_button();

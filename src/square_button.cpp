@@ -11,7 +11,8 @@ SquareButton::SquareButton(lv_obj_t *parent,
                            const void *button_img,
                            const char *text,
                            lv_event_cb_t cb,
-                           void *user_data)
+                           void *user_data,
+                           bool compact)
   : button(lv_btn_create(parent))
   , icon_tile(NULL)
   , icon(NULL)
@@ -35,8 +36,10 @@ SquareButton::SquareButton(lv_obj_t *parent,
   lv_obj_set_style_pad_all(button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
 
   icon_tile = plain(button);
-  lv_obj_set_size(icon_tile, px(60), px(60));
-  lv_obj_align(icon_tile, LV_ALIGN_TOP_LEFT, px(14), px(14));
+  const int tile_px = compact ? 44 : 60;
+  const int tile_margin = compact ? 10 : 14;
+  lv_obj_set_size(icon_tile, px(tile_px), px(tile_px));
+  lv_obj_align(icon_tile, LV_ALIGN_TOP_LEFT, px(tile_margin), px(tile_margin));
   lv_obj_set_style_radius(icon_tile, px(12), 0);
   lv_obj_set_style_bg_color(icon_tile, lv_color_hex(powerui::COLOR_SECONDARY), 0);
   lv_obj_set_style_bg_opa(icon_tile, LV_OPA_COVER, 0);
@@ -47,7 +50,7 @@ SquareButton::SquareButton(lv_obj_t *parent,
   {
     const lv_img_dsc_t *dsc = static_cast<const lv_img_dsc_t *>(button_img);
     const int natural = std::max<int>(dsc->header.w, dsc->header.h);
-    lv_img_set_zoom(icon, static_cast<uint16_t>(256 * px(40) / natural));
+    lv_img_set_zoom(icon, static_cast<uint16_t>(256 * px(compact ? 28 : 40) / natural));
   }
   lv_obj_center(icon);
   lv_obj_set_style_img_recolor(icon, icon_color, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -55,21 +58,28 @@ SquareButton::SquareButton(lv_obj_t *parent,
 
   // Title and subtitle: a fixed-height block at the bottom so every title sits on the same line.
   text_cont = plain(button);
-  lv_obj_set_size(text_cont, LV_PCT(100), px(56));
-  lv_obj_align(text_cont, LV_ALIGN_BOTTOM_LEFT, 0, -px(14));
-  lv_obj_set_style_pad_left(text_cont, px(14), 0);
+  lv_obj_set_size(text_cont, LV_PCT(100), px(compact ? 20 : 56));
+  lv_obj_align(text_cont, LV_ALIGN_BOTTOM_LEFT, 0, -px(compact ? 10 : 14));
+  lv_obj_set_style_pad_left(text_cont, px(compact ? 10 : 14), 0);
   lv_obj_set_style_pad_right(text_cont, px(10), 0);
   lv_obj_set_layout(text_cont, LV_LAYOUT_FLEX);
   lv_obj_set_flex_flow(text_cont, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_flex_align(text_cont, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
   lv_obj_set_style_pad_row(text_cont, px(3), 0);
 
-  label = lv_label_create(text_cont);
+  // Compact: the title sits to the right of the icon, centered on it, and wraps to a second line if needed.
+  label = lv_label_create(compact ? button : text_cont);
   lv_label_set_text(label, text);
-  lv_label_set_long_mode(label, LV_LABEL_LONG_CLIP);
-  lv_obj_set_width(label, LV_PCT(100));
   lv_obj_set_style_text_color(label, text_color, LV_PART_MAIN | LV_STATE_DEFAULT);
   lv_obj_set_style_text_font(label, &lv_font_montserrat_16, LV_PART_MAIN | LV_STATE_DEFAULT);
+  if (compact) {
+    lv_label_set_long_mode(label, LV_LABEL_LONG_WRAP);
+    lv_obj_set_width(label, px(100));
+    lv_obj_align_to(label, icon_tile, LV_ALIGN_OUT_RIGHT_MID, px(8), 0);
+  } else {
+    lv_label_set_long_mode(label, LV_LABEL_LONG_CLIP);
+    lv_obj_set_width(label, LV_PCT(100));
+  }
 
   if (cb != NULL) {
     lv_obj_add_event_cb(button, cb, LV_EVENT_CLICKED, user_data);

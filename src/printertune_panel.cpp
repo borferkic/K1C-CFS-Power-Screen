@@ -26,9 +26,9 @@ LV_IMG_DECLARE(ui_icon_plug_zap);
 LV_IMG_DECLARE(cooldown_img);
 LV_IMG_DECLARE(extruder);
 
-// Row heights of the tile grid: two rows fill the panel; more rows keep that height and the panel scrolls.
+// Row heights of the tile grid: three rows fill the panel; more rows keep that height and the panel scrolls.
 static lv_coord_t grid_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
-static lv_coord_t grid_rows[6] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+static lv_coord_t grid_rows[8] = {LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
 
 PrinterTunePanel::PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t *parent, FineTunePanel &finetune)
   : ws(c)
@@ -47,17 +47,17 @@ PrinterTunePanel::PrinterTunePanel(KWebSocketClient &c, std::mutex &l, lv_obj_t 
   , tmc_status_panel(c, l)
   , power_panel(c, l)
   , pid_tune_panel(c, l)
-  , bedmesh_btn(cont, &bedmesh_img, "Bed Mesh", &PrinterTunePanel::_handle_callback, this)
-  , finetune_btn(cont, &fine_tune_img, "Fine Tune", &PrinterTunePanel::_handle_callback, this)
-  , inputshaper_btn(cont, &ui_resonance_img, "Input Shaper", &PrinterTunePanel::_handle_callback, this)
-  , belts_calibration_btn(cont, &ui_belts_img, "Belts / Shake", &PrinterTunePanel::_handle_callback, this)
-  , limits_btn(cont, &limit_img, "Limits", &PrinterTunePanel::_handle_callback, this)
-  , tmc_tune_btn(cont, &motor_img, "TMC Autotune", &PrinterTunePanel::_handle_callback, this)
-  , tmc_status_btn(cont, &chart_img, "TMC Metrics", &PrinterTunePanel::_handle_callback, this)
-  , power_devices_btn(cont, &ui_icon_plug_zap, "Power Devices", &PrinterTunePanel::_handle_callback, this)
-  , console_btn(cont, &ui_console_img, "Console", &PrinterTunePanel::_handle_callback, this)
-  , pid_tune_btn(cont, &cooldown_img, "PID Tune", &PrinterTunePanel::_handle_callback, this)
-  , nozzle_clean_btn(cont, &extruder, "Nozzle Clean", &PrinterTunePanel::_handle_callback, this)
+  , bedmesh_btn(cont, &bedmesh_img, "Bed Mesh", &PrinterTunePanel::_handle_callback, this, true)
+  , finetune_btn(cont, &fine_tune_img, "Fine Tune", &PrinterTunePanel::_handle_callback, this, true)
+  , inputshaper_btn(cont, &ui_resonance_img, "Input Shaper", &PrinterTunePanel::_handle_callback, this, true)
+  , belts_calibration_btn(cont, &ui_belts_img, "Belts / Shake", &PrinterTunePanel::_handle_callback, this, true)
+  , limits_btn(cont, &limit_img, "Limits", &PrinterTunePanel::_handle_callback, this, true)
+  , tmc_tune_btn(cont, &motor_img, "TMC Autotune", &PrinterTunePanel::_handle_callback, this, true)
+  , tmc_status_btn(cont, &chart_img, "TMC Metrics", &PrinterTunePanel::_handle_callback, this, true)
+  , power_devices_btn(cont, &ui_icon_plug_zap, "Power Devices", &PrinterTunePanel::_handle_callback, this, true)
+  , console_btn(cont, &ui_console_img, "Console", &PrinterTunePanel::_handle_callback, this, true)
+  , pid_tune_btn(cont, &cooldown_img, "PID Tune", &PrinterTunePanel::_handle_callback, this, true)
+  , nozzle_clean_btn(cont, &extruder, "Nozzle Clean", &PrinterTunePanel::_handle_callback, this, true)
 {
   bedmesh_btn.set_subtitle("Probe the bed surface");
   finetune_btn.set_subtitle("Z, speed, flow and PA");
@@ -113,15 +113,15 @@ void PrinterTunePanel::relayout() {
                          LV_GRID_ALIGN_STRETCH, slot / 4, 1);
     slot++;
   }
-  // Rows: two fill the panel; from the third row on each row keeps the height of a two-row layout and the tab scrolls.
-  const int rows = std::max(2, (slot + 3) / 4);
-  const lv_coord_t row_height = (powerui::overlay_height_px() - 3 * 12) / 2;
+  // Rows: three rows fill the panel; from the fourth row on the tab scrolls.
+  const int rows = std::max(1, (slot + 3) / 4);
+  const lv_coord_t row_height = (powerui::overlay_height_px() - 4 * 12) / 3;
   for (int r = 0; r < rows; r++) {
-    grid_rows[r] = rows > 2 ? row_height : LV_GRID_FR(1);
+    grid_rows[r] = row_height;
   }
   grid_rows[rows] = LV_GRID_TEMPLATE_LAST;
   lv_obj_set_grid_dsc_array(cont, grid_col_dsc, grid_rows);
-  if (rows > 2) {
+  if (rows > 3) {
     lv_obj_add_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_scroll_dir(cont, LV_DIR_VER);
   } else {
