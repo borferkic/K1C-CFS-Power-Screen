@@ -159,12 +159,17 @@ It is recommended to restart the printer after removing PowerScreen.
   - The filament cut uses the cutter X position and speed of the `[box]` section of `box.cfg` (`cut_pos_x`, `cut_velocity`), so it hits as softly as the CFS's own cut. If those values are missing it falls back to X42 and 8000 mm/min. The cut stays at Y225.2.
   - The bed lowers at 10 mm/s (`F600`) before cutting or loading, the speed the CFS module uses.
   - After a pause, once the nozzle is wiped, `PS_LOAD_FILAMENT` heats the nozzle to 10 °C under the print temperature saved by the pause and waits there. If no temperature was saved, it does nothing.
-- Green `RESUME` action (`PS_RESUME`): heats to the print temperature, purges 5 mm and resumes the print.
+- Green `RESUME` action (`PS_RESUME`): heats to the print temperature, purges 5 mm in the purge tray, leaves the tray in a straight line and resumes the print.
 - Red `STOP` action (`PS_CANCEL`), which cancels with `CANCEL_PRINT`.
 - Nozzle temperature card (actual / target, state and progress bar) and an X button that closes the dialog at once, without waiting for Klipper.
 - Icons for load, unload, resume, and stop actions.
 - Button layout reorganized for comfortable touchscreen use on the K1C.
 - **[PowerUI](https://github.com/borferkic/PowerUI)** visual theme on every screen, created by Boris Fernández (Boris SdK) and based on [shadcn/ui](https://github.com/shadcn-ui/ui). Its design guidelines and implementation instructions live in the [PowerUI](https://github.com/borferkic/PowerUI) repository.
+
+> [!IMPORTANT]
+> **The nozzle stays in the purge tray after `PS_LOAD_FILAMENT`.** The factory `RESUME` goes to the print position in one straight X, Y and Z move, so from the tray it would cross the brush in a diagonal and could hit it. Resume with the **RESUME** button of the manual filament change dialog (`PS_RESUME`), the **Resume** button of Print Status or `PS_RESUME_PRINT`; all of them leave the tray in a straight line first. `PS_CANCEL` does the same before cancelling.
+>
+> **Do not resume with a plain `RESUME` (Fluidd or the console) while the nozzle is in the purge tray.** Use `PS_RESUME_PRINT` there. Keep a hand near the emergency stop the first time you try it.
 
 ## Pending work
 
@@ -336,12 +341,17 @@ Se recomienda reiniciar la impresora después de quitar PowerScreen.
   - El corte del filamento usa la posición X y la velocidad del cortador de la sección `[box]` de `box.cfg` (`cut_pos_x`, `cut_velocity`), así que golpea tan suave como el corte propio del CFS. Si faltan esos valores usa X42 y 8000 mm/min. El corte se mantiene en Y225.2.
   - La cama baja a 10 mm/s (`F600`) antes de cortar o cargar, la velocidad que usa el módulo del CFS.
   - Tras una pausa, y una vez limpiada la boquilla, `PS_LOAD_FILAMENT` calienta la boquilla a 10 °C por debajo de la temperatura de impresión que guardó la pausa y espera ahí. Si no hay temperatura guardada, no hace nada.
-- Acción `RESUME` en color verde (`PS_RESUME`): calienta a la temperatura de impresión, purga 5 mm y reanuda la impresión.
+- Acción `RESUME` en color verde (`PS_RESUME`): calienta a la temperatura de impresión, purga 5 mm en la bandeja, sale de la bandeja en línea recta y reanuda la impresión.
 - Acción `STOP` en color rojo (`PS_CANCEL`), que cancela con `CANCEL_PRINT`.
 - Tarjeta con la temperatura de la boquilla (actual / objetivo, estado y barra de progreso) y un botón X que cierra el diálogo al instante, sin esperar a Klipper.
 - Iconos para las acciones de carga, descarga, reanudación y detención.
 - Botones reorganizados para facilitar el uso táctil en la K1C.
 - Tema visual **[PowerUI](https://github.com/borferkic/PowerUI)** en todas las pantallas, creado por Boris Fernández (Boris SdK) y basado en [shadcn/ui](https://github.com/shadcn-ui/ui). Sus lineamientos de diseño y las instrucciones de implementación están en el repositorio [PowerUI](https://github.com/borferkic/PowerUI).
+
+> [!IMPORTANT]
+> **La boquilla se queda en la bandeja de purga tras `PS_LOAD_FILAMENT`.** El `RESUME` de fábrica va a la posición de impresión en un solo movimiento recto de X, Y y Z, así que desde la bandeja cruzaría la brocha en diagonal y podría golpearla. Reanuda con el botón **RESUME** del diálogo de cambio manual de filamento (`PS_RESUME`), el botón **Resume** de Print Status o `PS_RESUME_PRINT`; todos salen de la bandeja en línea recta antes. `PS_CANCEL` hace lo mismo antes de cancelar.
+>
+> **No reanudes con un `RESUME` simple (Fluidd o la consola) mientras la boquilla está en la bandeja de purga.** Usa `PS_RESUME_PRINT`. La primera vez que lo pruebes, ten una mano cerca del paro de emergencia.
 
 ## Pendientes
 
