@@ -4,6 +4,8 @@
 #include "utils.h"
 #include "spdlog/spdlog.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstring>
 
 LV_IMG_DECLARE(load_filament_img);
@@ -151,7 +153,102 @@ PromptPanel::PromptPanel(KWebSocketClient &websocket_client, std::mutex &lock, l
     lv_style_set_bg_color(&style_btn_dark_grey, lv_color_hex(powerui::COLOR_MAT_GREY_DARK));
     lv_style_set_bg_opa(&style_btn_dark_grey, LV_OPA_COVER);
     
+    // Manual filament change extras. They ignore the grid layout and are shown only for that prompt.
+    x_btn = lv_btn_create(prompt_cont);
+    lv_obj_add_flag(x_btn, LV_OBJ_FLAG_IGNORE_LAYOUT);
+    lv_obj_set_size(x_btn, powerui::px(44), powerui::px(44));
+    lv_obj_align(x_btn, LV_ALIGN_TOP_RIGHT, 0, 0);
+    lv_obj_set_style_bg_color(x_btn, lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(x_btn, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_radius(x_btn, powerui::px(10), LV_PART_MAIN);
+    lv_obj_set_style_shadow_width(x_btn, 0, LV_PART_MAIN);
+    lv_obj_set_style_border_width(x_btn, 1, LV_PART_MAIN);
+    lv_obj_set_style_border_color(x_btn, lv_color_hex(powerui::COLOR_WHITE), LV_PART_MAIN);
+    lv_obj_set_style_border_opa(x_btn, LV_OPA_10, LV_PART_MAIN);
+    lv_obj_t *x_label = lv_label_create(x_btn);
+    lv_label_set_text(x_label, LV_SYMBOL_CLOSE);
+    lv_obj_set_style_text_color(x_label, lv_color_hex(powerui::COLOR_FG), 0);
+    lv_obj_center(x_label);
+    // Closing only hides the window: it never waits for Klipper, which may be busy with a macro.
+    lv_obj_add_event_cb(x_btn, [](lv_event_t *e) {
+        static_cast<PromptPanel *>(lv_event_get_user_data(e))->background();
+    }, LV_EVENT_CLICKED, this);
+
+    nozzle_card = lv_obj_create(prompt_cont);
+    lv_obj_add_flag(nozzle_card, LV_OBJ_FLAG_IGNORE_LAYOUT);
+    lv_obj_clear_flag(nozzle_card, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_size(nozzle_card, lv_pct(100), powerui::px(60));
+    lv_obj_set_pos(nozzle_card, 0, powerui::px(58));
+    lv_obj_set_style_bg_color(nozzle_card, lv_color_hex(powerui::COLOR_SECONDARY), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(nozzle_card, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_radius(nozzle_card, powerui::px(10), LV_PART_MAIN);
+    lv_obj_set_style_border_width(nozzle_card, 0, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(nozzle_card, 0, LV_PART_MAIN);
+    nozzle_temp_label = lv_label_create(nozzle_card);
+    lv_obj_set_style_text_font(nozzle_temp_label, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(nozzle_temp_label, lv_color_hex(powerui::COLOR_FG), 0);
+    lv_obj_align(nozzle_temp_label, LV_ALIGN_TOP_LEFT, powerui::px(14), powerui::px(8));
+    nozzle_state_label = lv_label_create(nozzle_card);
+    lv_obj_set_style_text_font(nozzle_state_label, &lv_font_montserrat_14, 0);
+    lv_obj_align(nozzle_state_label, LV_ALIGN_TOP_RIGHT, -powerui::px(14), powerui::px(11));
+    nozzle_bar = lv_bar_create(nozzle_card);
+    lv_obj_set_size(nozzle_bar, lv_pct(100) - 2 * powerui::px(14), powerui::px(6));
+    lv_obj_align(nozzle_bar, LV_ALIGN_BOTTOM_MID, 0, -powerui::px(8));
+    lv_bar_set_range(nozzle_bar, 0, 100);
+    lv_obj_set_style_bg_color(nozzle_bar, lv_color_hex(0x3A3A3A), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(nozzle_bar, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_radius(nozzle_bar, powerui::px(3), LV_PART_MAIN);
+    lv_obj_set_style_radius(nozzle_bar, powerui::px(3), LV_PART_INDICATOR);
+    lv_obj_set_style_bg_opa(nozzle_bar, LV_OPA_COVER, LV_PART_INDICATOR);
+    set_manual_widgets_visible(false);
+
     background(); // hide ourselves
+}
+
+void PromptPanel::set_manual_widgets_visible(bool visible) {
+    for (lv_obj_t *obj : {x_btn, nozzle_card}) {
+        if (obj == NULL) {
+            continue;
+        }
+        if (visible) {
+            lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
+}
+
+// Nozzle temperature of the manual filament change window: actual / target, a state and a bar toward the target.
+void PromptPanel::update_nozzle_card() {
+    if (nozzle_card == NULL || lv_obj_has_flag(nozzle_card, LV_OBJ_FLAG_HIDDEN)) {
+        return;
+    }
+    auto &temp = State::get_instance()->get_data("/printer_state/extruder/temperature"_json_pointer);
+    auto &target = State::get_instance()->get_data("/printer_state/extruder/target"_json_pointer);
+    if (!temp.is_number()) {
+        return;
+    }
+    const double t = temp.template get<double>();
+    const double tg = target.is_number() ? target.template get<double>() : 0.0;
+    lv_label_set_text_fmt(nozzle_temp_label, "Nozzle  %d / %d \xC2\xB0" "C", (int)std::lround(t), (int)std::lround(tg));
+    const char *state = "Heater off";
+    uint32_t color = powerui::COLOR_MUTED;
+    if (tg > 0) {
+        if (std::fabs(t - tg) <= 3.0) {
+            state = "At temperature";
+            color = powerui::COLOR_ACCENT;
+        } else if (t < tg) {
+            state = "Heating";
+            color = powerui::COLOR_WARNING;
+        } else {
+            state = "Cooling";
+        }
+    }
+    lv_label_set_text(nozzle_state_label, state);
+    lv_obj_set_style_text_color(nozzle_state_label, lv_color_hex(color), 0);
+    lv_obj_set_style_bg_color(nozzle_bar, lv_color_hex(color), LV_PART_INDICATOR);
+    const int percent = tg > 0 ? (int)std::max(0.0, std::min(100.0, t * 100.0 / tg)) : 0;
+    lv_bar_set_value(nozzle_bar, percent, LV_ANIM_OFF);
 }
 
 
@@ -176,11 +273,15 @@ void PromptPanel::refresh_filament_buttons() {
 
 void PromptPanel::consume(json &j) {
     auto &pstate = j["/params/0/print_stats/state"_json_pointer];
-    if (pstate.is_null()) {
+    auto &extruder = j["/params/0/extruder"_json_pointer];
+    if (pstate.is_null() && extruder.is_null()) {
         return;
     }
     std::lock_guard<std::mutex> lock(lv_lock);
-    refresh_filament_buttons();
+    if (!pstate.is_null()) {
+        refresh_filament_buttons();
+    }
+    update_nozzle_card();
 }
 
 PromptPanel::~PromptPanel() {
@@ -226,7 +327,8 @@ void PromptPanel::handle_callback(lv_event_t *event) {
         // The Manual M600 screen uses these terminal actions. Hide the
         // native prompt before running them so no nested RESPOND is needed.
         const char *button_text = label == NULL ? "" : lv_label_get_text(label);
-        if (!strcmp(button_text, "RESUME") || !strcmp(button_text, "STOP") || !strcmp(button_text, "CLOSE") || !strcmp(button_text, "X")) {
+        // CLOSE is recognised by its command: its label carries an icon, so the text no longer reads "CLOSE".
+        if (!strcmp(button_text, "RESUME") || !strcmp(button_text, "STOP") || !strcmp(button_text, "X") || cmd.find("action:prompt_end") != std::string::npos) {
             background();
         }
 
@@ -293,19 +395,25 @@ void PromptPanel::handle_macro_response(json &j) {
                 lv_obj_add_flag(flex, LV_OBJ_FLAG_HIDDEN);
                 lv_obj_set_grid_cell(footer_cont, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 2);
                 lv_obj_set_size(footer_cont, lv_pct(100), lv_pct(100));
+                set_manual_widgets_visible(manual_filament_prompt);
                 if (manual_filament_prompt) {
                     static lv_coord_t manual_button_cols[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
-                    // Two compact rows: LOAD, UNLOAD, RESUME above; STOP and CLOSE below.
-                    static lv_coord_t manual_button_rows[] = {LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST};
+                    // Two rows: LOAD and UNLOAD above, RESUME and STOP below. CLOSE is the X button of the window.
+                    static lv_coord_t manual_button_rows[] = {LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST};
                     lv_obj_set_layout(footer_cont, LV_LAYOUT_GRID);
                     lv_obj_set_grid_dsc_array(footer_cont, manual_button_cols, manual_button_rows);
+                    // The buttons sit below the nozzle card.
+                    lv_obj_add_flag(footer_cont, LV_OBJ_FLAG_IGNORE_LAYOUT);
+                    lv_obj_set_pos(footer_cont, 0, powerui::px(130));
+                    lv_obj_set_size(footer_cont, lv_pct(100), powerui::px(184));
                     // Keep the 2x2 controls inside the K1C display margins.
                     lv_obj_set_style_pad_all(footer_cont, 0, 0);
                     // Leave a clear gap after the instruction and between both rows.
-                    lv_obj_set_style_pad_top(footer_cont, 8, 0);
+                    lv_obj_set_style_pad_top(footer_cont, 0, 0);
                     lv_obj_set_style_pad_row(footer_cont, 12, 0);
                     lv_obj_set_style_pad_column(footer_cont, 12, 0);
                 } else {
+                    lv_obj_clear_flag(footer_cont, LV_OBJ_FLAG_IGNORE_LAYOUT);
                     lv_obj_set_layout(footer_cont, LV_LAYOUT_FLEX);
                     lv_obj_set_flex_flow(footer_cont, LV_FLEX_FLOW_ROW_WRAP);
                     lv_obj_set_style_pad_all(footer_cont, 0, 0);
@@ -322,7 +430,7 @@ void PromptPanel::handle_macro_response(json &j) {
                     // The K1C needs extra vertical room for the second row.
                     lv_obj_set_style_min_width(prompt_cont, 0, 0);
                     lv_obj_set_style_min_height(prompt_cont, 0, 0);
-                    lv_obj_set_size(prompt_cont, powerui::px(392), powerui::px(322));
+                    lv_obj_set_size(prompt_cont, powerui::px(500), powerui::px(372));
                 } else {
                     lv_obj_set_style_min_height(prompt_cont, lv_pct(60), 0);
                     lv_obj_set_style_min_width(prompt_cont, lv_pct(60), 0);
@@ -436,7 +544,7 @@ void PromptPanel::handle_macro_response(json &j) {
                             lv_obj_set_size(btn, powerui::px(96), powerui::px(32));
                         } else {
                             lv_obj_set_grid_cell(btn, LV_GRID_ALIGN_STRETCH, button_column, 1, LV_GRID_ALIGN_CENTER, button_row, 1);
-                            lv_obj_set_size(btn, LV_PCT(100), powerui::px(84));
+                            lv_obj_set_size(btn, LV_PCT(100), powerui::px(86));
                         }
                         lv_obj_set_style_min_width(btn, 0, 0);
                         lv_obj_set_style_min_height(btn, 0, 0);
@@ -535,16 +643,22 @@ void PromptPanel::handle_macro_response(json &j) {
                         }
                     }
                     lv_obj_add_event_cb(btn, _handle_callback, LV_EVENT_PRESSED, this);
+                    if (manual_filament_prompt && prompt_footer_button == "CLOSE") {
+                        lv_obj_add_flag(btn, LV_OBJ_FLAG_HIDDEN);  // replaced by the X button of the window
+                    }
 
                 }
             } else if (command.find("prompt_show") == 0) {
                 spdlog::debug("PROMPT_SHOW");
                 refresh_filament_buttons();
+                update_nozzle_card();
                 check_height();
                 foreground();
             } else if (command.find("prompt_end") == 0) {
                 spdlog::debug("PROMPT_END");
                 background();
+                set_manual_widgets_visible(false);
+                lv_obj_clear_flag(footer_cont, LV_OBJ_FLAG_IGNORE_LAYOUT);
 
                 // remove buttons
                 lv_obj_clean(footer_cont);

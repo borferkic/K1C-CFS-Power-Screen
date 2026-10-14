@@ -38,6 +38,8 @@ class PromptPanel : public NotifyConsumer {
 
         void check_height();
         void refresh_filament_buttons();
+        void update_nozzle_card();
+        void set_manual_widgets_visible(bool visible);
 
         KWebSocketClient &ws;
         lv_obj_t *promptpanel_cont;
@@ -52,6 +54,12 @@ class PromptPanel : public NotifyConsumer {
         int manual_button_count = 0;
         lv_obj_t *load_btn = NULL;
         lv_obj_t *unload_btn = NULL;
+        // Manual filament change extras: close button and nozzle temperature card.
+        lv_obj_t *x_btn = NULL;
+        lv_obj_t *nozzle_card = NULL;
+        lv_obj_t *nozzle_temp_label = NULL;
+        lv_obj_t *nozzle_state_label = NULL;
+        lv_obj_t *nozzle_bar = NULL;
 
 };
 
