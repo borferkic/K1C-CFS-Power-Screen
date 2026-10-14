@@ -159,7 +159,7 @@ It is recommended to restart the printer after removing PowerScreen.
   - The filament cut uses the cutter X position and speed of the `[box]` section of `box.cfg` (`cut_pos_x`, `cut_velocity`), so it hits as softly as the CFS's own cut. If those values are missing it falls back to X42 and 8000 mm/min. The cut stays at Y225.2.
   - The bed lowers at 10 mm/s (`F600`) before cutting or loading, the speed the CFS module uses.
   - After a pause, once the nozzle is wiped, `PS_LOAD_FILAMENT` heats the nozzle to 10 °C under the print temperature saved by the pause and waits there. If no temperature was saved, it does nothing.
-- Green `RESUME` action (`PS_RESUME`): heats to the print temperature, purges 10 mm and resumes the print.
+- Green `RESUME` action (`PS_RESUME`): heats to the print temperature, purges 5 mm and resumes the print.
 - Red `STOP` action (`PS_CANCEL`), which cancels with `CANCEL_PRINT`.
 - Nozzle temperature card (actual / target, state and progress bar) and an X button that closes the dialog at once, without waiting for Klipper.
 - Icons for load, unload, resume, and stop actions.
@@ -336,7 +336,7 @@ Se recomienda reiniciar la impresora después de quitar PowerScreen.
   - El corte del filamento usa la posición X y la velocidad del cortador de la sección `[box]` de `box.cfg` (`cut_pos_x`, `cut_velocity`), así que golpea tan suave como el corte propio del CFS. Si faltan esos valores usa X42 y 8000 mm/min. El corte se mantiene en Y225.2.
   - La cama baja a 10 mm/s (`F600`) antes de cortar o cargar, la velocidad que usa el módulo del CFS.
   - Tras una pausa, y una vez limpiada la boquilla, `PS_LOAD_FILAMENT` calienta la boquilla a 10 °C por debajo de la temperatura de impresión que guardó la pausa y espera ahí. Si no hay temperatura guardada, no hace nada.
-- Acción `RESUME` en color verde (`PS_RESUME`): calienta a la temperatura de impresión, purga 10 mm y reanuda la impresión.
+- Acción `RESUME` en color verde (`PS_RESUME`): calienta a la temperatura de impresión, purga 5 mm y reanuda la impresión.
 - Acción `STOP` en color rojo (`PS_CANCEL`), que cancela con `CANCEL_PRINT`.
 - Tarjeta con la temperatura de la boquilla (actual / objetivo, estado y barra de progreso) y un botón X que cierra el diálogo al instante, sin esperar a Klipper.
 - Iconos para las acciones de carga, descarga, reanudación y detención.
